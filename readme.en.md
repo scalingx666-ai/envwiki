@@ -158,6 +158,36 @@ A recipe looks like this:
 }
 ```
 
+### How recipes are matched
+
+Recipes are not matched by bumping keywords into each other. envwiki turns
+every recipe into vectors and keeps them in **zvec**, an in-process vector
+store:
+
+- **signal vector**: a BM25 sparse vector over summary, when_to_use,
+  not_when_to_use and inputs;
+- **detail vector**: a BM25 sparse vector over the whole recipe (steps,
+  verification, pitfalls);
+- **dense vector**: one more semantic layer when an embedding endpoint is
+  configured;
+- **full text index**: zvec's own FTS.
+
+A query searches those signals together and fuses them with reciprocal rank
+fusion. The index is cached under `~/.cache/envwiki/recipes-<hash>.zvec`,
+keyed by the content of the recipe library, so a changed library gets its
+own index.
+
+Dense vectors need an embedding endpoint:
+
+| Variable | Meaning |
+| --- | --- |
+| `ENVWIKI_EMBEDDING_BASE_URL` | OpenAI-compatible `/embeddings` endpoint |
+| `ENVWIKI_EMBEDDING_MODEL` | Model id |
+| `ENVWIKI_EMBEDDING_API_KEY` | API key for that endpoint (optional) |
+
+`plan_task`, `recommend_recipes` and `search_recipes` all report an `engine`
+field: `zvec-hybrid`, `zvec-bm25` or `lexical`.
+
 ## The MCP server: a toolbox
 
 ```
@@ -229,6 +259,10 @@ Everything comes from the environment, so envwiki can run unattended.
 | `ENVWIKI_PROVIDER` | `envwiki-local` | Provider name written into pi's models.json |
 | `HARBOR_SRC` | auto-detected | Path to Harbor's `src` directory, used for schema validation |
 | `ENVWIKI_STAGING_DIR` | empty | Workspace `scaffold_task` writes into by default |
+| `ENVWIKI_INDEX_DIR` | `~/.cache/envwiki` | Where the recipe vector index is cached |
+| `ENVWIKI_EMBEDDING_BASE_URL` | empty | OpenAI-compatible `/embeddings` endpoint for dense vectors |
+| `ENVWIKI_EMBEDDING_MODEL` | empty | Model id for dense vectors |
+| `ENVWIKI_EMBEDDING_API_KEY` | empty | API key for that embedding endpoint |
 
 The API key never lands on disk: pi's `models.json` receives
 `"$ENVWIKI_API_KEY"` and the real value is exported at run time.
@@ -300,8 +334,14 @@ recipe against the paper it claims to come from.
 ## Development
 
 ```
-uv sync --extra dev
-uv run pytest          # 55 tests
+uv sync --extra dev --extra vector
+uv run pytest          # 66 tests
+
+The `vector` extra installs zvec: recipe retrieval then goes through the
+vector store instead of keyword weighting. zvec ships wheels for CPython
+3.10 to 3.14 only, so the repository is pinned to 3.13 (see
+`.python-version`). Without the extra envwiki still works, on the built-in
+lexical matcher.
 uv run ruff check src tests
 ```
 
@@ -317,8 +357,10 @@ uv run ruff check src tests
 - envwiki does not run the agent for you: the quality of the result is the
   quality of your agent and your model, and the agent may not even follow the
   tools.
-- Recipe matching is keyword weighted. It gets you the right neighbourhood,
-  but the model still has to choose.
+- Recipe retrieval runs on BM25 sparse vectors by default; semantic retrieval
+  needs an embedding endpoint you configure yourself.
+- The match only gets the agent into the right neighbourhood; the model
+  still has to choose.
 
 ## License
 

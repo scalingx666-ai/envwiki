@@ -3,27 +3,19 @@
 from __future__ import annotations
 
 import json
-import re
 from functools import lru_cache
 from pathlib import Path
 
+from envwiki.recipes import vector_index
 from envwiki.recipes.schema import Recipe
+from envwiki.recipes.text import tokenize
 
 DATA_DIR = Path(__file__).resolve().parent / "data" / "families"
 DATA_PATH = Path(__file__).resolve().parent / "data" / "recipes.json"
 
-_TOKEN_RE = re.compile(r"[a-z][a-z0-9\-]{1,}")
-
-_STOPWORDS = {
-    "the", "and", "for", "with", "from", "into", "that", "this", "are", "was",
-    "using", "use", "used", "via", "its", "not", "can", "all", "any", "one",
-    "task", "tasks", "agent", "agents", "env", "environment", "environments",
-    "paper", "papers", "method", "methods", "based",
-}
-
 
 def _tokens(text: str) -> list[str]:
-    return [t for t in _TOKEN_RE.findall((text or "").lower()) if t not in _STOPWORDS]
+    return tokenize(text)
 
 
 class RecipeLibrary:
@@ -91,7 +83,22 @@ class RecipeLibrary:
         return score
 
     def search(self, query: str, limit: int = 6) -> list[tuple[Recipe, float]]:
-        """Rank recipes by how well they match the query."""
+        """Rank recipes by how well they match the query.
+
+        The vector index answers first: it knows the recipes as vectors and
+        compares them with the profile as a vector. The lexical matcher is
+        the fallback for installs without the vector extra.
+        """
+        hits = vector_index.search(self.recipes, query, limit=limit)
+        if hits is not None:
+            ranked = [
+                (self._by_id[recipe_id], score)
+                for recipe_id, score in hits
+                if recipe_id in self._by_id and score > 0
+            ]
+            if ranked or not _tokens(query):
+                return ranked
+
         wanted = set(_tokens(query))
         if not wanted:
             return []
@@ -99,6 +106,10 @@ class RecipeLibrary:
         scored = [item for item in scored if item[1] > 0]
         scored.sort(key=lambda item: (-item[1], item[0].id))
         return scored[:limit]
+
+    def engine(self) -> str:
+        """Which engine is ranking the recipes right now."""
+        return vector_index.engine()
 
     def recommend(self, source_profile: str, limit: int = 5) -> list[tuple[Recipe, float]]:
         """Rank recipes by how well they fit a description of the source."""

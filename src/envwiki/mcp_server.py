@@ -126,7 +126,7 @@ def search_recipes(query: str, limit: int = 6) -> dict[str, Any]:
     """Rank recipes by keyword overlap."""
     library = load_library()
     recipes = [_summary(recipe, score) for recipe, score in library.search(query, limit=limit)]
-    return {"count": len(recipes), "recipes": recipes}
+    return {"count": len(recipes), "engine": library.engine(), "recipes": recipes}
 
 
 @server.tool(
@@ -144,7 +144,7 @@ def recommend_recipes(source_profile: str, limit: int = 5) -> dict[str, Any]:
         _summary(recipe, score)
         for recipe, score in library.recommend(source_profile, limit=limit)
     ]
-    return {"count": len(recipes), "recipes": recipes}
+    return {"count": len(recipes), "engine": library.engine(), "recipes": recipes}
 
 
 @server.tool(
@@ -159,7 +159,7 @@ def plan_task(source_profile: str, limit: int = 3) -> dict[str, Any]:
     """Rank recipes by fit and expand the best one into a procedure."""
     library = load_library()
     plan = library.plan(source_profile, limit=limit)
-    return {"count": len(plan), "plan": plan}
+    return {"count": len(plan), "engine": library.engine(), "plan": plan}
 
 
 @server.tool(

@@ -140,6 +140,29 @@ agent 会自己走完：`stage_source` → `plan_task` → `get_recipe` →
 }
 ```
 
+### 怎么匹配
+
+配方不是靠关键词硬碰出来的。envwiki 把每条配方向量化后放进 **zvec**（进程内向量库）：
+
+- **信号向量**：summary + when_to_use + not_when_to_use + inputs 的 BM25 稀疏向量；
+- **细节向量**：整条配方（步骤、校验、坑）的 BM25 稀疏向量；
+- **稠密向量**：配了 embedding 端点时再加一层语义向量；
+- **全文索引**：zvec 自带的 FTS。
+
+查询时这几路信号一起检索，用 RRF 融合排序。索引按配方库内容哈希缓存在
+`~/.cache/envwiki/recipes-<hash>.zvec`，配方库一改就换一份。
+
+稠密向量需要一个 embedding 端点：
+
+| 变量 | 含义 |
+| --- | --- |
+| `ENVWIKI_EMBEDDING_BASE_URL` | OpenAI 兼容的 `/embeddings` 端点 |
+| `ENVWIKI_EMBEDDING_MODEL` | 模型 id |
+| `ENVWIKI_EMBEDDING_API_KEY` | 该端点的 key（可选） |
+
+`plan_task` / `recommend_recipes` / `search_recipes` 的返回里都有 `engine` 字段，
+写着这次是 `zvec-hybrid`、`zvec-bm25` 还是 `lexical`。
+
 ## MCP server：工具箱
 
 ```
@@ -207,6 +230,10 @@ uv run envwiki skill install --to <dir>       # 把 skill 装进 agent
 | `ENVWIKI_PROVIDER` | `envwiki-local` | 写入 pi models.json 的 provider 名 |
 | `HARBOR_SRC` | 自动探测 | Harbor 的 `src` 目录，用于 schema 校验 |
 | `ENVWIKI_STAGING_DIR` | 空 | `scaffold_task` 默认写入的暂存区 |
+| `ENVWIKI_INDEX_DIR` | `~/.cache/envwiki` | 配方向量索引的缓存目录 |
+| `ENVWIKI_EMBEDDING_BASE_URL` | 空 | 稠密向量用的 OpenAI 兼容 `/embeddings` 端点 |
+| `ENVWIKI_EMBEDDING_MODEL` | 空 | 稠密向量用的模型 id |
+| `ENVWIKI_EMBEDDING_API_KEY` | 空 | 该 embedding 端点的 key |
 
 API key 不落盘：pi 的 `models.json` 里写的是 `"$ENVWIKI_API_KEY"`，真实值在运行时
 由环境注入。
@@ -270,8 +297,12 @@ $ uv run envwiki validate ./my-task
 ## 开发
 
 ```
-uv sync --extra dev
-uv run pytest          # 55 项测试
+uv sync --extra dev --extra vector
+uv run pytest          # 66 项测试
+
+`vector` 这一档装上 zvec：配方检索走向量库而不是关键词加权。zvec 只提供
+CPython 3.10–3.14 的 wheel，所以本仓库锁在 3.13（见 `.python-version`）。
+不装这一档照样能用，只是退回内置的词法匹配。
 uv run ruff check src tests
 ```
 
@@ -282,7 +313,8 @@ uv run ruff check src tests
 - 解题 agent 与 verifier 都没有网络，任务若需要联网取数据会失败。
 - 只支持 `linux` 与 `windows` 目标环境，与 Harbor 自身的枚举一致。
 - envwiki 不替你跑 agent：合成质量取决于你的 agent 与模型，也可能它不按工具走。
-- 配方匹配是关键词加权的，能把你带到正确的邻域，最终选哪条仍由模型决定。
+- 配方检索默认走 BM25 稀疏向量；要语义检索得自己配一个 embedding 端点。
+- 配方匹配只是把你带到正确的邻域，最终选哪条仍由模型决定。
 
 ## License
 
