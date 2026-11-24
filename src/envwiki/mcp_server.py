@@ -41,7 +41,8 @@ INSTRUCTIONS = """\
 envwiki gives you the material, the methods and the scaffolding to build a
 Harbor benchmark task.
 
-It does not decide what the task should be. You do.
+It does not decide what the task should be. You do. Nothing is
+staged for you either: start with stage_source.
 
 - stage_source brings a link or an upload into a workspace you can explore;
 - plan_task and get_recipe give you synthesis methods distilled from the

@@ -40,6 +40,17 @@ def _run_client(body):
     return _call(main)
 
 
+def test_server_tells_the_agent_that_it_decides_the_task():
+    async def body(session):
+        result = await session.initialize()
+        return result.instructions or ""
+
+    instructions = _run_client(body)
+    assert "stage_source" in instructions
+    assert "scaffold_task" in instructions
+    assert "It does not decide what the task should be" in instructions
+
+
 def test_server_exposes_the_recipe_tools():
     async def body(session):
         tools = await session.list_tools()

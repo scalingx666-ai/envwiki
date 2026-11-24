@@ -1,8 +1,8 @@
-"""Skill files that envwiki injects into the harness.
+"""Skill files that envwiki ships.
 
 A skill is a directory holding a SKILL.md file with name and description
-frontmatter. The harness advertises it, and the model loads it when the work
-matches.
+frontmatter. An agent loads it when the work matches; envwiki itself only
+ships it and can install it somewhere an agent will look.
 """
 
 from __future__ import annotations

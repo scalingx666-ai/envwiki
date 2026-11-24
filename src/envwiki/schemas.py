@@ -1,4 +1,4 @@
-"""Typed shapes shared across ingest, harness and conversion."""
+"""Typed shapes shared across ingest, scaffolding and validation."""
 
 from __future__ import annotations
 
@@ -15,7 +15,6 @@ class SourceKind(StrEnum):
 
 class IngestedSource(BaseModel):
     """One resolved input: a cloned repo, a fetched page, or an upload."""
-
     kind: SourceKind
     name: str
     origin: str
@@ -43,7 +42,6 @@ class TaskMetadata(BaseModel):
 
 class EnvironmentSpec(BaseModel):
     """How the Harbor environment is built."""
-
     base_image: str = "ubuntu:24.04"
     workdir: str = "/app"
     os: str = "linux"
@@ -53,7 +51,6 @@ class EnvironmentSpec(BaseModel):
 
 class VerifierSpec(BaseModel):
     """The test that produces the reward."""
-
     language: str = "bash"
     code: str
     timeout_sec: float = 900.0
@@ -67,7 +64,6 @@ class VerifierSpec(BaseModel):
 
 class SolutionSpec(BaseModel):
     """The reference solution that should make the verifier pass."""
-
     language: str = "bash"
     code: str
 
@@ -79,11 +75,12 @@ class SolutionSpec(BaseModel):
 
 
 class TaskDraft(BaseModel):
-    """The intermediate representation the model produces.
+    """The shape of a task, as scaffold_task takes it.
 
-    One draft becomes one Harbor task directory.
+    One draft becomes one Harbor task directory. The tool signature of
+    scaffold_task and this model are the same contract: there is no second
+    description of a task anywhere else.
     """
-
     name: str = "envwiki-task"
     description: str = ""
     metadata: TaskMetadata = Field(default_factory=TaskMetadata)
@@ -100,14 +97,3 @@ class TaskDraft(BaseModel):
         v = "".join(c if c.isalnum() or c in "-_" else "-" for c in v)
         v = "-".join(part for part in v.split("-") if part)
         return v or "envwiki-task"
-
-
-class BuildResult(BaseModel):
-    """Outcome of one envwiki build."""
-
-    task_dir: str
-    draft: TaskDraft
-    sources: list[IngestedSource] = Field(default_factory=list)
-    warnings: list[str] = Field(default_factory=list)
-    harness: str = "pi"
-    model: str = ""

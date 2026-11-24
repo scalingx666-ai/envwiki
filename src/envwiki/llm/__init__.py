@@ -1,5 +1,5 @@
-#"""LLM access layer."""
+"""A thin client for the OpenAI-compatible endpoint."""
 
-from envwiki.llm.client import ChatResult, LLMClient, image_data_url
+from envwiki.llm.client import LLMClient
 
-__all__ = ["ChatResult", "LLMClient", "image_data_url"]
+__all__ = ["LLMClient"]

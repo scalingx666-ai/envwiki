@@ -1,7 +1,7 @@
 [project]
 name = "envwiki"
 version = "0.1.0"
-description = "Turn any link or uploaded multimodal content into an initial Harbor task."
+description = "A toolbox for agents that build Harbor tasks: recipes, staging and scaffolding over MCP."
 readme = "readme.en.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }

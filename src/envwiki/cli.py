@@ -1,191 +1,37 @@
-"""envwiki command line interface."""
+"""envwiki command line interface.
+
+envwiki is a toolbox for agents that build Harbor tasks: an MCP server that
+carries the recipes, the material and the scaffolding, plus a skill that
+carries the method. The commands below prepare that toolbox and diagnose it.
+
+None of them synthesises a task. The agent does that, through the MCP server.
+"""
 
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import typer
 
 from envwiki.config import EnvwikiConfig, ModelEndpoint
-from envwiki.convert.builder import discover_tasks, publish_task
-from envwiki.convert.prompt import SYSTEM_PROMPT, build_user_prompt
 from envwiki.convert.validate import validate_task
-from envwiki.harness.direct import DirectHarness
-from envwiki.harness.pi_harness import PiHarness, register_provider
-from envwiki.ingest.bundle import build_bundle
 from envwiki.ingest.classify import classify_url, parse_github_url
 from envwiki.llm.client import LLMClient
+from envwiki.pi_setup import mcp_server_entry, register_provider
+from envwiki.skills import builtin_skill_dirs
 
 app = typer.Typer(
     add_completion=False,
-    help="Drive an agent that turns links or uploads into a Harbor task.",
+    help="A toolbox for agents that build Harbor tasks.",
 )
 model_app = typer.Typer(help="Inspect and register the model endpoint.")
 app.add_typer(model_app, name="model")
-mcp_app = typer.Typer(help="Serve the envwiki toolbox over MCP.")
+mcp_app = typer.Typer(help="Serve envwiki over MCP.")
 app.add_typer(mcp_app, name="mcp")
-
-
-def _endpoint(
-    base_url: str | None,
-    api_key: str | None,
-    model: str | None,
-    provider: str | None,
-) -> ModelEndpoint:
-    return ModelEndpoint.from_env(
-        base_url=base_url, api_key=api_key, model=model, provider=provider
-    )
-
-
-@app.command("build")
-def build_cmd(
-    links: list[str] | None = typer.Argument(None, help="Links to ingest."),
-    upload: list[Path] | None = typer.Option(
-        None, "--upload", "-u", help="File to upload (repeatable)."
-    ),
-    out: Path = typer.Option(
-        Path("envwiki-tasks"),
-        "--out",
-        "-o",
-        help="Where the finished task directories are written.",
-    ),
-    harness: str = typer.Option("pi", "--harness", help="Harness backend: pi or direct."),
-    workspace: Path | None = typer.Option(
-        None, "--workspace", "-w", help="Staging directory for the source material."
-    ),
-    base_url: str | None = typer.Option(None, "--base-url"),
-    api_key: str | None = typer.Option(
-        None, "--api-key", envvar="ENVWIKI_API_KEY", help="API key for the endpoint."
-    ),
-    model: str | None = typer.Option(None, "--model"),
-    provider: str | None = typer.Option(None, "--provider"),
-    org: str = typer.Option("envwiki", "--org", help="org/ prefix used in [task].name."),
-    enable_docling: bool = typer.Option(False, "--enable-docling"),
-    no_mcp: bool = typer.Option(
-        False, "--no-mcp", help="Do not expose MCP servers to the harness."
-    ),
-    no_skills: bool = typer.Option(
-        False, "--no-skills", help="Do not inject skills into the harness."
-    ),
-    no_envwiki_mcp: bool = typer.Option(
-        False,
-        "--no-envwiki-mcp",
-        help="Do not expose the envwiki recipe server to the harness.",
-    ),
-    skill_dir: list[Path] = typer.Option(
-        [], "--skill-dir", help="Extra skill directory to inject (repeatable)."
-    ),
-    allow_write_tools: bool = typer.Option(
-        False,
-        "--allow-write-tools",
-        help="Let the harness run shell commands and write files. Off by default: "
-        "the source material is untrusted.",
-    ),
-    register: bool = typer.Option(
-        True, "--register/--no-register", help="Register the endpoint in pi's models.json."
-    ),
-    timeout: float = typer.Option(1800.0, "--timeout", help="Harness timeout in seconds."),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Ingest only, do not call the model."),
-) -> None:
-    """Stage the material, let the agent build a task, validate what it wrote."""
-    link_list = [link.strip() for link in (links or []) if link and link.strip()]
-    upload_list = [Path(p).expanduser() for p in (upload or [])]
-    if not link_list and not upload_list:
-        typer.echo("nothing to do: pass a link or --upload", err=True)
-        raise typer.Exit(2)
-
-    endpoint = _endpoint(base_url, api_key, model, provider)
-    config = EnvwikiConfig(endpoint=endpoint, harness=harness)
-    if workspace is not None:
-        config.workspace = workspace
-
-    typer.echo("staging sources ...")
-    bundle = build_bundle(link_list, upload_list, config.workspace, config.max_context_chars)
-    for warning in bundle.warnings:
-        typer.echo("warning: " + warning, err=True)
-    if not bundle.sources:
-        typer.echo("no sources were ingested", err=True)
-        raise typer.Exit(2)
-    typer.echo(
-        "staged "
-        + str(len(bundle.sources))
-        + " source(s) in "
-        + str(bundle.staging_dir)
-    )
-    if dry_run:
-        typer.echo(bundle.tree)
-        raise typer.Exit(0)
-
-    if harness == "pi":
-        agent = PiHarness(config, allow_write_tools=allow_write_tools)
-        agent.prepare(
-            bundle.staging_dir,
-            enable_jina=not no_mcp,
-            enable_docling=enable_docling,
-            enable_skills=not no_skills,
-            enable_envwiki=not no_envwiki_mcp,
-            extra_skill_dirs=list(skill_dir or []),
-        )
-        if register:
-            registration = register_provider(config.agent_dir, endpoint)
-            typer.echo("model provider: " + registration.message)
-    elif harness == "direct":
-        agent = DirectHarness(config)
-    else:
-        typer.echo("unknown harness: " + harness, err=True)
-        raise typer.Exit(2)
-
-    prompt = build_user_prompt(
-        bundle.digest, str(bundle.staging_dir), bundle.tree, org=org
-    )
-    typer.echo("running harness (" + harness + ") ...")
-    result = agent.run(
-        prompt,
-        cwd=bundle.staging_dir,
-        images=bundle.images,
-        timeout=timeout,
-        system_prompt=SYSTEM_PROMPT,
-    )
-    if not result.ok:
-        typer.echo("harness failed: " + result.error, err=True)
-        if result.text:
-            typer.echo(result.text[:1500], err=True)
-        raise typer.Exit(1)
-
-    produced = discover_tasks(bundle.staging_dir)
-    if not produced:
-        typer.echo(
-            "the agent wrote no task under " + str(bundle.staging_dir), err=True
-        )
-        typer.echo(
-            "scaffold_task writes tasks/<name>/task.toml there; nothing was found",
-            err=True,
-        )
-        if result.text:
-            typer.echo(result.text[:1500], err=True)
-        raise typer.Exit(1)
-
-    failed = False
-    for task_dir in produced:
-        report = validate_task(task_dir)
-        for issue in report.issues:
-            typer.echo(issue.level + ": " + issue.message, err=(issue.level == "error"))
-        published = publish_task(task_dir, out)
-        typer.echo("task: " + str(published))
-        typer.echo(
-            "validation: "
-            + ("ok" if report.ok else "failed")
-            + " (schema source: "
-            + report.schema_source
-            + ")"
-        )
-        if not report.ok:
-            failed = True
-
-    typer.echo("staging dir: " + str(bundle.staging_dir))
-    if failed:
-        raise typer.Exit(1)
+skill_app = typer.Typer(help="Install the synthesis skill into an agent.")
+app.add_typer(skill_app, name="skill")
 
 
 @app.command("validate")
@@ -279,6 +125,43 @@ def mcp_serve(
         server.run(transport="stdio")
         return
     server.run(transport=transport, host=host, port=port)
+
+
+@mcp_app.command("config")
+def mcp_config(
+    python_executable: str | None = typer.Option(
+        None, "--python", help="Interpreter that runs envwiki."
+    ),
+) -> None:
+    """Print the MCP client configuration that reaches envwiki."""
+    entry = mcp_server_entry(python_executable)
+    typer.echo(json.dumps({"mcpServers": entry}, indent=2, ensure_ascii=False))
+
+
+@skill_app.command("install")
+def skill_install(
+    to: Path | None = typer.Option(
+        None, "--to", help="Skill directory to install into."
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Only show what would happen."),
+) -> None:
+    """Install the env-synthesis skill where an agent can load it."""
+    directories = builtin_skill_dirs()
+    if not directories:
+        typer.echo("no skill ships with this installation", err=True)
+        raise typer.Exit(1)
+
+    if to is None:
+        for directory in directories:
+            typer.echo(str(directory))
+        return
+
+    target = Path(to).expanduser()
+    for directory in directories:
+        destination = target / directory.name
+        if not dry_run:
+            shutil.copytree(directory, destination, dirs_exist_ok=True)
+        typer.echo("skill: " + str(destination))
 
 
 def main() -> None:

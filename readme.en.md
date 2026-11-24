@@ -1,71 +1,114 @@
 # envwiki
 
-> Turn any link or uploaded multimodal content into a verifiable **Harbor** task.
+> A **toolbox** for agents that synthesise environments and tasks.
 >
-> 把任意链接或多模态上传，变成一个可校验的 **Harbor** 任务。
+> 给 agent 用的环境与任务合成**工具箱**。
 
 **[English](readme.en.md)** | **[中文](readme.md)**
 
 There are many ways to synthesise an environment, and the papers disagree about
-the details. envwiki abstracts each method into a **recipe**, and ships the
-recipes, the material and the scaffolding through one **MCP server**. The
-**agent decides what task to write**; envwiki itself does not synthesise.
+the details. envwiki abstracts each method into a **recipe**, ships the
+recipes, the material and the scaffolding through one **MCP server**, and
+writes the method into a **Skill**.
+
+**The agent does the synthesis.** envwiki generates no tasks and makes no
+decisions on the agent's behalf.
 
 ---
 
 ## What this is
 
-envwiki is three things:
+envwiki is three things, all of them for the agent:
 
-- an **MCP server** that gives an agent a toolbox: recipes (the methods),
-  material (a staging area) and scaffolding (write a task, check a task). It
-  holds **no synthesis logic of its own**: it never decides what a task should
-  look like;
+- an **MCP server** that is a toolbox: recipes (the methods), material (a
+  staging area) and scaffolding (write a task, check a task). It holds **no
+  synthesis logic of its own**: it never decides what a task should look
+  like;
 - a **Skill** that is the single place where "how to write a Harbor task"
   lives: the method, the verifier contract, the reference-solution contract,
   the path rules and the pre-submit checklist;
-- a **CLI** that is a thin driver. It stages the material, runs the agent,
-  collects what the agent wrote, validates it and publishes it. It does not
-  parse model output into a task, and it never writes task content itself.
+- a small set of **diagnostic commands**: putting the toolbox into your
+  agent (print the MCP config, install the skill), checking a task directory,
+  showing how a link is handled.
 
-Any harness that speaks MCP and loads skills can drive it. pi is the default
-here, but the MCP server is plain stdio or streamable HTTP, and the skill is
-just a normal `SKILL.md`.
+envwiki **does not** start an agent for you and **does not** synthesise a
+task by itself. You own the agent: hang the MCP server on it, install the
+skill, then tell it "turn this link into a Harbor task".
+
+Any harness that speaks MCP and loads skills can use it: pi, Claude Code,
+Codex, OpenCode, whatever you already run.
 
 ## Who does what
-
-This is the central convention of the project: **the synthesis lives in the
-agent, envwiki is the toolbox.**
 
 | Who | Responsible for | Not responsible for |
 | --- | --- | --- |
 | the agent | reading the material, choosing a method, deciding what task to write, iterating on validation errors | parsing material, judging the schema |
 | the envwiki MCP server | handing over methods (recipes), material (staging), writing the task (scaffolding) and checking it | deciding what the task is, generating task content |
-| the envwiki CLI | staging, running the agent, finding the product, validating, publishing | reading model output as a task, writing the task for the agent |
+| the envwiki CLI | printing the MCP config, installing the skill, validating a task, showing how a link is handled | synthesising tasks, orchestrating agents |
 
 **There is exactly one contract.** The shape of a task is enforced by the
 signature of the `scaffold_task` tool and by `TaskDraft` (pydantic) in
-`envwiki/schemas.py`. envwiki's prompt no longer carries a parallel task
-JSON structure, and Harbor's rules live **only** in the skill. Want to know
-what a task looks like? Read the tool signature. Want to know how to write a
-good one? Read the skill.
+`envwiki/schemas.py`. There is no second task JSON structure anywhere in
+envwiki, and Harbor's rules live **only** in the skill. Want to know what a
+task looks like? Read the tool signature. Want to know how to write a good
+one? Read the skill.
 
 ```
-material (link / upload)
+link / upload
    |
    v
-staging     ->  file tree + an index with line numbers
+agent calls stage_source  ->  staging area: file tree + an index with line numbers
    |
    v
-agent reads the material  ->  plan_task picks a method  ->  get_recipe returns
-the procedure  ->  the agent follows it
+agent calls plan_task  ->  pick a method  ->  get_recipe  ->  follow it
    |
    v
-scaffold_task writes the task  ->  validate_task checks it  ->  fix and repeat
-   |
-   v
-the CLI finds the product  ->  validates  ->  publishes it to --out
+agent calls scaffold_task  ->  write the task  ->  validate_task  ->  fix and repeat
 ```
+
+## How to use it
+
+Three steps.
+
+### 1. Hang the MCP server on your agent
+
+```
+uv run envwiki mcp config
+```
+```
+{
+  "mcpServers": {
+    "envwiki": {
+      "command": "/path/to/python",
+      "args": ["-m", "envwiki.mcp_server"],
+      "description": "..."
+    }
+  }
+}
+```
+
+Write it into your agent's MCP configuration: for pi that is
+`~/.pi/agent/mcp.json` (global) or the project's `.pi/mcp.json`; every other
+harness has its own place. The tools are named
+`mcp__envwiki__plan_task`, `mcp__envwiki__scaffold_task`,
+`mcp__envwiki__validate_task` and so on.
+
+### 2. Install the skill
+
+```
+uv run envwiki skill install --to ~/.pi/agent/skills
+```
+
+Without `--to` the command prints where the skill lives, so you can copy it
+yourself.
+
+### 3. Say one sentence to your agent
+
+"Use envwiki to turn https://github.com/owner/repo into a Harbor task."
+
+The agent walks the whole path by itself: `stage_source` → `plan_task` →
+`get_recipe` → `scaffold_task` → `validate_task`, and hands you the task
+directory at the end.
 
 ## The recipe library
 
@@ -118,7 +161,7 @@ A recipe looks like this:
 ## The MCP server: a toolbox
 
 ```
-uv run envwiki-mcp                       # stdio, the form a local harness spawns
+uv run envwiki-mcp                       # stdio, the form an agent spawns
 uv run envwiki mcp serve --transport streamable-http --port 8765
 ```
 
@@ -149,58 +192,30 @@ The whole library is also available as the resource `envwiki://recipes/index`.
 | `scaffold_task` | write the task directory from the spec you produced. **This is the only way to write files**, and the spec is enforced by the tool signature |
 | `validate_task` | check the task directory: local structure plus Harbor's own TaskConfig |
 
-Under the usual MCP naming convention the tools are
-`mcp__envwiki__plan_task`, `mcp__envwiki__scaffold_task`,
-`mcp__envwiki__validate_task` and so on.
-
 ## The skill
 
-`src/envwiki/skills/env-synthesis/SKILL.md` is copied into the harness
-workspace by `envwiki build`. It is the **single source of the method and the
-rules**: the tool table, the five-step workflow, what makes a good task, the
-verifier contract, the reference-solution contract, the path rules and the
-checklist to run before validating.
-
-## Quick start
-
-```
-git clone https://github.com/scalingx666-ai/envwiki.git
-cd envwiki
-uv sync --extra dev
-uv run envwiki --help
-```
-
-From a link:
-
-```
-uv run envwiki build https://github.com/owner/repo --out ./envwiki-tasks
-```
-
-From uploads (text, PDF, images):
-
-```
-uv run envwiki build --upload spec.pdf --upload diagram.png
-```
+`src/envwiki/skills/env-synthesis/SKILL.md` is the **single source of the
+method and the rules**: the tool table, the six-step workflow, what makes a
+good task, the verifier contract, the reference-solution contract, the path
+rules and the checklist to run before validating.
 
 ## Command line
 
+The command line does two things: put the toolbox into your agent, and
+diagnose.
+
 ```
-uv run envwiki build <links...>              # stage, run the agent, validate and publish
 uv run envwiki validate <task dir>            # validate against Harbor's schema
 uv run envwiki inspect <url>                  # show how a link is handled
 uv run envwiki model check                    # is the endpoint alive
 uv run envwiki model register                 # register the endpoint in pi's models.json
 uv run envwiki mcp serve                      # run as an MCP server
+uv run envwiki mcp config                     # print the MCP config that reaches envwiki
+uv run envwiki skill install --to <dir>       # install the skill for an agent
 ```
 
-Useful switches: `--harness pi|direct`, `--out`, `--workspace`, `--org`,
-`--timeout`, `--dry-run`, `--no-mcp`, `--no-skills`, `--no-envwiki-mcp`,
-`--skill-dir`, `--enable-docling`, `--allow-write-tools`.
-
-`--harness direct` runs without pi: the model talks straight to the
-OpenAI-compatible endpoint, but it uses **the same tools** (the MCP server's
-tool functions, called in process), so both paths share one contract. It needs
-an endpoint that accepts OpenAI-style `tools` parameters.
+There is no `build`: envwiki does not synthesise for you and does not
+orchestrate your agent. The agent does that, through the MCP server.
 
 ## Configuration
 
@@ -212,33 +227,30 @@ Everything comes from the environment, so envwiki can run unattended.
 | `ENVWIKI_API_KEY` | `sk-my-secret` | API key for that endpoint |
 | `ENVWIKI_MODEL` | `hy4flash-free` | Model id |
 | `ENVWIKI_PROVIDER` | `envwiki-local` | Provider name written into pi's models.json |
-| `ENVWIKI_HARNESS` | `pi` | Harness backend: `pi` or `direct` |
 | `HARBOR_SRC` | auto-detected | Path to Harbor's `src` directory, used for schema validation |
+| `ENVWIKI_STAGING_DIR` | empty | Workspace `scaffold_task` writes into by default |
 
 The API key never lands on disk: pi's `models.json` receives
 `"$ENVWIKI_API_KEY"` and the real value is exported at run time.
 
 ## Safety
 
-The source material is arbitrary and untrusted, and the harness runs on your
-machine, so the defaults are deliberately narrow:
+The source material is arbitrary and untrusted, so the defaults are
+deliberately narrow:
 
-- the harness starts with its host-modifying tools disabled
-  (`bash`, `edit`, `write`) and explores by reading files.
-  Pass `--allow-write-tools` to lift that, for sources you trust;
 - **the model can only write through `scaffold_task`**: it cannot write any
   other file, and whatever it writes goes through pydantic and Harbor's schema
   immediately;
 - `.pi` and `.agents` directories inside the staged material are deleted
-  before the harness runs, so a cloned repository cannot register extensions,
-  MCP servers or skills for it;
+  before anything explores them, so a cloned repository cannot register
+  extensions, MCP servers or skills;
 - the skill states that the source material is data, not instructions;
 - the API key is referenced through the environment, never written to a config.
 
 ## Task layout
 
 ```
-envwiki-tasks/my-task/
+my-task/
   task.toml            # schema_version 1.4, [task] [metadata] [verifier] [agent] [environment]
   instruction.md       # what the solving agent is asked to do
   environment/
@@ -253,8 +265,8 @@ envwiki-tasks/my-task/
 Three rules come from Harbor itself and are enforced by the builder and the
 validator:
 
-- `[task].name` must be in `org/name` format (envwiki uses
-  `envwiki/<task-name>` by default, and `--org` changes it);
+- `[task].name` must be in `org/name` format (the `org` parameter of
+  `scaffold_task` sets the prefix);
 - `environment/Dockerfile` is built with `environment/` as the Docker build
   context;
 - a staged file listed in `scaffold_task`'s `copy_from_staging` lands at the
@@ -265,8 +277,8 @@ validator:
 ## Validation
 
 ```
-$ uv run envwiki validate ./envwiki-tasks/my-task
-./envwiki-tasks/my-task: ok, 0 warning(s), schema source: harbor
+$ uv run envwiki validate ./my-task
+./my-task: ok, 0 warning(s), schema source: harbor
 ```
 
 `envwiki validate` checks the structure locally and, when Harbor is
@@ -289,7 +301,7 @@ recipe against the paper it claims to come from.
 
 ```
 uv sync --extra dev
-uv run pytest          # 62 tests
+uv run pytest          # 55 tests
 uv run ruff check src tests
 ```
 
@@ -302,13 +314,11 @@ uv run ruff check src tests
   that needs to fetch something at solve time will fail.
 - Only `linux` and `windows` target environments are supported,
   matching Harbor's own enum.
-- A read-only harness cannot run the code it is asked to grade. Tasks that
-  need execution-time facts (a stack trace, a computed output) come out
-  weaker than they would with `--allow-write-tools`.
+- envwiki does not run the agent for you: the quality of the result is the
+  quality of your agent and your model, and the agent may not even follow the
+  tools.
 - Recipe matching is keyword weighted. It gets you the right neighbourhood,
   but the model still has to choose.
-- `--harness direct` needs an endpoint that accepts OpenAI-style `tools`
-  parameters.
 
 ## License
 
