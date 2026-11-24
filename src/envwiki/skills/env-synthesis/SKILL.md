@@ -40,6 +40,8 @@ the only way to know the task is acceptable.
    (the workspace from step 1): the task then lands in `<staging>/tasks/<name>`.
    Only pass `task_dir` when you know the path is writable; if it is not,
    the task goes into the workspace instead and the tool tells you where.
+   If the answer lists `missing_assets`, a file you named is not in the
+   workspace: name the path that is, or drop that requirement.
 6. **Validate.** Call `validate_task`. Fix every error, and every warning
    you can, then validate again.
 

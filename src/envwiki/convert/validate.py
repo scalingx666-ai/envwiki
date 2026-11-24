@@ -117,6 +117,21 @@ def load_harbor_task_config():
     return None
 
 
+def _copy_sources(dockerfile: str) -> list[str]:
+    """The files a Dockerfile copies, relative to the build context."""
+    sources: list[str] = []
+    for line in dockerfile.splitlines():
+        parts = line.strip().split()
+        if len(parts) < 3 or parts[0].upper() != "COPY":
+            continue
+        if any(part.startswith("--") for part in parts):
+            continue
+        for source in parts[1:-1]:
+            if source and not source.endswith("/"):
+                sources.append(source)
+    return sources
+
+
 def _check_files(task_dir: Path, issues: list[Issue]) -> None:
     instruction = task_dir / "instruction.md"
     if not instruction.exists():
@@ -129,6 +144,16 @@ def _check_files(task_dir: Path, issues: list[Issue]) -> None:
         body = dockerfile.read_text(encoding="utf-8")
         if "FROM " not in body.upper():
             issues.append(Issue("error", "environment/Dockerfile has no FROM instruction"))
+        for source in _copy_sources(body):
+            if not (task_dir / "environment" / source).exists():
+                issues.append(
+                    Issue(
+                        "error",
+                        "Dockerfile copies '"
+                        + source
+                        + "', which is not in the build context",
+                    )
+                )
     else:
         issues.append(Issue("warning", "no environment/Dockerfile"))
 

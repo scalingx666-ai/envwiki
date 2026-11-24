@@ -25,7 +25,11 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 
 from envwiki import __version__
-from envwiki.convert.builder import detect_recipes, write_task
+from envwiki.convert.builder import (
+    detect_recipes,
+    missing_staged_assets,
+    write_task,
+)
 from envwiki.convert.validate import validate_task
 from envwiki.ingest.bundle import build_bundle, build_tree
 from envwiki.recipes import load_library
@@ -367,6 +371,9 @@ def scaffold_task(
         "recipes": detect_recipes(draft.source_notes + chr(10) + draft.instruction_md),
         "files": sorted(
             str(p.relative_to(written)) for p in written.rglob("*") if p.is_file()
+        ),
+        "missing_assets": missing_staged_assets(
+            list(copy_from_staging or []), staging
         ),
     }
     if note:

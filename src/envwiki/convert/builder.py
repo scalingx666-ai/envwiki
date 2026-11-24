@@ -154,6 +154,27 @@ def _copy_staged_assets(
     return copied
 
 
+def missing_staged_assets(paths: list[str], staging_dir: Path | None) -> list[str]:
+    """Which of the requested staged files are not there.
+
+    The agent asks for files by their path in the workspace. One that is
+    missing cannot be copied into the image, so it is reported instead of
+    quietly breaking the build.
+    """
+    if staging_dir is None:
+        return [_normalise_rel(path) for path in paths if _normalise_rel(path)]
+    root = Path(staging_dir).expanduser().resolve()
+    missing: list[str] = []
+    for raw in paths:
+        rel = _normalise_rel(raw)
+        if not rel:
+            continue
+        source = (root / rel).resolve()
+        if not str(source).startswith(str(root)) or not source.is_file():
+            missing.append(rel)
+    return missing
+
+
 def detect_recipes(text: str) -> list[str]:
     """Which synthesis recipes the model says it followed.
 
@@ -194,6 +215,10 @@ def write_task(
     copied = _copy_staged_assets(draft, out_dir, staging_dir, destinations)
     if copied:
         draft.environment.copy_from_staging = copied
+    # Only the assets that are really there may be copied into the image:
+    # a COPY line for a file that was never staged breaks the build.
+    present = {rel: target for rel, target in destinations.items() if rel in copied}
+    missing = [rel for rel in destinations if rel not in present]
 
     (out_dir / "task.toml").write_text(
         render_task_toml(draft, org=org, author=author), encoding="utf-8"
@@ -202,7 +227,7 @@ def write_task(
         draft.instruction_md.strip() + NL, encoding="utf-8"
     )
     (out_dir / "environment" / "Dockerfile").write_text(
-        render_dockerfile(draft, destinations), encoding="utf-8"
+        render_dockerfile(draft, present), encoding="utf-8"
     )
 
     verifier_lang = draft.verifier.language
@@ -222,7 +247,8 @@ def write_task(
         "description": draft.description,
         "source_notes": draft.source_notes,
         "metadata": draft.metadata.model_dump(),
-        "staged_assets": destinations,
+        "staged_assets": present,
+        "missing_assets": missing,
         "recipes": detect_recipes(
             draft.source_notes + chr(10) + draft.instruction_md
         ),

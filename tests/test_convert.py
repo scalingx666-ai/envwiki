@@ -130,6 +130,38 @@ def test_write_task_replaces_stale_files_of_the_task(tmp_path: Path):
     assert (out / "tests" / "test.sh").is_file()
 
 
+def test_write_task_drops_assets_that_were_never_staged(tmp_path: Path):
+    staging = tmp_path / "staging"
+    (staging / "repos" / "o").mkdir(parents=True)
+    (staging / "repos" / "o" / "readme.md").write_text("body", encoding="utf-8")
+
+    draft = _draft()
+    draft.environment.copy_from_staging = ["repos/o/readme.md", "repos/o/gone.md"]
+    task_dir = write_task(draft, tmp_path / "task", staging_dir=staging)
+
+    dockerfile = (task_dir / "environment" / "Dockerfile").read_text(encoding="utf-8")
+    assert "COPY readme.md /app/readme.md" in dockerfile
+    assert "gone.md" not in dockerfile
+
+    import json
+
+    meta = json.loads((task_dir / "envwiki.json").read_text(encoding="utf-8"))
+    assert meta["missing_assets"] == ["repos/o/gone.md"]
+
+
+def test_validate_flags_a_copy_of_a_file_that_is_not_there(tmp_path: Path):
+    task_dir = write_task(_draft(), tmp_path / "task")
+    dockerfile = task_dir / "environment" / "Dockerfile"
+    dockerfile.write_text(
+        "FROM ubuntu:24.04" + chr(10) + "COPY options.md /app/options.md" + chr(10),
+        encoding="utf-8",
+    )
+
+    report = validate_task(task_dir)
+    assert not report.ok
+    assert any("options.md" in issue.message for issue in report.errors)
+
+
 def test_task_provenance_records_the_recipe_used(tmp_path: Path):
     draft = _draft()
     draft.source_notes = "Grounded in the paper, following dockerized-terminal-blueprint."

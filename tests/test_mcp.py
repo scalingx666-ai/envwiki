@@ -214,6 +214,31 @@ def test_scaffold_task_reports_a_write_failure_instead_of_failing(tmp_path):
     assert "could not write the task" in payload["error"]
 
 
+def test_scaffold_task_reports_the_assets_it_could_not_find(tmp_path):
+    staging = tmp_path / "stage"
+    staging.mkdir()
+
+    async def body(session):
+        res = await session.call_tool(
+            "scaffold_task",
+            {
+                "name": "demo-task",
+                "instruction_md": "Do the thing.",
+                "verifier_code": VERIFIER_CODE,
+                "staging_dir": str(staging),
+                "copy_from_staging": ["repos/o/readme.md"],
+            },
+        )
+        return json.loads(res.content[0].text)
+
+    payload = _run_client(body)
+    assert payload["missing_assets"] == ["repos/o/readme.md"]
+    dockerfile = (
+        Path(payload["task_dir"]) / "environment" / "Dockerfile"
+    ).read_text(encoding="utf-8")
+    assert "COPY readme.md" not in dockerfile
+
+
 def test_validate_task_accepts_what_scaffold_task_wrote(tmp_path):
     staging = tmp_path / "stage"
     staging.mkdir()
