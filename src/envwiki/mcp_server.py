@@ -30,11 +30,13 @@ from envwiki.convert.builder import (
     missing_staged_assets,
     write_task,
 )
+from envwiki.convert.gate import gate_task as run_gate
 from envwiki.convert.validate import validate_task
 from envwiki.ingest.bundle import build_bundle, build_tree
 from envwiki.recipes import load_library
 from envwiki.schemas import (
     EnvironmentSpec,
+    Provenance,
     SolutionSpec,
     TaskDraft,
     TaskMetadata,
@@ -52,11 +54,16 @@ staged for you either: start with stage_source.
 - plan_task and get_recipe give you synthesis methods distilled from the
   literature: read one, then follow its steps;
 - scaffold_task writes the task directory from the spec you produce;
-- validate_task checks that directory against Harbor's own schema.
+- validate_task checks that directory against Harbor's own schema;
+- gate_task runs the task and checks that it really works.
 
 Workflow: stage the material, describe it, ask for a method, follow the
-method, scaffold the task, validate it, and fix whatever the validator
-reports.
+method, scaffold the task, validate it, gate it, and fix whatever the
+validator or the gate reports.
+
+The gate is the part that matters. A task that parses can still be
+broken: the reference solution has to earn the full reward when the task
+is really run, and an agent that does nothing must earn less.
 """
 
 server = MCPServer(
@@ -295,8 +302,11 @@ def _target_dir(task_dir: str, staging: Path | None, name: str) -> tuple[Path, s
         "Pass staging_dir to write into that workspace (the task lands in "
         "<staging>/tasks/<name>); task_dir overrides the location and must be "
         "writable, and if it is not the task goes into the workspace instead "
-        "and the answer says so. Call validate_task on the result. The task "
-        "name is prefixed with the org you pass."
+        "and the answer says so. Call validate_task on the result, then "
+        "gate_task to find out whether it really runs. The task name is "
+        "prefixed with the org you pass. Pin the material with "
+        "upstream_repo and upstream_commit so the task can be rebuilt, and "
+        "set reward_floor when the task starts from a partly working state."
     ),
 )
 def scaffold_task(
@@ -312,10 +322,15 @@ def scaffold_task(
     target_os: str = "linux",
     setup_commands: list[str] | None = None,
     copy_from_staging: list[str] | None = None,
-    difficulty: str = "medium",
+    difficulty: str = "unrated",
     category: str = "general",
     tags: list[str] | None = None,
     source_notes: str = "",
+    upstream_repo: str = "",
+    upstream_commit: str = "",
+    upstream_license: str = "",
+    derived_from: str = "",
+    reward_floor: float | None = None,
     staging_dir: str = "",
     task_dir: str = "",
     org: str = "envwiki",
@@ -326,7 +341,15 @@ def scaffold_task(
             name=name,
             description=description,
             metadata=TaskMetadata(
-                difficulty=difficulty, category=category, tags=list(tags or [])
+                difficulty=difficulty,
+                category=category,
+                tags=list(tags or []),
+                provenance=Provenance(
+                    upstream_repo=upstream_repo,
+                    upstream_commit=upstream_commit,
+                    upstream_license=upstream_license,
+                    derived_from=derived_from,
+                ),
             ),
             instruction_md=instruction_md,
             environment=EnvironmentSpec(
@@ -343,6 +366,7 @@ def scaffold_task(
                 else None
             ),
             source_notes=source_notes,
+            reward_floor=reward_floor,
         )
     except Exception as exc:
         return {
@@ -379,6 +403,64 @@ def scaffold_task(
     if note:
         answer["note"] = note
     return answer
+
+
+@server.tool(
+    name="gate_task",
+    description=(
+        "Run the task and check it really works. This is the execution "
+        "gate: the reference solution has to earn the full reward when the "
+        "task is actually run, and an agent that does nothing must earn "
+        "less, so the task leaves reward space to compete for. It also "
+        "checks that the instruction does not hand out the answer. Needs "
+        "Harbor and a running Docker daemon; when either is missing it "
+        "says so instead of pretending the task passed. Call it after "
+        "validate_task, and fix whatever it reports."
+    ),
+)
+def gate_task(
+    task_dir: str,
+    run_oracle: bool = True,
+    run_baseline: bool = True,
+    timeout_sec: float = 1800.0,
+) -> dict[str, Any]:
+    """Run the execution-level gate over a task directory."""
+    try:
+        report = run_gate(
+            Path(task_dir).expanduser(),
+            timeout_sec=timeout_sec,
+            run_oracle=run_oracle,
+            run_baseline=run_baseline,
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "verified": False,
+            "task_dir": task_dir,
+            "errors": [type(exc).__name__ + ": " + str(exc)[:400]],
+            "warnings": [],
+            "checks": [],
+        }
+    return {
+        "ok": report.ok,
+        "verified": report.verified,
+        "task_dir": report.task_dir,
+        "reward": report.reward,
+        "floor": report.floor,
+        "reward_repair": report.reward_repair,
+        "checks": [
+            {
+                "name": check.name,
+                "status": check.status,
+                "detail": check.detail,
+                "measured": check.measured,
+            }
+            for check in report.checks
+        ],
+        "errors": report.errors,
+        "warnings": report.warnings,
+        "notes": report.notes,
+    }
 
 
 @server.tool(

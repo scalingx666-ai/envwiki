@@ -28,16 +28,47 @@ class IngestedSource(BaseModel):
         return f"{head} ({self.origin})" if self.origin else head
 
 
+class Provenance(BaseModel):
+    """Where the task's material came from, pinned so it can be reproduced.
+
+    ScienceIDE's rule: a task runs on an unmodified, pinned upstream. A
+    commit hash and a content hash are what make "the same task" a
+    checkable claim instead of a story.
+    """
+    upstream_repo: str = ""
+    upstream_commit: str = ""
+    upstream_license: str = ""
+    source_archive_sha256: str = ""
+    derived_from: str = ""
+
+    @property
+    def pinned(self) -> bool:
+        """True when the material is pinned well enough to rebuild it."""
+        return bool(self.upstream_commit) and bool(self.upstream_repo)
+
+
 class TaskMetadata(BaseModel):
-    difficulty: str = "medium"
+    """What the task says about itself.
+
+    Difficulty is not a label the author picks: it is "unrated" until a
+    measurement exists. The facts a measurement produces live in
+    difficulty_facts, so a reader can always tell an opinion from a
+    measurement.
+    """
+    difficulty: str = "unrated"
     category: str = "general"
     tags: list[str] = Field(default_factory=list)
+    provenance: Provenance = Field(default_factory=Provenance)
+    difficulty_facts: dict[str, object] = Field(default_factory=dict)
 
     @field_validator("difficulty")
     @classmethod
     def _known_difficulty(cls, v: str) -> str:
-        v = (v or "medium").strip().lower()
-        return v if v in {"easy", "medium", "hard"} else "medium"
+        v = (v or "unrated").strip().lower()
+        if v in {"easy", "medium", "hard"}:
+            # A hand-written tier is allowed but is never a measurement.
+            return v
+        return v if v in {"unrated", "unknown"} else "unrated"
 
 
 class EnvironmentSpec(BaseModel):
@@ -50,7 +81,13 @@ class EnvironmentSpec(BaseModel):
 
 
 class VerifierSpec(BaseModel):
-    """The test that produces the reward."""
+    """The test that produces the reward.
+
+    The verifier runs as tests/test.sh: Harbor only discovers test.sh or
+    test.bat, and only that one file is uploaded into the container. A
+    verifier written in another language therefore has to be reachable
+    from that single entry point.
+    """
     language: str = "bash"
     code: str
     timeout_sec: float = 900.0
@@ -63,7 +100,11 @@ class VerifierSpec(BaseModel):
 
 
 class SolutionSpec(BaseModel):
-    """The reference solution that should make the verifier pass."""
+    """The reference solution that should make the verifier pass.
+
+    It runs as solution/solve.sh, for the same reason the verifier runs
+    as test.sh: Harbor discovers and uploads one file per directory.
+    """
     language: str = "bash"
     code: str
 
@@ -89,6 +130,7 @@ class TaskDraft(BaseModel):
     verifier: VerifierSpec
     solution: SolutionSpec | None = None
     source_notes: str = ""
+    reward_floor: float | None = None
 
     @field_validator("name")
     @classmethod

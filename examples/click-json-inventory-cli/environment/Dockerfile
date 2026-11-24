@@ -4,7 +4,7 @@ FROM python:3.12-slim
 COPY commands-and-groups.md /app/commands-and-groups.md
 COPY options.md /app/options.md
 
-RUN pip install --no-cache-dir click==8.6.0
+RUN pip install --no-cache-dir click==8.1.8
 
 WORKDIR /app
 

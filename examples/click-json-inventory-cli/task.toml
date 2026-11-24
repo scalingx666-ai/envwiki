@@ -1,13 +1,20 @@
 schema_version = "1.4"
 
 [task]
-name = "pallets/click-json-inventory-cli"
+name = "envwiki/click-json-inventory-cli"
 description = "Implement a persistent inventory CLI using Click's command groups, typed options, and deterministic output."
 
 [metadata]
-difficulty = "medium"
+difficulty = "unrated"
 category = "terminal-coding"
 tags = ["python", "click", "cli", "json", "offline"]
+
+[metadata.provenance]
+upstream_repo = "https://github.com/pallets/click"
+upstream_commit = ""
+upstream_license = "BSD-3-Clause"
+source_archive_sha256 = ""
+derived_from = "pallets/click reference material staged by envwiki"
 
 [verifier]
 timeout_sec = 900.0

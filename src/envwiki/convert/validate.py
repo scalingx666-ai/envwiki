@@ -18,7 +18,7 @@ from pathlib import Path
 ORG_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*$")
 SUPPORTED_SCHEMA_VERSION = "1.4"
 REWARD_MARKER = "/logs/verifier/reward"
-DIFFICULTIES = {"easy", "medium", "hard"}
+DIFFICULTIES = {"easy", "medium", "hard", "unrated", "unknown"}
 TASK_OS = {"linux", "windows"}
 
 
@@ -132,6 +132,22 @@ def _copy_sources(dockerfile: str) -> list[str]:
     return sources
 
 
+def _discover_entry(directory: Path, base_name: str) -> Path | None:
+    """The one script Harbor would pick up from a directory.
+
+    Harbor looks for <base>.sh first and <base>.bat second, and uploads
+    only that file into the container. Anything else in the directory is
+    invisible to the run.
+    """
+    if not directory.is_dir():
+        return None
+    for suffix in (".sh", ".bat"):
+        candidate = directory / (base_name + suffix)
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def _check_files(task_dir: Path, issues: list[Issue]) -> None:
     instruction = task_dir / "instruction.md"
     if not instruction.exists():
@@ -158,11 +174,18 @@ def _check_files(task_dir: Path, issues: list[Issue]) -> None:
         issues.append(Issue("warning", "no environment/Dockerfile"))
 
     tests_dir = task_dir / "tests"
-    verifier_files = list(tests_dir.glob("test.*")) if tests_dir.is_dir() else []
-    if not verifier_files:
-        issues.append(Issue("error", "no verifier found in tests/"))
+    # Harbor discovers one script per directory and uploads only that file,
+    # so a verifier that is not test.sh (or test.bat) is never run at all.
+    verifier = _discover_entry(tests_dir, "test")
+    if verifier is None:
+        issues.append(
+            Issue(
+                "error",
+                "no verifier found in tests/: Harbor only discovers test.sh "
+                "(or test.bat on Windows), and uploads that one file",
+            )
+        )
     else:
-        verifier = verifier_files[0]
         code = verifier.read_text(encoding="utf-8")
         if not code.strip():
             issues.append(Issue("error", "verifier " + verifier.name + " is empty"))
@@ -172,9 +195,15 @@ def _check_files(task_dir: Path, issues: list[Issue]) -> None:
             issues.append(Issue("warning", "verifier " + verifier.name + " is not executable"))
 
     solution_dir = task_dir / "solution"
-    solution_files = list(solution_dir.glob("solve.*")) if solution_dir.is_dir() else []
-    if not solution_files:
-        issues.append(Issue("warning", "no reference solution in solution/"))
+    solution = _discover_entry(solution_dir, "solve")
+    if solution is None:
+        issues.append(
+            Issue(
+                "warning",
+                "no reference solution in solution/: Harbor only discovers "
+                "solve.sh, so there is no oracle to check the task against",
+            )
+        )
 
 
 def validate_task(task_dir: Path) -> ValidationReport:
@@ -223,6 +252,21 @@ def validate_task(task_dir: Path) -> ValidationReport:
         difficulty = str(metadata.get("difficulty") or "")
         if difficulty and difficulty not in DIFFICULTIES:
             issues.append(Issue("warning", "unknown difficulty: " + repr(difficulty)))
+
+        # A task that claims to come from an upstream must say which
+        # commit, otherwise the material cannot be rebuilt or checked.
+        provenance = metadata.get("provenance") or {}
+        if isinstance(provenance, dict):
+            repo = str(provenance.get("upstream_repo") or "")
+            commit = str(provenance.get("upstream_commit") or "")
+            if repo and not commit:
+                issues.append(
+                    Issue(
+                        "warning",
+                        "the provenance names an upstream repo but no commit: "
+                        "pin the commit so the task can be rebuilt",
+                    )
+                )
 
         environment = data.get("environment") or {}
         os_name = str(environment.get("os") or "linux")

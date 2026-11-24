@@ -1,6 +1,6 @@
 # Build a persistent inventory CLI with Click
 
-Create `inventory.py` in `/app`. Click 8.6.0 is preinstalled. The staged references `commands-and-groups.md` and `options.md` describe the command group and parameter APIs. Implement a command line program named `inventory` and persist all state as JSON at the path selected by the root `--db PATH` option. The default path is `inventory.json` in the current working directory.
+Create `inventory.py` in `/app`. Click 8.1.8 is preinstalled. The staged references `commands-and-groups.md` and `options.md` describe the command group and parameter APIs. Implement a command line program named `inventory` and persist all state as JSON at the path selected by the root `--db PATH` option. The default path is `inventory.json` in the current working directory.
 
 The command group must provide:
 

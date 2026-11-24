@@ -1,9 +1,9 @@
 {
   "name": "click-json-inventory-cli",
   "description": "Implement a persistent inventory CLI using Click's command groups, typed options, and deterministic output.",
-  "source_notes": "Followed envwiki recipe: dockerized-terminal-blueprint (Evidence-grounded Dockerized terminal blueprint). Task scope is grounded in staged pallets/click docs/commands-and-groups.md and docs/options.md (CLI group/command and typed option interfaces). Click 8.6.0 is installed at image build time; task execution needs no network.",
+  "source_notes": "Grounded in the documentation of pallets/click, following the dockerized-terminal-blueprint recipe: the material is staged, the task is a terminal coding task, the verifier checks behaviour rather than files.",
   "metadata": {
-    "difficulty": "medium",
+    "difficulty": "unrated",
     "category": "terminal-coding",
     "tags": [
       "python",
@@ -11,11 +11,20 @@
       "cli",
       "json",
       "offline"
-    ]
+    ],
+    "provenance": {
+      "upstream_repo": "https://github.com/pallets/click",
+      "upstream_commit": "",
+      "upstream_license": "BSD-3-Clause",
+      "source_archive_sha256": "",
+      "derived_from": "pallets/click reference material staged by envwiki"
+    },
+    "difficulty_facts": {}
   },
+  "reward_floor": null,
   "staged_assets": {
-    "repos/pallets-click/docs/commands-and-groups.md": "commands-and-groups.md",
-    "repos/pallets-click/docs/options.md": "options.md"
+    "commands-and-groups.md": "commands-and-groups.md",
+    "options.md": "options.md"
   },
   "missing_assets": [],
   "recipes": [

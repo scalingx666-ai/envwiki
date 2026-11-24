@@ -16,6 +16,7 @@ from pathlib import Path
 import typer
 
 from envwiki.config import EnvwikiConfig, ModelEndpoint
+from envwiki.convert.gate import gate_task
 from envwiki.convert.validate import validate_task
 from envwiki.ingest.classify import classify_url, parse_github_url
 from envwiki.llm.client import LLMClient
@@ -50,6 +51,49 @@ def validate_cmd(
         + str(len(report.warnings))
         + " warning(s), schema source: "
         + report.schema_source
+    )
+    if not report.ok:
+        raise typer.Exit(1)
+
+
+@app.command("gate")
+def gate_cmd(
+    task_dir: Path = typer.Argument(..., help="Task directory to run."),
+    skip_oracle: bool = typer.Option(
+        False, "--skip-oracle", help="Only run the baseline."
+    ),
+    skip_baseline: bool = typer.Option(
+        False, "--skip-baseline", help="Only run the reference solution."
+    ),
+) -> None:
+    """Run a task and check that it really works.
+
+    The reference solution has to earn the full reward, and an agent that
+    does nothing has to earn less. A task that only parses can still be
+    broken, and this is what catches it.
+    """
+    report = gate_task(
+        task_dir,
+        run_oracle=not skip_oracle,
+        run_baseline=not skip_baseline,
+    )
+    for check in report.checks:
+        typer.echo(check.status + ": " + check.name + " - " + check.detail)
+    for issue in report.errors:
+        typer.echo("error: " + issue)
+    for issue in report.warnings:
+        typer.echo("warning: " + issue)
+    if report.reward is not None:
+        typer.echo("reward: " + str(report.reward))
+    if report.floor is not None:
+        typer.echo("floor: " + str(report.floor))
+    if report.reward_repair is not None:
+        typer.echo("reward_repair: " + str(round(report.reward_repair, 4)))
+    typer.echo(
+        report.task_dir
+        + ": "
+        + ("passed" if report.ok else str(len(report.errors)) + " error(s)")
+        + (", verified" if report.verified else ", not verified")
     )
     if not report.ok:
         raise typer.Exit(1)

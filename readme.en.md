@@ -63,7 +63,7 @@ agent calls stage_source  ->  staging area: file tree + an index with line numbe
 agent calls plan_task  ->  pick a method  ->  get_recipe  ->  follow it
    |
    v
-agent calls scaffold_task  ->  write the task  ->  validate_task  ->  fix and repeat
+agent calls scaffold_task  ->  write the task  ->  validate_task  ->  gate_task  ->  fix and repeat
 ```
 
 ## How to use it
@@ -107,7 +107,7 @@ yourself.
 "Use envwiki to turn https://github.com/owner/repo into a Harbor task."
 
 The agent walks the whole path by itself: `stage_source` → `plan_task` →
-`get_recipe` → `scaffold_task` → `validate_task`, and hands you the task
+`get_recipe` → `scaffold_task` → `validate_task` → `gate_task`, and hands you the task
 directory at the end.
 
 ## The recipe library
@@ -228,6 +228,7 @@ The whole library is also available as the resource `envwiki://recipes/index`.
 | --- | --- |
 | `scaffold_task` | write the task directory from the spec you produced. **This is the only way to write files**, and the spec is enforced by the tool signature |
 | `validate_task` | check the task directory: local structure plus Harbor's own TaskConfig |
+| `gate_task` | **the execution gate**: run the task and check that it really works |
 
 ## The skill
 
@@ -243,6 +244,7 @@ diagnose.
 
 ```
 uv run envwiki validate <task dir>            # validate against Harbor's schema
+uv run envwiki gate <task dir>                    # run it: oracle scores full, baseline does not
 uv run envwiki inspect <url>                  # show how a link is handled
 uv run envwiki model check                    # is the endpoint alive
 uv run envwiki model register                 # register the endpoint in pi's models.json
@@ -303,7 +305,7 @@ my-task/
   envwiki.json         # provenance: name, description, source notes, metadata, recipe ids used
 ```
 
-Three rules come from Harbor itself and are enforced by the builder and the
+Rules come from Harbor itself and are enforced by the builder and the
 validator:
 
 - `[task].name` must be in `org/name` format (the `org` parameter of
@@ -313,7 +315,27 @@ validator:
 - a staged file listed in `scaffold_task`'s `copy_from_staging` lands at the
   root of the working directory under its own file name, so
   `repos/x/readme.md` becomes `/app/readme.md`; the instruction, the verifier
-  and the solution must all name that same path.
+  and the solution must all name that same path;
+- **Harbor discovers and uploads one file per directory**: `tests/test.sh` and
+  `solution/solve.sh`. Anything else next to them is invisible inside the
+  container, so a Python verifier or solution is embedded in those entry
+  points rather than written as a second `test.py`/`solve.py`;
+- **the reference solution has to leave the artefact behind.** A solution that
+  only defines something and exits produces nothing, and the verifier then
+  reports a missing file.
+
+### Difficulty is measured, not declared
+
+`[metadata].difficulty` defaults to `"unrated"` rather than an easy/medium/hard
+tier an author picked. The measurement lives in `[metadata.difficulty_facts]`:
+the floor, the number of checks, what a run costs, whether the instruction
+leaks the answer. A tier is an opinion; a floor and a pass rate are facts.
+
+### Provenance is pinned
+
+`[metadata.provenance]` records the upstream repo, its commit, the license and
+the hash of the material. Without a commit, "the same task" cannot be rebuilt
+or checked, so the validator says so when a repo is named without one.
 
 A task that really came out of this pipeline lives in
 ``examples/click-json-inventory-cli/``: an agent synthesised it from the
@@ -336,6 +358,39 @@ missing package metadata and imports it from there. The report says which path
 was taken. The agent also calls `validate_task` on its own task while it
 builds, and fixes whatever the validator reports.
 
+## The execution gate
+
+Validation proves the shape. The gate proves the behaviour:
+
+```
+$ uv run envwiki gate ./my-task
+pass: instruction_disclosure - the instruction does not contain the solution
+pass: verifier_entrypoint - tests/test.sh is present, the entry point Harbor runs
+pass: oracle - the reference solution earned the full reward
+pass: baseline - an agent that does nothing earns less than the full reward
+pass: reward_space - the reward an agent competes for, above the floor
+reward: 1.0
+floor: 0.0
+reward_repair: 1.0
+./my-task: passed, verified
+```
+
+The gate runs the task in a container, twice:
+
+- **oracle**: the reference solution. It has to earn **1.0**. Otherwise the task
+  is unsolvable, or the solution never wrote what the verifier looks at.
+- **baseline**: an agent that does nothing. It has to earn **less than the full
+  reward**. A task that hands out its reward for free measures nothing.
+
+The space between them is what an agent competes for. When a task starts from
+a partly working state, `reward_floor` records what the unfixed build earns
+and the reward above it is normalised: with a floor of 0.2, a reward of 0.45 is
+0.3125 of the space that is left.
+
+The gate needs the Harbor CLI and a running Docker daemon. When either is
+missing it **says that it did not run**, rather than pretending the task
+passed.
+
 ## The paper corpus, and checkable citations
 
 `src/envwiki/recipes/data/corpus.json` ships with the package: 574
@@ -348,7 +403,7 @@ recipe against the paper it claims to come from.
 
 ```
 uv sync --extra dev --extra vector
-uv run pytest          # 66 tests
+uv run pytest          # 92 tests
 
 The `vector` extra installs zvec: recipe retrieval then goes through the
 vector store instead of keyword weighting. zvec ships wheels for CPython
@@ -360,9 +415,13 @@ uv run ruff check src tests
 
 ## Limitations
 
-- The generated task is a **first draft**. It is schema-valid and structurally
-  complete, but the difficulty calibration and the verifier's strictness are
-  whatever the model produced. Review before publishing to a benchmark.
+- The generated task is a **first draft**. It is schema-valid, structurally
+  complete and passes the execution gate, but the difficulty calibration and
+  the verifier's strictness are still whatever the model produced. Review
+  before publishing to a benchmark.
+- The execution gate needs the Harbor CLI and a running Docker daemon. When
+  either is missing it says it did not run, so "the gate passed" only means
+  something when the task really was executed.
 - The solver agent and the verifier both run without network access, so a task
   that needs to fetch something at solve time will fail.
 - Only `linux` and `windows` target environments are supported,

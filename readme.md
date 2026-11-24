@@ -52,7 +52,7 @@ agent 调 stage_source  ->  暂存区：文件树 + 带行号索引的摘要
 agent 调 plan_task  ->  选方法  ->  get_recipe  ->  按步骤执行
    |
    v
-agent 调 scaffold_task  ->  写任务  ->  validate_task  ->  不合格就改，再来一轮
+agent 调 scaffold_task  ->  写任务  ->  validate_task  ->  gate_task  ->  不合格就改，再来一轮
 ```
 
 ## 怎么用
@@ -94,7 +94,7 @@ uv run envwiki skill install --to ~/.pi/agent/skills
 "用 envwiki 把 https://github.com/owner/repo 变成一个 Harbor 任务。"
 
 agent 会自己走完：`stage_source` → `plan_task` → `get_recipe` →
-`scaffold_task` → `validate_task`，最后把任务目录交给你。
+`scaffold_task` → `validate_task` → `gate_task`，最后把任务目录交给你。
 
 ## 配方库
 
@@ -200,11 +200,12 @@ uv run envwiki mcp serve --transport streamable-http --port 8765
 | --- | --- |
 | `scaffold_task` | 按你给的规格写出任务目录。**这是唯一的落盘方式**，规格由工具签名强制 |
 | `validate_task` | 校验任务目录：本地结构 + Harbor 官方 TaskConfig |
+| `gate_task` | **执行级验证门**：真的把任务跑起来，检查参考解能否拿满分、无作为是否留出奖励空间 |
 
 ## Skill
 
 `src/envwiki/skills/env-synthesis/SKILL.md` 是**方法与规则的唯一出处**：工具表、
-六步工作流、什么算好任务、verifier 契约、参考解契约、路径规则、提交前自检清单。
+七步工作流、什么算好任务、verifier 契约、参考解契约、测量式难度、路径规则、提交前自检清单。
 
 ## 命令行
 
@@ -212,6 +213,7 @@ envwiki 的命令行只做两件事：把工具箱装进你的 agent，以及诊
 
 ```
 uv run envwiki validate <task dir>            # 用 Harbor schema 校验任务
+uv run envwiki gate <task dir>                # 真的跑一遍：参考解满分 + 基线留出奖励空间
 uv run envwiki inspect <url>                  # 看某个链接会怎么处理
 uv run envwiki model check                    # 模型端点是否可用
 uv run envwiki model register                 # 把端点注册进 pi 的 models.json
@@ -268,13 +270,29 @@ my-task/
   envwiki.json         # 溯源：名称、描述、来源笔记、元数据、用到的配方 id
 ```
 
-三条来自 Harbor 自身的硬规则，由构建器与校验器保证：
+来自 Harbor 自身的硬规则，由构建器与校验器保证：
 
 - `[task].name` 必须是 `org/name` 形式（`scaffold_task` 的 `org` 参数决定前缀）。
 - `environment/Dockerfile` 的构建上下文是 `environment/`。
 - `scaffold_task` 的 `copy_from_staging` 里列的文件会落到工作目录根部、只保留文件名，
   `repos/x/readme.md` 变成 `/app/readme.md`；instruction、verifier、solution
   必须用同一个路径。
+- **Harbor 只发现并上传 `tests/test.sh` 与 `solution/solve.sh` 各一个文件**，
+  同目录下的其它文件容器里根本看不到。所以 Python 写的 verifier 与参考解会被
+  内联进这两个入口文件，而不是另存成 `test.py`/`solve.py`。
+- **参考解必须留下产物**：只定义不落盘的解法跑完什么都没留下，verifier 只会看到
+  "文件不存在"。Python 解法会被写进工作目录再执行。
+
+### 难度是测出来的，不是写出来的
+
+`[metadata].difficulty` 默认是 `"unrated"`，不是作者拍脑袋的 easy/medium/hard。
+真正的难度写在 `[metadata.difficulty_facts]` 里：floor 是多少、几个 check、
+跑一次多贵、指令有没有泄露答案。有测量才有难度。
+
+### 溯源要钉住
+
+`[metadata.provenance]` 记上游仓库、commit、license 与素材哈希。有 commit 才谈得上
+"同一个任务"可复现、可核对；只写了 repo 没写 commit，校验器会提醒。
 
 真实跑出来的一个例子在 ``examples/click-json-inventory-cli/``：那是 agent 通过 MCP
 从 [pallets/click](https://github.com/pallets/click) 的文档合成出来的任务，配方是
@@ -286,6 +304,35 @@ my-task/
 $ uv run envwiki validate ./my-task
 ./my-task: ok, 0 warning(s), schema source: harbor
 ```
+
+校验只证明**形状**对。真正证明任务能用的是执行门：
+
+```
+$ uv run envwiki gate ./my-task
+pass: instruction_disclosure - the instruction does not contain the solution
+pass: verifier_entrypoint - tests/test.sh is present, the entry point Harbor runs
+pass: oracle - the reference solution earned the full reward
+pass: baseline - an agent that does nothing earns less than the full reward
+pass: reward_space - the reward an agent competes for, above the floor
+reward: 1.0
+floor: 0.0
+reward_repair: 1.0
+./my-task: passed, verified
+```
+
+执行门会真的在容器里把任务跑两遍：
+
+- **oracle**：跑参考解。它必须拿到 **1.0**，否则说明任务不可解、或者参考解本身没写出
+  verifier 要检查的东西。
+- **baseline**：跑一个什么都不做的 agent。它必须**拿不到满分**，否则这个任务白送分，
+  测不出任何东西。
+
+两者之间的差额就是 agent 要争取的奖励空间。任务从半成品起步时，用
+`reward_floor` 记下未修状态的得分，归一化后的奖励是
+`(reward - floor) / (1 - floor)`——floor 0.2 时，0.45 的奖励等于剩余空间里的 0.3125。
+
+门需要 Harbor CLI 与运行中的 Docker daemon。缺任何一个，它会**明说自己没跑成**，
+而不是当作通过。
 
 `envwiki validate` 先做本地结构检查，再在 Harbor 可导入时用 Harbor 自己的
 `TaskConfig` 校验 `task.toml`。优先用已安装的 Harbor；否则探测到 Harbor 源码目录
@@ -306,7 +353,7 @@ $ uv run envwiki validate ./my-task
 
 ```
 uv sync --extra dev --extra vector
-uv run pytest          # 66 项测试
+uv run pytest          # 92 项测试
 
 `vector` 这一档装上 zvec：配方检索走向量库而不是关键词加权。zvec 只提供
 CPython 3.10–3.14 的 wheel，所以本仓库锁在 3.13（见 `.python-version`）。
@@ -316,8 +363,10 @@ uv run ruff check src tests
 
 ## 限制
 
-- 生成的是**初版**任务：结构完整、schema 合法，但难度校准与校验严格程度取决于模型，
-  发布进 benchmark 前请人工过一遍。
+- 生成的是**初版**任务：结构完整、schema 合法、执行门能跑通，但难度标定与校验严格
+  程度仍取决于模型，发布进 benchmark 前请人工过一遍。
+- 执行门需要 Harbor CLI 与运行中的 Docker daemon。缺了它会明说没跑成，而不是假装
+  通过——所以"门过了"这句话只在真的跑过时才成立。
 - 解题 agent 与 verifier 都没有网络，任务若需要联网取数据会失败。
 - 只支持 `linux` 与 `windows` 目标环境，与 Harbor 自身的枚举一致。
 - envwiki 不替你跑 agent：合成质量取决于你的 agent 与模型，也可能它不按工具走。
