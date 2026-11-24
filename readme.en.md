@@ -315,6 +315,12 @@ validator:
   `repos/x/readme.md` becomes `/app/readme.md`; the instruction, the verifier
   and the solution must all name that same path.
 
+A task that really came out of this pipeline lives in
+``examples/click-json-inventory-cli/``: an agent synthesised it from the
+documentation of [pallets/click](https://github.com/pallets/click) through the MCP
+server, with the ``dockerized-terminal-blueprint`` recipe, and it passes Harbor's
+TaskConfig.
+
 ## Validation
 
 ```

@@ -1,0 +1,24 @@
+{
+  "name": "click-json-inventory-cli",
+  "description": "Implement a persistent inventory CLI using Click's command groups, typed options, and deterministic output.",
+  "source_notes": "Followed envwiki recipe: dockerized-terminal-blueprint (Evidence-grounded Dockerized terminal blueprint). Task scope is grounded in staged pallets/click docs/commands-and-groups.md and docs/options.md (CLI group/command and typed option interfaces). Click 8.6.0 is installed at image build time; task execution needs no network.",
+  "metadata": {
+    "difficulty": "medium",
+    "category": "terminal-coding",
+    "tags": [
+      "python",
+      "click",
+      "cli",
+      "json",
+      "offline"
+    ]
+  },
+  "staged_assets": {
+    "repos/pallets-click/docs/commands-and-groups.md": "commands-and-groups.md",
+    "repos/pallets-click/docs/options.md": "options.md"
+  },
+  "missing_assets": [],
+  "recipes": [
+    "dockerized-terminal-blueprint"
+  ]
+}

@@ -276,6 +276,10 @@ my-task/
   `repos/x/readme.md` 变成 `/app/readme.md`；instruction、verifier、solution
   必须用同一个路径。
 
+真实跑出来的一个例子在 ``examples/click-json-inventory-cli/``：那是 agent 通过 MCP
+从 [pallets/click](https://github.com/pallets/click) 的文档合成出来的任务，配方是
+``dockerized-terminal-blueprint``，校验通过 Harbor 的 TaskConfig。
+
 ## 校验
 
 ```

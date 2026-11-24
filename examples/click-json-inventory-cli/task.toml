@@ -1,0 +1,21 @@
+schema_version = "1.4"
+
+[task]
+name = "pallets/click-json-inventory-cli"
+description = "Implement a persistent inventory CLI using Click's command groups, typed options, and deterministic output."
+
+[metadata]
+difficulty = "medium"
+category = "terminal-coding"
+tags = ["python", "click", "cli", "json", "offline"]
+
+[verifier]
+timeout_sec = 900.0
+
+[agent]
+timeout_sec = 1800.0
+
+[environment]
+os = "linux"
+workdir = "/app"
+build_timeout_sec = 900.0
