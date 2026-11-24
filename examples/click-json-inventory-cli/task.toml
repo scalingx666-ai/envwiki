@@ -11,7 +11,7 @@ tags = ["python", "click", "cli", "json", "offline"]
 
 [metadata.provenance]
 upstream_repo = "https://github.com/pallets/click"
-upstream_commit = ""
+upstream_commit = "08b803cf32ceb2ae6a772c62d5da42757a897d44"
 upstream_license = "BSD-3-Clause"
 source_archive_sha256 = ""
 derived_from = "pallets/click reference material staged by envwiki"
