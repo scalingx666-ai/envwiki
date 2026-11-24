@@ -44,6 +44,15 @@ def test_library_reports_the_engine_it_uses():
     assert load_library().engine() in {"lexical", "zvec-bm25", "zvec-hybrid"}
 
 
+def test_library_falls_back_to_the_lexical_matcher(monkeypatch):
+    monkeypatch.setattr(vector_index, "ZVEC_AVAILABLE", False)
+    library = load_library()
+    assert library.engine() == "lexical"
+    hits = library.search("a python cli that converts csv to json", limit=3)
+    assert hits
+    assert hits[0][1] > 0
+
+
 def test_library_still_ranks_recipes():
     hits = load_library().search("a python cli that converts csv to json", limit=3)
     assert hits

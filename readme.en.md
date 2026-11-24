@@ -177,6 +177,13 @@ fusion. The index is cached under `~/.cache/envwiki/recipes-<hash>.zvec`,
 keyed by the content of the recipe library, so a changed library gets its
 own index.
 
+The two rankings are then fused once more: the vector store contributes the
+overall similarity, the lexical matcher contributes the signal phrases the
+recipe author wrote down by hand ("this is a terminal task", "this is a web
+application"). Reciprocal rank fusion merges them, so neither buries the
+other: the vectors find the right neighbourhood, the signal phrases order it
+correctly.
+
 Dense vectors need an embedding endpoint:
 
 | Variable | Meaning |

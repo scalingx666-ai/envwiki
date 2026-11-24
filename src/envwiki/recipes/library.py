@@ -82,30 +82,59 @@ class RecipeLibrary:
             score += 0.5
         return score
 
-    def search(self, query: str, limit: int = 6) -> list[tuple[Recipe, float]]:
-        """Rank recipes by how well they match the query.
-
-        The vector index answers first: it knows the recipes as vectors and
-        compares them with the profile as a vector. The lexical matcher is
-        the fallback for installs without the vector extra.
-        """
-        hits = vector_index.search(self.recipes, query, limit=limit)
-        if hits is not None:
-            ranked = [
-                (self._by_id[recipe_id], score)
-                for recipe_id, score in hits
-                if recipe_id in self._by_id and score > 0
-            ]
-            if ranked or not _tokens(query):
-                return ranked
-
-        wanted = set(_tokens(query))
+    def _lexical(self, query: str, wanted: set[str]) -> list[tuple[Recipe, float]]:
+        """The word-overlap ranking, with the signal phrases on top."""
         if not wanted:
             return []
         scored = [(r, self._score(r, wanted)) for r in self.recipes]
         scored = [item for item in scored if item[1] > 0]
         scored.sort(key=lambda item: (-item[1], item[0].id))
-        return scored[:limit]
+        return scored
+
+    def _vector(self, query: str, limit: int) -> list[tuple[Recipe, float]]:
+        """The vector ranking, when the vector store is there."""
+        hits = vector_index.search(self.recipes, query, limit=limit)
+        if hits is None:
+            return []
+        return [
+            (self._by_id[recipe_id], score)
+            for recipe_id, score in hits
+            if recipe_id in self._by_id and score > 0
+        ]
+
+    def search(self, query: str, limit: int = 6) -> list[tuple[Recipe, float]]:
+        """Rank recipes by how well they match the query.
+
+        Two rankings are fused. The vector index knows the recipes as
+        vectors and compares them with the profile as a vector; the lexical
+        matcher counts words and knows the signal phrases the recipe author
+        wrote down. Reciprocal rank fusion keeps both, so neither can bury
+        the other.
+        """
+        wanted = set(_tokens(query))
+        lexical = self._lexical(query, wanted)
+        vector = self._vector(query, max(limit * 3, limit))
+
+        if not vector:
+            return lexical[:limit]
+        if not lexical:
+            return vector[:limit]
+
+        fused: dict[str, float] = {}
+        for ranking in (vector, lexical):
+            for rank, (recipe, _) in enumerate(ranking):
+                fused[recipe.id] = fused.get(recipe.id, 0.0) + 1.0 / (60 + rank + 1)
+
+        ranked = [
+            (self._by_id[recipe_id], score)
+            for recipe_id, score in fused.items()
+            if recipe_id in self._by_id
+        ]
+        ranked.sort(key=lambda item: (-item[1], item[0].id))
+        if not ranked:
+            return []
+        best = ranked[0][1]
+        return [(recipe, score / best) for recipe, score in ranked[:limit]]
 
     def engine(self) -> str:
         """Which engine is ranking the recipes right now."""
