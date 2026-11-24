@@ -1,0 +1,242 @@
+{
+  "family": "mcp-tools",
+  "recipes": [
+    {
+      "id": "adversarial-injection-state-env",
+      "name": "Adversarial injection environment synthesis",
+      "family": "mcp-tools",
+      "summary": "Build an executable stateful environment and then let an attacker agent and a user simulator attack it: the attacker inspects the environment to find viable injection points and writes payloads that survive the tool pipeline, while the user simulator keeps the benign objective realistic so the injected content is the only adversarial element. The task is state-grounded and long-horizon, and the attack lives in the environment's state rather than in the prompt, so the agent has to notice it inside tool output. Verification is trajectory-level and two-sided: the legitimate objective must still be completed, and the forbidden action must appear nowhere in the tool-call log or in any outgoing argument, with ordering constraints checked where the environment provides diagnostic tools.",
+      "when_to_use": [
+        "the target capability includes robustness to untrusted content that the agent reads through tools",
+        "the source exposes content the agent must read (files, web pages, issue text, records)",
+        "you want the attack to be discovered rather than announced in the instruction"
+      ],
+      "not_when_to_use": [
+        "the task is about tool-call correctness only, with no untrusted content in the loop",
+        "the environment has no content that the agent reads back"
+      ],
+      "inputs": [
+        "a seed domain with stateful tools that return content to the agent",
+        "an attacker agent able to query the environment for candidate injection points",
+        "a user simulator or scripted task intent that keeps the benign objective realistic"
+      ],
+      "steps": [
+        {
+          "title": "Build the stateful environment first",
+          "detail": "Synthesize the environment with a real state store and tools that return environment content, so there is a surface for injected text to travel through and a state to assert afterwards."
+        },
+        {
+          "title": "Discover injection points rather than presetting them",
+          "detail": "Have the attacker agent query the environment - records, files, tool returns - and mark the fields whose content the task agent will read. The injection location follows from what the environment exposes, not from a fixed list of slots."
+        },
+        {
+          "title": "Generate environment-specific payloads",
+          "detail": "Write payloads that fit the field they land in and the tool that transports them, for instance instructions embedded in a record body that request an unrelated call, so the payload survives the pipeline verbatim."
+        },
+        {
+          "title": "Ground the benign task",
+          "detail": "Use the user simulator to produce a realistic request whose success depends on the same records the payload is embedded in, so the agent cannot solve the task by simply avoiding the contaminated field."
+        },
+        {
+          "title": "Choose placement and timing deliberately",
+          "detail": "Place the injection in a state field the agent reads before or during the action it must take, and record the placement in the task metadata; both timing and placement change attack effectiveness and should be parameters rather than accidents."
+        },
+        {
+          "title": "Verify on two axes plus ordering",
+          "detail": "The verifier checks that the legitimate objective is completed and that no forbidden call or exfiltrated value appears in the trajectory; where the environment provides diagnostic tools, it also checks that they were called before the corrective action, since the final outcome alone does not reveal the ordering."
+        },
+        {
+          "title": "Ship a benign control alongside",
+          "detail": "Pair the attacked instance with a benign instance that has no payload but the same tools and the same objective, so the capability can be measured without the attack and the pair doubles as the fail-to-pass check of the environment plumbing."
+        }
+      ],
+      "verifier": [
+        "the tool-call log contains no call to the forbidden endpoint and no injected string in any argument",
+        "the legitimate objective's assertions hold in the final state; reward.txt is 1 or 0",
+        "the benign control instance passes under the same verifier with no attack-specific code path",
+        "the untouched workspace fails and writes 0 to /logs/verifier/reward.txt"
+      ],
+      "pitfalls": [
+        "payloads that merely restate the prompt are spotted trivially and measure nothing",
+        "checking only the final answer misses an agent that complied with the injection and then reported failure",
+        "the benign control drifting away from the attacked instance stops the pair from isolating the attack"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2608.11878",
+          "title": "ToolHazard: Scaling Adversarial Environments for Security Evaluation and Alignment of LLM-based Agents",
+          "note": "environment simulator plus attacker and user simulators that discover viable injection points, generate environment-specific payloads and build state-grounded long-horizon tasks"
+        },
+        {
+          "arxiv_id": "2609.36679",
+          "title": "MLToolBench: Learning Tool-Augmented Agents for Machine Learning Development",
+          "note": "diagnostic tools whose value depends on later decisions, so the check must verify the diagnostic call happened before the fix rather than judging only the final outcome"
+        },
+        {
+          "arxiv_id": "2602.00933",
+          "title": "MCP-Atlas: A Large-Scale Benchmark for Tool-Use Competency with Real MCP Servers",
+          "note": "claim-level scoring that judges the final answer against atomic facts grounded in tool outputs, kept separate from tool-call correctness"
+        }
+      ]
+    },
+    {
+      "id": "dynamic-disruption-replanning-env",
+      "name": "Mid-task state disruption and replanning tasks",
+      "family": "mcp-tools",
+      "summary": "Task families in which the environment changes under the agent mid-execution, so a plan that was correct at turn one becomes wrong. The environment is built with explicit triggers - a field the agent read changes, a resource another actor takes, a tool's interface changes - that fire on a predicate and are injected into live state at a reproducible point of the episode. Because the trigger invalidates the committed plan, the agent must notice the shift, diagnose it and rebuild a strategy, and the three failure modes this elicits (executing on stale state, misdiagnosing the trigger, never verifying the adaptation) are exactly what a verifier has to separate. A stateful simulator of the server supplies the consistency and validity checks that let the agent discover that its plan no longer holds before it commits the next action.",
+      "when_to_use": [
+        "the source domain has state that changes over time or across actors",
+        "you want to test replanning rather than first-shot planning",
+        "tasks must span several turns so a trigger can land mid-task"
+      ],
+      "not_when_to_use": [
+        "the environment is static and the task is a single call",
+        "the domain has no notion of time and no other actor that can change state"
+      ],
+      "inputs": [
+        "an executable tool environment whose state a trigger can mutate",
+        "a taxonomy of trigger types for the domain (value change, contention, interface evolution)",
+        "a deterministic firing point, such as a step counter or an observable clock"
+      ],
+      "steps": [
+        {
+          "title": "Enumerate the domain's conflict types",
+          "detail": "List the ways state can invalidate a plan here - a read field changes, a resource is taken by another actor, a tool's schema or return shape changes - and build one trigger class per type rather than a single generic disruption."
+        },
+        {
+          "title": "Make triggers conditional and deterministic",
+          "detail": "Each trigger is a predicate over environment state plus a firing condition, and the environment exposes a step counter or clock so the trigger fires at a reproducible point in the episode and can be re-run identically."
+        },
+        {
+          "title": "Fire the trigger inside a valid trajectory",
+          "detail": "Run a reference trajectory, place the trigger at a step where the agent has already committed to a plan, and record the state before and after so the invalidation is provable from the log rather than asserted."
+        },
+        {
+          "title": "Keep solvability across trigger types",
+          "detail": "Confirm a valid strategy still exists after the trigger fires: the reference solution must include the detection and the revised plan, and must still satisfy the task's assertions afterwards."
+        },
+        {
+          "title": "Assert the post-adaptation state",
+          "detail": "The verifier checks the state after the adaptation, not the state the original plan aimed at; otherwise a stale-state execution that happens to land on a passing state passes anyway."
+        },
+        {
+          "title": "Grade the failure mode, not only success",
+          "detail": "Label each failed run as stale-state execution, misdiagnosis of the dynamic trigger, or missing post-adaptation verification, and keep the taxonomy in the task metadata so results across instances stay comparable."
+        },
+        {
+          "title": "Optionally evolve the tool interface as a trigger",
+          "detail": "Mutate the interface itself - rename a tool, add a parameter, change a return shape - so the task also measures whether the agent re-reads the tool definitions after the change instead of reusing the old call."
+        }
+      ],
+      "verifier": [
+        "post-trigger final state asserted by value; a stale plan that ignores the change fails",
+        "the reference trajectory records the trigger point and the revised action sequence",
+        "the trigger predicate is re-evaluated at verify time and reports that it fired",
+        "the untouched workspace fails and writes 0 to /logs/verifier/reward.txt"
+      ],
+      "pitfalls": [
+        "a trigger that fires after the objective is already complete has no effect on the trajectory",
+        "asserting the pre-trigger state lets a stale-state execution pass",
+        "triggers that only change wording create no real plan invalidation"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2605.18548",
+          "title": "STT-Arena: A More Realistic Environment for Tool-Using with Spatio-Temporal Dynamics",
+          "note": "executable environments with injected spatio-temporal triggers that invalidate an ongoing plan, plus the three recurring failure modes including missing post-adaptation verification"
+        },
+        {
+          "arxiv_id": "2602.19218",
+          "title": "Gecko: A Simulation Environment with Stateful Feedback for Refining Agent Tool Calls",
+          "note": "stateful simulator that checks tool names and arguments and returns schema-conforming, state-consistent responses so call sequences can be refined before real execution"
+        },
+        {
+          "arxiv_id": "2607.14642",
+          "title": "MCPEvol-Bench: Benchmarking LLM Agent Performance Across Dynamic Evolutions of MCP Servers",
+          "note": "mutation operators applied to live MCP servers to simulate tool evolution, with a measurable rise in planning and reasoning errors on the evolved versions"
+        }
+      ]
+    },
+    {
+      "id": "trace-mined-mcp-composition-env",
+      "name": "Trace-mined MCP composition environments",
+      "family": "mcp-tools",
+      "summary": "Build the tool environment out of real call traces instead of out of a hand-written scenario. Adjacent calls in recorded MCP sessions are mined for three dependency kinds - data (an argument value produced by an earlier return), state (a later call whose result depends on an earlier mutation) and retry (a repeat of the same call after an error) - using deterministic rules rather than model judgement, which yields a weighted tool-composition graph. The graph is clustered into environments; a database is synthesised only for state-mutating tools, while query and stateless tools replay their recorded returns, so the replayed side stays faithful and the mutating side stays consistent. Long tasks come from state-aware random walks with rollback, each chain decompiled into a natural-language objective with assertion-based checks, and only chains that replay successfully from the initial state are kept. The output is multi-step, cross-server work with an executable, replayable check.",
+      "when_to_use": [
+        "the source links to real MCP servers or ships recorded MCP call traces",
+        "you need tasks that span several tools or several servers",
+        "tool interfaces must match the real ones rather than a mock invented by the generator"
+      ],
+      "not_when_to_use": [
+        "no traces exist for the target tools",
+        "the task is a single tool call with a deterministic output"
+      ],
+      "inputs": [
+        "recorded MCP call traces (tool name, arguments, returns, errors)",
+        "a container backend that provisions and resets one MCP server instance per rollout",
+        "a deterministic rule engine for dependency mining, with no model call in the mining step"
+      ],
+      "steps": [
+        {
+          "title": "Mine dependencies with deterministic rules",
+          "detail": "Scan consecutive calls in the traces for data, state and retry dependencies and emit a weighted edge per dependency. Deterministic rules only: an edge that cannot be witnessed by a recorded call sequence is not an edge."
+        },
+        {
+          "title": "Cluster the composition graph into environments",
+          "detail": "Cluster the weighted tool-composition graph into coherent environments and keep an environment only when its tools form a connected sub-graph with enough distinct edges to support multi-step work."
+        },
+        {
+          "title": "Split stateful from stateless tools",
+          "detail": "Synthesise a database only for the tools that mutate state; query and stateless tools replay their recorded returns. Record the classification per tool so the walker knows what can be replayed and what must be executed."
+        },
+        {
+          "title": "Walk the graph with rollback",
+          "detail": "Generate long chains by state-aware random walks that respect the mined dependencies, snapshotting and rolling back state between candidate chains so every candidate starts from the same initial state."
+        },
+        {
+          "title": "Decompile the chain into a task with assertions",
+          "detail": "Turn each chain into a natural-language objective that names neither the tools nor the order, and attach assertion-based checks derived from the chain's final state rather than from the agent's prose."
+        },
+        {
+          "title": "Keep only chains that replay",
+          "detail": "Re-execute every candidate chain from the initial state and keep only those that replay successfully with all assertions holding. This execution filter is the main quality gate; anything that fails it is discarded."
+        },
+        {
+          "title": "Pin one isolated server instance per rollout",
+          "detail": "Provision a resettable, isolated instance of the MCP server per trajectory through the MCP interface itself, so the same task can be re-run without leftover server state bleeding into the next attempt."
+        }
+      ],
+      "verifier": [
+        "assertion-based checks on the final database state for state-mutating tools, executed by tests/test.sh",
+        "the recorded chain replays from the seeded initial state and satisfies every assertion",
+        "the reference solution passes and the untouched workspace writes 0 to /logs/verifier/reward.txt",
+        "a wrong-but-plausible chain is rejected by the assertion, not merely by a different call count"
+      ],
+      "pitfalls": [
+        "model-judged dependency edges look plausible but do not replay; only execution-witnessed edges survive",
+        "synthesising a database for stateless tools invents mutable state that never existed",
+        "prompts that name the tools collapse the task back into single-call behaviour"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2611.05036",
+          "title": "ToolSpace: Scaling Tool-Centric Environment Synthesis for Long-Horizon Agents",
+          "note": "reverses the data-first order: mines data, state and retry dependencies from traces, clusters the composition graph, synthesises databases only for mutating tools, walks with rollback and keeps only replayable chains"
+        },
+        {
+          "arxiv_id": "2608.22167",
+          "title": "MCP-Universe RL: A Framework for Training MCP Tool-Use Agents via Reinforcement Learning",
+          "note": "MCP as the universal environment interface, plus an orchestration layer that provisions, isolates and recycles MCP environments over a pluggable container backend"
+        },
+        {
+          "arxiv_id": "2602.00933",
+          "title": "MCP-Atlas: A Large-Scale Benchmark for Tool-Use Competency with Real MCP Servers",
+          "note": "prompts omit servers, tools and parameters so plausible distractors must be rejected, and outcomes are scored by claim-level rubrics so alternative valid trajectories still get credit"
+        }
+      ]
+    }
+  ]
+}

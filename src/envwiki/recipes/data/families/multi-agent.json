@@ -1,0 +1,163 @@
+{
+  "family": "multi-agent",
+  "recipes": [
+    {
+      "id": "interdependent-collaboration-task-graph",
+      "name": "Interdependent collaboration task graphs",
+      "family": "multi-agent",
+      "summary": "Build multi-agent tasks by making the work depend on itself: the collaboration requirement lives in the task dependencies and the shared resources, not in a prompt that assigns roles. Reusable collaboration structures are mined from source workflows at two levels - local patterns capturing how subtasks interact (one subtask's output feeds another's input, two subtasks contend for one resource, one must finish before another starts) and global structures describing how those interactions compose into a complete job - and recombined coarse-to-fine into new task graphs. Each graph is instantiated in an executable environment that reports partial progress as well as final resolution, so a verifier can distinguish a wrong answer from a right answer reached through broken dependencies. Roles and communication protocols are deliberately left open: which agents route work to whom is part of what is being measured.",
+      "when_to_use": [
+        "the source contains workflows that decompose into subtasks with real interdependence",
+        "you need to measure collaboration itself, not only individual subtask accuracy",
+        "the environment can expose shared state that several agents read and write"
+      ],
+      "not_when_to_use": [
+        "the source is a single-agent task with no interaction surface",
+        "the environment cannot be run with more than one agent"
+      ],
+      "inputs": [
+        "a pool of source tasks or workflows that can be decomposed into subtasks",
+        "an executable environment exposing shared resources and partial progress",
+        "an explicit record of which subtask outputs feed which other subtasks"
+      ],
+      "steps": [
+        {
+          "title": "Mine local collaboration patterns",
+          "detail": "Extract recurring interaction shapes between subtasks from the source workflows and store each as a structural pattern - an output-to-input edge, a resource contention, an ordering constraint - rather than as a prompt instruction."
+        },
+        {
+          "title": "Mine global task structures",
+          "detail": "Extract the higher-level workflows that assemble those interactions into a complete job, so the bank holds both a unit of collaboration and a whole pipeline built from units, and recombination has two granularities to work with."
+        },
+        {
+          "title": "Recombine coarse-to-fine",
+          "detail": "Compose new task graphs by substituting local patterns into global structures and instantiating the result in the environment. Vary the recombination so the new graphs mix patterns the source never combined."
+        },
+        {
+          "title": "Keep dependencies, drop roles",
+          "detail": "Write the instruction as the end objective plus the shared resources it touches. Do not assign roles, team topologies or a communication protocol, since those choices are exactly what the task is meant to measure."
+        },
+        {
+          "title": "Expose partial progress",
+          "detail": "The environment must report which subtasks are satisfied and which are not, so a run can be scored on how the interdependencies were handled and not only on the final artefact."
+        },
+        {
+          "title": "Score two axes separately",
+          "detail": "Report whether the objective was reached and whether the dependencies were respected - no subtask consumed an output that had not yet been produced, no shared resource was written twice. Store both in the result so the failure is attributable."
+        },
+        {
+          "title": "Run agents against one resettable world",
+          "detail": "Give every agent the same environment instance with isolated per-agent interfaces but shared world state, and reset that state between runs so a graph can be replayed exactly and attempts do not contaminate each other."
+        }
+      ],
+      "verifier": [
+        "the final objective asserted on the shared state; test.sh writes 1 or 0 to /logs/verifier/reward.txt",
+        "dependency log check: every consumed subtask output has a producer that completed earlier in the trace",
+        "shared-resource write log contains exactly one write per resource, with no conflicting double write",
+        "the reference solution passes and the untouched workspace fails"
+      ],
+      "pitfalls": [
+        "pre-assigning roles lets an agent hard-code a protocol and skips the collaboration measurement",
+        "partial progress aggregated into a single number hides whether the dependencies were respected",
+        "shared state that is not reset between runs makes the second attempt trivially easier"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2611.01728",
+          "title": "MAC-Bench: Benchmarking Multi-Agent Collaboration via Interconnected Tasks",
+          "note": "collaboration requirements embedded in task dependencies and shared-resource constraints, two-level mining of local patterns and global structures, coarse-to-fine composition, and automated verification of partial progress and complete resolution"
+        },
+        {
+          "arxiv_id": "2605.26203",
+          "title": "AgentSociety: Incentivizing Agentic Social Intelligence",
+          "note": "decentralised agents of heterogeneous competence route work by delegation and disclose information selectively, so the environment must support incentive-bearing communication rather than broadcast"
+        },
+        {
+          "arxiv_id": "2205.06946",
+          "title": "Unified Distributed Environment",
+          "note": "one virtualised interface over heterogeneous simulators, multi-agent by default, so a task graph can be executed by several agents against a single shared world"
+        }
+      ]
+    },
+    {
+      "id": "mixed-motive-coopetition-payoff-env",
+      "name": "Mixed-motive coopetition environments with parameterised payoffs",
+      "family": "multi-agent",
+      "summary": "Not every multi-agent task is cooperative: real collaboration mixes conflict, so the payoff structure is declared rather than implied. Each instance belongs to a mechanism class - interdependence and complementarity, trust and reputation, collective action and loyalty, or sequential interaction and reciprocity - and carries a closed-form payoff together with a calibrated interdependence matrix that states how much each agent's outcome depends on the others. The reward layer is then parameterised over structurally distinct modes (private, integrated, cooperative), which separates payoff from reward and lets the same environment answer a cooperation test and a reward-convention ablation. Co-player behaviour is part of the design rather than an afterthought: the instance ships with a reference co-player, and where difficulty matters, the co-player policy and the environment parameters are adapted together.",
+      "when_to_use": [
+        "the source describes agents with conflicting or partial interests",
+        "you want to compare how one task behaves under different reward conventions",
+        "the environment must be calibrated against a documented case rather than merely plausible"
+      ],
+      "not_when_to_use": [
+        "all agents share a single objective, which makes the payoff trivial",
+        "you need a single-agent task"
+      ],
+      "inputs": [
+        "the source's interaction structure, mapped to one or more mechanism classes",
+        "a payoff specification that can be written in closed form per instance",
+        "an environment exposed through a multi-agent interface, parallel and turn-based"
+      ],
+      "steps": [
+        {
+          "title": "Assign the mechanism class",
+          "detail": "Classify the instance into one of the four mechanism classes by the structure of the interaction - interdependence and complementarity, trust and reputation, collective action and loyalty, sequential interaction and reciprocity. The class fixes which parameters vary and what counts as a valid cooperative outcome."
+        },
+        {
+          "title": "Declare the payoff in closed form",
+          "detail": "Write each agent's payoff as an explicit function of the joint outcome and derive the interdependence matrix quantifying how much each payoff moves when the others change. Keep the matrix as data in the task, not as prose."
+        },
+        {
+          "title": "Parameterise the reward layer",
+          "detail": "Expose the reward in three structurally distinct modes - private, integrated, cooperative - over the same payoff, so the same instance can serve both a cooperation test and a reward-type ablation without editing the dynamics."
+        },
+        {
+          "title": "Implement the multi-agent interfaces",
+          "detail": "Expose the instance through both a parallel and a turn-based interface so the same task runs under synchronous and sequential policies, and check that the underlying dynamics do not change with the interface used."
+        },
+        {
+          "title": "Give the co-player a policy",
+          "detail": "Ship a reference co-player - a learning algorithm, a game-theoretic oracle or a heuristic - and record which one was used. A constant-action opponent makes the instance a single exploit rather than a coordination problem."
+        },
+        {
+          "title": "Adapt co-player and environment together",
+          "detail": "Where the instance must stay hard, adapt the co-player policy and the environment parameters jointly, then check that the difficulty is not carried by a single co-player quirk that a different solver would walk around."
+        },
+        {
+          "title": "Validate against a reference case",
+          "detail": "Where the source supplies a documented case, calibrate the instance against it and record the agreement rate as a quality metric for that instance."
+        }
+      ],
+      "verifier": [
+        "the joint outcome is asserted on the environment state and per-agent payoffs are computed from the closed form and logged",
+        "switching the reward mode changes the reported reward while the trajectory stays identical",
+        "the reference co-player seeds and policy ids are stored with the task so runs are reproducible",
+        "the untouched workspace fails and writes 0 to /logs/verifier/reward.txt"
+      ],
+      "pitfalls": [
+        "payoff and reward conflated in one function makes ablation impossible",
+        "a fixed co-player turns the instance into an opponent exploit rather than a coordination problem",
+        "interdependence asserted qualitatively instead of supplied as a matrix cannot be calibrated"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2605.02063",
+          "title": "Coopetition-Gym v1: A Formally Grounded Platform for Mixed-Motive Multi-Agent Reinforcement Learning under Strategic Coopetition",
+          "note": "closed-form payoff per instance, calibrated interdependence matrix, and a reward layer parameterised over private, integrated and cooperative modes across four mechanism classes"
+        },
+        {
+          "arxiv_id": "2303.03376",
+          "title": "MAESTRO: Open-Ended Environment Design for Multi-Agent Reinforcement Learning",
+          "note": "environment parameters and co-player policies are adapted jointly, so co-player strength belongs to the difficulty budget rather than being fixed"
+        },
+        {
+          "arxiv_id": "2605.26203",
+          "title": "AgentSociety: Incentivizing Agentic Social Intelligence",
+          "note": "payoffs reflect marginal contribution and delegation to more competent neighbours is incentive compatible, giving the mixed-motive structure an explicit utility model"
+        }
+      ]
+    }
+  ]
+}

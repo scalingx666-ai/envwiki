@@ -1,0 +1,2875 @@
+{
+ "source": "awesome-environment (arXiv reading list)",
+ "papers": {
+  "2605.28556": {
+   "title": "A Matter of TASTE: Improving Coverage and Difficulty of Agent Benchmarks",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2401.13178": {
+   "title": "AgentBoard: An Analytical Evaluation Board of Multi-turn LLM Agents",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2506.07982": {
+   "title": "$τ^2$-Bench: Evaluating Conversational Agents in a Dual-Control Environment",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2406.12045": {
+   "title": "$τ$-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2409.18433": {
+   "title": "Easy2Hard-Bench: Standardized Difficulty Labels for Profiling LLM Performance and Generalization",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2407.16711": {
+   "title": "Benchmarks as Microscopes: A Call for Model Metrology",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2506.06632": {
+   "title": "Curriculum Reinforcement Learning from Easy to Hard Tasks Improves LLM Reasoning",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2606.08893": {
+   "title": "Cheap Reward Hacking Detection",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2607.22368": {
+   "title": "Do Agent Benchmarks Measure Capability? Protocol Validity in the Age of Agentic AI",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2607.01470": {
+   "title": "World Feedback for Clinical Agents: Diagnosing RL in FHIR Environments",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2511.09586": {
+   "title": "Environment Scaling for Interactive Agentic Experience Collection: A Survey",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2608.05797": {
+   "title": "Predicting Task Difficulty Without Rollouts",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2510.15047": {
+   "title": "Why Do LLM Agents Fail in Exploring New Environments? A World-Modeling Perspective",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2605.02964": {
+   "title": "Reward Hacking Benchmark: Measuring Exploits in LLM Agents with Tool Use",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2605.20744": {
+   "title": "Hack-Verifiable Environments: Towards Evaluating Reward Hacking at Scale",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2605.21384": {
+   "title": "SpecBench: Measuring Reward Hacking in Long-Horizon Coding Agents",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2608.22103": {
+   "title": "Hack-Verifiable Terminal Bench: Evaluating Reward Hacking in Terminal Tasks",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2608.30724": {
+   "title": "BAITBENCH: Measuring Agent Reward Hacking with Optional Shortcuts Planted in ML Tasks",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2511.21654": {
+   "title": "EvilGenie: A Reward Hacking Benchmark",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2610.15924": {
+   "title": "Scalable Weak-to-Strong Verifier Hardening for Agent Environments",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2610.35716": {
+   "title": "Audit Where Hacks Pay: Budgeted Strong-Verifier Audits Against Reward Hacking in GRPO",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2610.19525": {
+   "title": "Diagnosing and Correcting Reward Hacking in Verifiable Instruction Following",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2610.12822": {
+   "title": "Reward Hacking as a Transmissible Strategy in Multi-Agent Coding Systems",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2604.16242": {
+   "title": "Detecting and Suppressing Reward Hacking with Gradient Fingerprints",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2601.20103": {
+   "title": "Benchmarking Reward Hack Detection in Code Environments via Contrastive Analysis",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2609.28614": {
+   "title": "Reward Hacking Challenges Oversight of Autonomous Research Agents",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2605.04312": {
+   "title": "Agent Island: A Saturation- and Contamination-Resistant Benchmark from Multiagent Games",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2605.22564": {
+   "title": "SynAE: A Framework for Measuring the Quality of Synthetic Data for Tool-Calling Agent Evaluations",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2606.05241": {
+   "title": "Search-Time Contamination in Deep Research Agents: Measuring Performance Inflation in Public Benchmark Evaluation",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2605.26079": {
+   "title": "Automated Benchmark Auditing for AI Agents and Large Language Models",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2610.32285": {
+   "title": "Trial by Trace: Benchmarking AI Agent Harnesses for Reliability and Failure Attribution",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2604.17849": {
+   "title": "On the Reliability of Computer Use Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2502.20379": {
+   "title": "Multi-Agent Verification: Scaling Test-Time Compute with Multiple Verifiers",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2502.17259": {
+   "title": "Detecting Benchmark Contamination Through Watermarking",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2505.08389": {
+   "title": "Towards Contamination Resistant Benchmarks",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2505.07215": {
+   "title": "Measuring General Intelligence with Generated Games",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2605.10325": {
+   "title": "Verifiable Process Rewards for Agentic Reasoning",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2610.12598": {
+   "title": "Beyond Binary Verifiable Rewards: Behavioral Self-Rewarding for SWE Agents",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2604.16004": {
+   "title": "AgentV-RL: Scaling Reward Modeling with Agentic Verifier",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2601.04171": {
+   "title": "Agentic Rubrics as Contextual Verifiers for SWE Agents",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2608.24174": {
+   "title": "Task-Adaptive Rubrics for GUI Reward Modeling",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2602.00575": {
+   "title": "Agentic Reward Modeling: Verifying GUI Agent via Progressive Trajectory-Grounded Interaction",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2607.25904": {
+   "title": "Interactive Reward Agent: GUI Task Evaluation via Environment-State Verification",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2509.23263": {
+   "title": "GUI-PRA: Process Reward Agent for GUI Tasks",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2509.23738": {
+   "title": "GUI-Shepherd: Reliable Process Reward and Verification for Long-Sequence GUI Tasks",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2606.24525": {
+   "title": "VisCritic: Visual State Comparison as Process Reward for GUI Agents",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2610.26469": {
+   "title": "VeriCUA: Learning Proactive Verification for Reliable GUI Agent Rewards",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2511.08325": {
+   "title": "AgentPRM: Process Reward Models for LLM Agents via Step-Wise Promise and Progress",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2603.00724": {
+   "title": "RLAR: An Agentic Reward System for Multi-task Reinforcement Learning on Large Language Models",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2509.25598": {
+   "title": "Hybrid Reward Normalization for Process-supervised Non-verifiable Agentic Tasks",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2602.01709": {
+   "title": "ARTIS: Agentic Risk-Aware Test-Time Scaling via Iterative Simulation",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2602.18998": {
+   "title": "Evaluating Test-Time Scaling of General LLM Agents",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2602.12276": {
+   "title": "Agentic Test-Time Scaling for WebAgents",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2604.16529": {
+   "title": "Scaling Test-Time Compute for Agentic Coding",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2509.11079": {
+   "title": "Difficulty-Aware Agentic Orchestration for Query-Specific Multi-Agent Workflows",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2603.03800": {
+   "title": "A Rubric-Supervised Critic from Sparse Real-World Outcomes",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2609.35596": {
+   "title": "SEABench: Benchmarking Endogenous Misalignment In Self-Evolving Agents",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2608.08303": {
+   "title": "Query-Only Backdoor Attacks on Self-Evolving Skills via Trajectory Poisoning",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2610.08900": {
+   "title": "Humanize: Judgement Engineering for Agentic Coding",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2603.25111": {
+   "title": "SEVerA: Verified Synthesis of Self-Evolving Agents",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2610.11678": {
+   "title": "TRACE: Diagnosing Verifier Brittleness in Agentic Evaluation",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2605.08261": {
+   "title": "Computer Use at the Edge of the Statistical Precipice",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2609.37315": {
+   "title": "Do Agent Benchmarks Do What They Say? An Executable-Contract Audit of Tool-Using Agent Environments",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2610.40246": {
+   "title": "EnvOS: Auditing Computer-Use Agents When the World Moves On : Phenomenon-Based Task Construction, Certification, and Evidence-Based Evaluation",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2510.24636": {
+   "title": "OpenReward: Learning to Reward Long-form Agentic Tasks via Reinforcement Learning",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2603.00077": {
+   "title": "Autorubric: A Unifying Framework for Rubric-Based LLM Evaluation on Non-Verifiable Tasks",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2609.36086": {
+   "title": "PADMÉ: Preference Alignment Data Synthesis for Meta-Evaluation of LM Agent Evaluators",
+   "family": "verification",
+   "section": "1. Difficulty, Benchmark Measurement & Verification Reliability"
+  },
+  "2604.18292": {
+   "title": "Agent-World: Scaling Real-World Environment Synthesis for Evolving General Agent Intelligence",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2601.05808": {
+   "title": "EnvScaler: Scaling Tool-Interactive Environments for LLM Agent via Programmatic Synthesis",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2602.10090": {
+   "title": "Agent World Model: Infinity Synthetic Environments for Agentic Reinforcement Learning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2601.04126": {
+   "title": "InfiniteWeb: Scalable Web Environment Synthesis for GUI Agent Training",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2607.15660": {
+   "title": "ToolVerse: Unlocking Massive Environments and Long-Horizon Tasks for Agentic Reinforcement Learning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2608.19197": {
+   "title": "SPADE: Self-Play in Adaptive Synthetic Executable Environments",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2512.01311": {
+   "title": "CuES: A Curiosity-driven and Environment-grounded Synthesis Framework for Agentic RL",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2605.18703": {
+   "title": "EnvFactory: Scaling Tool-Use Agents via Executable Environments Synthesis and Robust RL",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2606.24597": {
+   "title": "Qwen-AgentWorld: Language World Models for General Agents",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2602.06820": {
+   "title": "ScaleEnv: Scaling Environment Synthesis from Scratch for Generalist Interactive Tool-Use Agent Training",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2512.19682": {
+   "title": "GenEnv: Difficulty-Aligned Co-Evolution Between LLM Agents and Environment Simulators",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2601.06328": {
+   "title": "C-World: A Computer Use Agent Environment Creator",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2604.18543": {
+   "title": "ClawEnvKit: Automatic Environment Generation for Claw-Like Agents",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2608.20634": {
+   "title": "AgentMercury: Your Agent Can Synthesize Verifiable Environments for Business Scenarios at scale",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2512.22857": {
+   "title": "AutoForge: Automated Environment Synthesis for Agentic Reinforcement Learning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2609.05576": {
+   "title": "EnvCraft: Synthesizing Executable Environments in Agentic RL for Claw-like Agent",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2509.13311": {
+   "title": "Towards General Agentic Intelligence via Environment Scaling",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.37648": {
+   "title": "Scaling Laws for Tool-Use Agents via Controllable Environment Synthesis",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.04906": {
+   "title": "Scaling Verifiable Environments for Long-horizon Work Agents",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2611.20612": {
+   "title": "Learning Design Taste through Verifiable Synthetic Environments and Agentic Reinforcement Learning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2611.07372": {
+   "title": "EnvOpt: Automated Optimization for Agent Environments",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2609.01045": {
+   "title": "AgentFactory: Towards Automated Agentic System Design and Optimization",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2509.13368": {
+   "title": "$Agent^2$: An Agent-Generates-Agent Framework for Reinforcement Learning Automation",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2609.22068": {
+   "title": "CodeMidas: Scaling Agentic Coding RL Environments from Code Itself",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2609.07925": {
+   "title": "FrogNano: Training a 4B Coding Agent via Online Task Synthesis",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2609.40221": {
+   "title": "PhantomEnvironments: Training LLM Agents in Fictional Worlds",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.13395": {
+   "title": "ProgramGym: Scaling Training Environments for Long-Horizon Program Reproduction Agents",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.32448": {
+   "title": "POSEIDON: Scaling Training Environments for Scientific Agents from Code Repositories",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2611.21152": {
+   "title": "From Repositories to Training Environments: Scaling Long-Horizon Coding Agents with Environment Evolution Loop",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2607.00016": {
+   "title": "Libra: Training the Environment for Agentic Information Retrieval",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.33149": {
+   "title": "WebUniverse: Scaling Verified Training Data for Agentic Web Development",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2603.10505": {
+   "title": "Safe and Scalable Web Agent Learning via Recreated Websites",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2511.09572": {
+   "title": "SynthTools: A Framework for Scaling Synthetic Tools for Agent Development",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2505.21055": {
+   "title": "Agent-Environment Alignment via Automated Interface Generation",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2511.01824": {
+   "title": "Simulating Environments with Reasoning Models for Agent Training",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2511.07317": {
+   "title": "RLVE: Scaling Up Reinforcement Learning for Language Models with Adaptive Verifiable Environments",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2511.19304": {
+   "title": "AutoEnv: Automated Environments for Measuring Cross-Environment Agent Learning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2510.09577": {
+   "title": "Dyna-Mind: Learning to Simulate from Experience for Better AI Agents",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2510.14969": {
+   "title": "LLMs as Scalable, General-Purpose Simulators For Evolving Digital Agent Training",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2601.11100": {
+   "title": "ReCreate: Reasoning and Creating Domain Agents Driven by Experience",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2512.24615": {
+   "title": "Youtu-Agent: Scaling Agent Productivity with Automated Generation and Hybrid Policy Optimization",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2609.04894": {
+   "title": "From Language Models to World-Acting Systems: Progress and Limits of Agentic AI across Digital, Social, Virtual, and Physical Environments",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2608.22167": {
+   "title": "MCP-Universe RL: A Framework for Training MCP Tool-Use Agents via Reinforcement Learning",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2602.19218": {
+   "title": "Gecko: A Simulation Environment with Stateful Feedback for Refining Agent Tool Calls",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2601.16206": {
+   "title": "Computer Environments Elicit General Agentic Intelligence in LLMs",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.24061": {
+   "title": "World of SWECraft: Agent Collaboration at Scale via Simulated Software Worlds",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2609.33665": {
+   "title": "CompoWorld: Compositional Environment Scaling for General Agents",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2607.28990": {
+   "title": "Scaling Scientific Discovery Environments for Turn-Level Agentic RL",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2607.07820": {
+   "title": "DeepSearch-World: Self-Distillation for Deep Search Agents in a Verifiable Environment",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2604.09815": {
+   "title": "EE-MCP: Self-Evolving MCP-GUI Agents via Automated Environment Generation and Experience Learning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2602.20117": {
+   "title": "ReSyn: Autonomously Scaling Synthetic Environments for Reasoning Models",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2601.21558": {
+   "title": "ASTRA: Automated Synthesis of agentic Trajectories and Reinforcement Arenas",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2406.04151": {
+   "title": "AgentGym: Evolving Large Language Model-based Agents across Diverse Environments",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2609.37539": {
+   "title": "SkillGym: Training Skill-Use Agents with Automatic Verifiable Environment Generation",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2609.33772": {
+   "title": "Skill2Env: Capability-Oriented Environment Synthesis from Skills for General Agents",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2605.09423": {
+   "title": "SimWorld Studio: Automatic Environment Generation with Evolving Coding Agent for Embodied Agent Learning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2608.14312": {
+   "title": "Envs-FORGE: Frontier-Optimized Reward-Grounded Environment Synthesis for Agent RL",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2605.14392": {
+   "title": "Learning to Build the Environment: Self-Evolving Reasoning RL via Verifiable Environment Synthesis",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2609.22000": {
+   "title": "RecreationWorld: Scalable and Verifiable Environments for Hybrid Computer-Use Agents",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.05923": {
+   "title": "VERA: Scaling Verifiable Environments for Agentic co-Evolution",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2609.22592": {
+   "title": "AutoGym: Blueprint-First Generation of Verifiable Agent Gyms",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.14163": {
+   "title": "AutoEnvScaling: Automating the Data Flywheel with Terminal Agents",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.16397": {
+   "title": "Recursive Environment Scaling for General Long-Horizon Agents",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.21492": {
+   "title": "MetaExp: Learning to Self-Improve through Experience via Verifiable Cross-Task Environment Scaling",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2512.04987": {
+   "title": "Nex-N1: Agentic Models Trained via a Unified Ecosystem for Large-Scale Environment Construction",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2605.18181": {
+   "title": "Scalable Environments Drive Generalizable Agents",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2604.17739": {
+   "title": "Democratizing Tool Learning with Environments Fully Simulated by a Free 8B Language Model",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2607.16900": {
+   "title": "Simulate to Generalize: Scaling Stateful Supervision for API-calling Agents using LLM World Models",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2605.07247": {
+   "title": "EnvSimBench: A Benchmark for Evaluating and Improving LLM-Based Environment Simulation",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2201.08896": {
+   "title": "Environment Generation for Zero-Shot Compositional Reinforcement Learning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2202.02790": {
+   "title": "Learning Synthetic Environments and Reward Networks for Reinforcement Learning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2112.00086": {
+   "title": "Dyna-bAbI: unlocking bAbI's potential with dynamic synthetic benchmarking",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2511.20814": {
+   "title": "SPHINX: A Synthetic Environment for Visual Perception and Reasoning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2601.13556": {
+   "title": "LogicEnvGen: Task-Logic Driven Generation of Diverse Simulated Environments for Embodied AI",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2611.22777": {
+   "title": "CrossEnv: Synthesizing Verifiable Cross-Environment Tasks for Long-Horizon Agent Training",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2611.19871": {
+   "title": "Interactive Structured Environment Scaling for Large Language Model Agentic Reasoning",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.33817": {
+   "title": "EnvLunch: The Environment as a Free Lunch for Learning to Interact",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2610.28989": {
+   "title": "AgentPolicyForge: From Executable Environments to Policy Benchmarks and Adaptive Guards",
+   "family": "environment-synthesis",
+   "section": "2. Environment Synthesis"
+  },
+  "2602.21320": {
+   "title": "Tool-R0: Self-Evolving LLM Agents for Tool-Learning from Zero Data",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2511.03773": {
+   "title": "Scaling Agent Learning via Experience Synthesis",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2606.02001": {
+   "title": "Scaling Agentic Capabilities via Grounded Interaction Synthesis",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2510.01179": {
+   "title": "TOUCAN: Synthesizing 1.5M Tool-Agentic Data from Real-World MCP Environments",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2601.22511": {
+   "title": "Mock Worlds, Real Skills: Building Small Agentic Language Models with Synthetic Tasks, Simulated Environments, and Rubric-Based Rewards",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2412.09605": {
+   "title": "AgentTrek: Agent Trajectory Synthesis via Guiding Replay with Web Tutorials",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2607.29175": {
+   "title": "Execution-First Synthetic Tool-Use Trace Generation for LLM Agents",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2512.18552": {
+   "title": "Toward Training Superintelligent Software Agents through Self-Play SWE-RL",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2511.13646": {
+   "title": "Live-SWE-agent: Can Software Engineering Agents Self-Evolve on the Fly?",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2512.21919": {
+   "title": "SWE-RM: Execution-free Feedback For Software Engineering Agents",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2504.14757": {
+   "title": "SWE-Synth: Synthesizing Verifiable Bug-Fix Data to Enable Large Language Models in Resolving Real-World Bugs",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2506.09003": {
+   "title": "SWE-Flow: Synthesizing Software Engineering Data in a Test-Driven Manner",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2510.19898": {
+   "title": "BugPilot: Complex Bug Generation for Efficient Learning of SWE Skills",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2509.08724": {
+   "title": "SWE-Mirror: Scaling Issue-Resolving Datasets by Mirroring Issues Across Repositories",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2602.09892": {
+   "title": "Immersion in the GitHub Universe: Scaling Coding Agents to Mastery",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2602.02619": {
+   "title": "daVinci-Agency: Unlocking Long-Horizon Agency Data-Efficiently",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2512.12216": {
+   "title": "Training Versatile Coding Agents in Synthetic Environments",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2510.08558": {
+   "title": "Agent Learning via Early Experience",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2607.22529": {
+   "title": "Skill Self-Play: Pushing the Frontier of LLM Capability with Co-Evolving Skills",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2510.23595": {
+   "title": "Multi-Agent Evolve: LLM Self-Improve through Co-evolution",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2604.14054": {
+   "title": "$π$-Play: Multi-Agent Self-Play via Privileged Self-Distillation without External Data",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2610.19868": {
+   "title": "Explorer-Zero: Improving Self-Play for Long-Horizon Tasks with Decomposable Verifiable Rewards",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2602.03109": {
+   "title": "One Model, All Roles: Multi-Turn, Multi-Agent Self-Play Reinforcement Learning for Conversational Social Intelligence",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2607.23802": {
+   "title": "From RLVR to RLSVR: Task Transformation Induces Self-Verifiable Rewards for Open-Ended LLM Self-Improvement",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2506.03533": {
+   "title": "Go-Browse: Training Web Agents with Structured Exploration",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2510.24284": {
+   "title": "MCP-Flow: Facilitating LLM Agents to Master Real-World, Diverse and Scaling MCP Tools",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2602.16819": {
+   "title": "Hybrid-Gym: Training Coding Agents to Generalize Across Tasks",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2511.04847": {
+   "title": "Test-Time Adaptation for LLM Agents via Environment Interaction",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2610.26887": {
+   "title": "Navalia: Advancing Cowork Agents through Verifiable Task Synthesis and Long-Horizon Post-Training",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2610.16523": {
+   "title": "EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2610.09484": {
+   "title": "MIMESIS: Learning User Simulators as Training Environments for Interactive Agents",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2601.03335": {
+   "title": "Digital Red Queen: Adversarial Program Evolution in Core War with LLMs",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2604.25135": {
+   "title": "FAMA: Failure-Aware Meta-Agentic Framework for Open-Source LLMs in Interactive Tool Use Environments",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2607.26115": {
+   "title": "GPT-Red: Automated Red Teaming via Self-Play at Scale",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2503.20527": {
+   "title": "StableToolBench-MirrorAPI: Modeling Tool Environments as Mirrors of 7,000+ Real-World APIs",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2504.06821": {
+   "title": "Inducing Programmatic Skills for Agentic Tasks",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2606.17838": {
+   "title": "Environment-Grounded Automated Prompt Optimization for LLM Game Agents",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2504.04736": {
+   "title": "Synthetic Data Generation & Multi-Step RL for Reasoning & Tool Use",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2610.23574": {
+   "title": "Darwin-Claw: Environment-Adaptive Experience Consolidation for Recursively Self-Evolving Agents",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2610.11345": {
+   "title": "SynCo: Data Synthesis Co-Training for Self-Evolving LLMs via Multi-Agent Reinforcement Learning",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2608.03392": {
+   "title": "Self-Evolving Coding Agents",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2604.27264": {
+   "title": "Self-Evolving Software Agents",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2606.07367": {
+   "title": "Self-evolving LLM agents with in-distribution Optimization",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2601.22607": {
+   "title": "From Self-Evolving Synthetic Data to Verifiable-Reward RL: Post-Training Multi-turn Interactive Tool-Using Agents",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2510.24695": {
+   "title": "AgentFrontier: Expanding the Capability Frontier of LLM Agents with ZPD-Guided Data Synthesis",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2511.09148": {
+   "title": "LoopTool: Closing the Data-Training Loop for Robust LLM Tool Calls",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2510.24645": {
+   "title": "FunReason-MT Technical Report: Advanced Data Synthesis Solution for Real-world Multi-Turn Tool-use",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2601.08699": {
+   "title": "RAGShaper: Eliciting Sophisticated Agentic RAG Skills via Automated Data Synthesis",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2410.14251": {
+   "title": "Synthesizing Post-Training Data for LLMs through Multi-Agent Simulation",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2511.21686": {
+   "title": "Matrix: Peer-to-Peer Multi-Agent Synthetic Data Generation Framework",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2412.17061": {
+   "title": "Multi-Agent Sampling: Scaling Inference Compute for Data Synthesis with Tree Search-Based Agentic Collaboration",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2602.23716": {
+   "title": "ProductResearch: Training E-Commerce Deep Research Agents via Multi-Agent Synthetic Trajectory Distillation",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2210.03629": {
+   "title": "ReAct: Synergizing Reasoning and Acting in Language Models",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2207.05608": {
+   "title": "Inner Monologue: Embodied Reasoning through Planning with Language Models",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2303.11366": {
+   "title": "Reflexion: Language Agents with Verbal Reinforcement Learning",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2201.07207": {
+   "title": "Language Models as Zero-Shot Planners: Extracting Actionable Knowledge for Embodied Agents",
+   "family": "experience-synthesis",
+   "section": "3. Experience / Interaction Synthesis"
+  },
+  "2605.25160": {
+   "title": "ScaleWoB: Guiding GUI Agents with Coding Agents via Large-Scale Environmental Synthesis",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2602.14093": {
+   "title": "GUI-GENESIS: Automated Synthesis of Efficient Environments with Verifiable Rewards for GUI Agent Post-Training",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2605.06761": {
+   "title": "Weblica: Scalable and Reproducible Training Environments for Visual Web Agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2607.11185": {
+   "title": "SCALECUA: Scaling Computer Use Agents with Verifiable Task Synthesis and Efficient Online RL",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2511.19663": {
+   "title": "Fara-7B: An Efficient Agentic Model for Computer Use",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2606.20785": {
+   "title": "Fara-1.5: Scalable Learning Environments for Computer Use Agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2412.19723": {
+   "title": "OS-Genesis: Automating GUI Agent Trajectory Construction via Reverse Task Synthesis",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2603.12138": {
+   "title": "HATS: Hardness-Aware Trajectory Synthesis for GUI Agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2601.02439": {
+   "title": "WebGym: Scaling Training Environments for Visual Web Agents with Realistic Tasks",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2510.16252": {
+   "title": "WEBSERV: A Full-Stack and RL-Ready Web Environment for Training Web Agents at Scale",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2611.03634": {
+   "title": "WebHarbor: Docking Real Websites for Evolving GUI Agent Environments",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2608.21898": {
+   "title": "Training Needs Trustworthy Worlds: Verified Synthetic Web Environments for Agent Learning",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2608.29305": {
+   "title": "Learning Simple Test-Time Environments for LLM Web Agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2506.10953": {
+   "title": "Build the web for agents, not agents for the web",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2603.22529": {
+   "title": "Ego2Web: A Web Agent Benchmark Grounded in Egocentric Videos",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2610.20939": {
+   "title": "MAI-Gym: An Open All-in-One Platform for GUI Agent Evaluation and RL Training across Mobile and Computer Environments",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2502.18906": {
+   "title": "VEM: Environment-Free Exploration for Training GUI Agent with Value Environment Model",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2609.05374": {
+   "title": "CUA-Universe: A Scalable and Dynamic Environment for Hybrid GUI+CLI Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2605.29447": {
+   "title": "Recovering Policy-Induced Errors: Benchmarking and Trajectory Synthesis for Robust GUI Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2607.18046": {
+   "title": "SEE: Structure-aware Exploring & Exploiting for Long-horizon GUI Agent Trajectory Synthesis",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2608.22847": {
+   "title": "GSAR: Goal-State-Anchor Rewards for Mobile GUI Agents with Self-Evolving Data Synthesis",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2507.05720": {
+   "title": "MobileGUI-RL: Advancing Mobile GUI Agent through Reinforcement Learning in Online Environment",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2508.11360": {
+   "title": "CRAFT-GUI: Curriculum-Reinforced Agent For GUI Tasks",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2512.19432": {
+   "title": "MobileWorld: Benchmarking Autonomous Mobile Agents in Agent-User Interactive and MCP-Augmented Environments",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2510.24563": {
+   "title": "OSWorld-MCP: Benchmarking MCP Tool Invocation In Computer-Use Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2609.00048": {
+   "title": "GUI-CC: Benchmarking Contextual Consistency of GUI World Models as Agent Environments",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2604.25380": {
+   "title": "Benchmarking and Improving GUI Agents in High-Dynamic Environments",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2506.01952": {
+   "title": "WebChoreArena: Evaluating Web Browsing Agents on Realistic Tedious Web Tasks",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2606.10394": {
+   "title": "STAGE-Claw: Automated State-based Agent Benchmarking for Realistic Scenarios",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2607.23722": {
+   "title": "E-Bench: Benchmarking Multi-Step Tool-Use Agents in Real-World Product Scenarios",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2504.13936": {
+   "title": "ViMo: A Generative Visual GUI World Model for App Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2602.09856": {
+   "title": "Code2World: A GUI World Model via Renderable Code Generation",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2409.08264": {
+   "title": "Windows Agent Arena: Evaluating Multi-Modal OS Agents at Scale",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2506.04135": {
+   "title": "macOSWorld: A Multilingual Interactive Benchmark for GUI Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2606.06560": {
+   "title": "MacArena: Benchmarking Computer Use Agents on an Online macOS Environment",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2606.22557": {
+   "title": "MacAgentBench: Benchmarking AI Agents on Real-World macOS Desktop",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2505.03570": {
+   "title": "OSUniverse: Benchmark for Multimodal GUI-navigation AI Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2507.19478": {
+   "title": "MMBench-GUI: Hierarchical Multi-Platform Evaluation Framework for GUI Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2503.07919": {
+   "title": "BEARCUBS: A benchmark for computer-using web agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2401.13649": {
+   "title": "VisualWebArena: Evaluating Multimodal Agents on Realistic Visual Web Tasks",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2405.14573": {
+   "title": "AndroidWorld: A Dynamic Benchmarking Environment for Autonomous Agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2603.05044": {
+   "title": "WebFactory: Automated Compression of Foundational Language Intelligence into Grounded Web Agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2604.15093": {
+   "title": "OpenMobile: Building Open Mobile Agents with Task and Trajectory Synthesis",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2610.14157": {
+   "title": "OpenMobile-2: Building Versatile Mobile Agents with Scalable Environments and App-Native Tools",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2608.12429": {
+   "title": "SynWeaver: Website-Prior Task and Trajectory Co-Synthesis for Web Agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2512.10962": {
+   "title": "WebSTAR: Scalable Data Synthesis for Computer Use Agents with Step-Level Filtering",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2509.15738": {
+   "title": "GUI-ReWalk: Massive Data Generation for GUI Agent via Stochastic Exploration and Intent-Aware Reasoning",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2502.11357": {
+   "title": "Explorer: Scaling Exploration-driven Web Trajectory Synthesis for Multimodal Web Agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2610.05861": {
+   "title": "Imagine to Act: High-Fidelity Data Synthesis via Image Editing World Model for Scalable GUI Agent Training",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2607.28074": {
+   "title": "Echoverse: Deep, Evolving Environments for Training Computer-Use Agents at Scale",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2605.29486": {
+   "title": "PhoneWorld: From Real-App Trajectories to Dynamic and Verifiable Environments for Phone-Use Agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2610.37786": {
+   "title": "WebAnything: From the Wild Web to Scalable Agent Environments",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2608.15930": {
+   "title": "UI-Mate: Advancing Open-Weight Foundation GUI Agents with In-Context Demonstrations",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2604.07776": {
+   "title": "Structured Distillation of Web Agent Capabilities Enables Generalization",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2207.01206": {
+   "title": "WebShop: Towards Scalable Real-World Web Interaction with Grounded Language Agents",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2306.06070": {
+   "title": "Mind2Web: Towards a Generalist Agent for the Web",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2401.13919": {
+   "title": "WebVoyager: Building an End-to-End Web Agent with Large Multimodal Models",
+   "family": "web-gui",
+   "section": "4. Web / GUI Environment Synthesis"
+  },
+  "2601.11868": {
+   "title": "Terminal-Bench: Benchmarking Agents on Hard, Realistic Tasks in Command Line Interfaces",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2606.22883": {
+   "title": "CLI-Universe: Towards Verifiable Task Synthesis Engine for Terminal Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2607.10891": {
+   "title": "SETA: Scaling Environments for Terminal Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2605.22535": {
+   "title": "TerminalWorld: Benchmarking Agents on Real-World Terminal Tasks",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2603.06739": {
+   "title": "ResearchEnvBench: Benchmarking Agents on Environment Synthesis for Research Code Execution",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2603.17216": {
+   "title": "ML-AutoResearch: Training Machine Learning Research Agents with Automatically Generated Environments",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2506.10954": {
+   "title": "SWE-Factory: Your Automated Factory for Issue Resolution Training Data and Evaluation Benchmarks",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2504.21798": {
+   "title": "SWE-smith: Scaling Data for Software Engineering Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2504.07164": {
+   "title": "R2E-Gym: Procedural Environments and Hybrid Verifiers for Scaling Open-Weights SWE Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2602.03419": {
+   "title": "SWE-World: Building Software Engineering Agents in Docker-Free Environments",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2602.02361": {
+   "title": "SWE-Universe: Scale Real-World Verifiable Environments to Millions",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2603.13023": {
+   "title": "daVinci-Env: Open SWE Environment Synthesis at Scale",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2602.00592": {
+   "title": "DockSmith: Scaling Reliable Coding Environments via an Agentic Docker Builder",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2602.01244": {
+   "title": "Large-Scale Terminal Agentic Trajectory Generation from Dockerized Environments",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2609.04148": {
+   "title": "Terminal-Universe: Turning Agent Trajectories into Scalable Terminal Environments",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2412.21139": {
+   "title": "Training Software Engineering Agents and Verifiers with SWE-Gym",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2505.23419": {
+   "title": "SWE-bench Goes Live!",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2505.20411": {
+   "title": "SWE-rebench: An Automated Pipeline for Task Collection and Decontaminated Evaluation of Software Engineering Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2602.23866": {
+   "title": "SWE-rebench V2: Language-Agnostic SWE Task Collection at Scale",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2609.08149": {
+   "title": "SWE-Bench Pro Verified: A Reliable Benchmark for Software Engineering Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2402.00424": {
+   "title": "Reproducibility of Build Environments through Space and Time",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2502.13681": {
+   "title": "Repo2Run: Automated Building Executable Environment for Code Repository at Scale",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2503.07358": {
+   "title": "RepoST: Scalable Repository-Level Coding Environment Construction with Sandbox Testing",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2503.14443": {
+   "title": "EnvBench: A Benchmark for Automated Environment Setup",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2602.07871": {
+   "title": "HerAgent: Rethinking the Automated Environment Deployment via Hierarchical Test Pyramid",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2512.06915": {
+   "title": "Multi-Docker-Eval: A `Shovel of the Gold Rush' Benchmark on Automatic Environment Building for Software Engineering",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2510.25694": {
+   "title": "Process-Level Trajectory Evaluation for Environment Configuration in Software Engineering Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2602.11210": {
+   "title": "SWE-MiniSandbox: Container-Free Reinforcement Learning for Building Software Engineering Agents",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2606.28436": {
+   "title": "Dockerless: Environment-Free Program Verifier for Coding Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2506.11425": {
+   "title": "Agent-RLVR: Training Software Engineering Agents via Guidance and Environment Rewards",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2509.02360": {
+   "title": "When Agents go Astray: Course-Correcting SWE Agents with PRMs",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2609.33429": {
+   "title": "Graph-Guided Repository Environment Construction",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2607.28591": {
+   "title": "Change2Task: From Repository Changes to Executable Coding Agent Tasks and Environments",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2606.28235": {
+   "title": "For Coding Agents, the Repository Matters",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2410.20285": {
+   "title": "SWE-Search: Enhancing Software Agents with Monte Carlo Tree Search and Iterative Refinement",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2406.12952": {
+   "title": "SWT-Bench: Testing and Validating Real-World Bug-Fixes with Code Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2412.02883": {
+   "title": "TDD-Bench Verified: Can LLMs Generate Tests for Issues Before They Get Resolved?",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2502.05368": {
+   "title": "Otter: Generating Tests from Issues to Validate SWE Patches",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2503.16320": {
+   "title": "Issue2Test: Generating Reproducing Test Cases from Issue Reports",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2412.06294": {
+   "title": "Beyond pip install: Evaluating LLM Agents for the Automated Installation of Python Projects",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2412.10133": {
+   "title": "You Name It, I Run It: An LLM Agent to Execute Tests of Arbitrary Projects",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2503.21557": {
+   "title": "debug-gym: A Text-Based Environment for Interactive Debugging",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2506.09289": {
+   "title": "UTBoost: Rigorous Evaluation of Coding Agents on SWE-Bench",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2503.07010": {
+   "title": "ProjectEval: A Benchmark for Programming Agents Automated Evaluation on Project-Level Code Generation",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2508.18993": {
+   "title": "GitTaskBench: A Benchmark for Code Agents Solving Real-World Tasks Through Code Repository Leveraging",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2601.22859": {
+   "title": "MEnvAgent: Scalable Polyglot Environment Construction for Verifiable Software Engineering",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2602.07274": {
+   "title": "TermiGen: High-Fidelity Environment and Robust Trajectory Synthesis for Terminal Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2605.29559": {
+   "title": "LiteCoder-Terminal: Scaling Long-Horizon Terminal Environments for Learning Language Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2608.18580": {
+   "title": "FACET: Preserving Source Intent and Executable State in Terminal Task Synthesis",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2608.05466": {
+   "title": "Recursive Synthesis for Long-Horizon Terminal Tasks",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2611.01927": {
+   "title": "Is Your Long-Horizon Benchmark Really Deep? Measuring and Synthesizing Depth in Terminal Tasks",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2602.21193": {
+   "title": "On Data Engineering for Scaling LLM Terminal Capabilities",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2610.02405": {
+   "title": "When Terminal-Agent Training Stalls: Demystifying Data Generation and Verification Challenge",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2610.14915": {
+   "title": "WorkBorne: Discovering Agentic Tasks from Real-World Artifact Transitions",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2512.17419": {
+   "title": "SWE-Bench++: A Framework for the Scalable Generation of Software Engineering Benchmarks from Open-Source Repositories",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2508.01550": {
+   "title": "RepoForge: Training a SOTA Fast-thinking SWE Agent with an End-to-End Data Curation Pipeline Synergizing SFT and RL at Scale",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2601.18418": {
+   "title": "daVinci-Dev: Agent-native Mid-training for Software Engineering",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2604.23190": {
+   "title": "RAT: RunAnyThing via Fully Automated Environment Configuration",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2611.23258": {
+   "title": "EnvAgent: Multi-Agent Approach to Building Science Environments in the Clouds",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2609.33875": {
+   "title": "Counterfactual Rollout Replay: Forkable Environments as Free Process Rewards for Software Engineering Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2610.04432": {
+   "title": "Video2World: Benchmarking Coding Agents for Interactive World Modeling from Embodied Videos",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2609.19134": {
+   "title": "ScienceIDE: Turning World's Scientific Codebase into Agent Learnable Environments",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2606.07682": {
+   "title": "SWE-Marathon: Can Agents Autonomously Complete Ultra-Long-Horizon Software Work?",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2610.24914": {
+   "title": "Arctic-SWE: Revisiting the Long Horizon Agent Training by Modeling-System Co-Design",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2306.14898": {
+   "title": "InterCode: Standardizing and Benchmarking Interactive Coding with Execution Feedback",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2310.06770": {
+   "title": "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2306.03091": {
+   "title": "RepoBench: Benchmarking Repository-Level Code Auto-Completion Systems",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2211.11501": {
+   "title": "DS-1000: A Natural and Reliable Benchmark for Data Science Code Generation",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2402.01030": {
+   "title": "Executable Code Actions Elicit Better LLM Agents",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2301.04104": {
+   "title": "Mastering Diverse Domains through World Models",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2209.00588": {
+   "title": "Transformers are Sample-Efficient World Models",
+   "family": "terminal-coding",
+   "section": "5. Terminal / Coding Environment Synthesis"
+  },
+  "2509.17158": {
+   "title": "ARE: Scaling Up Agent Environments and Evaluations",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2508.07745": {
+   "title": "Chimera: Harnessing Multi-Agent LLMs for Automatic Insider Threat Simulation",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2602.14721": {
+   "title": "WebWorld: A Large-Scale World Model for Web Agent Training",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2601.07553": {
+   "title": "VirtualEnv: A Platform for Embodied AI Research",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2606.12780": {
+   "title": "ProPlay: Procedural World Models for Self-Evolving LLM Agents",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2608.06197": {
+   "title": "EnvACE: Internalizing Environment Dynamics via World Rehearsal for Agentic Reinforcement Learning",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2601.22149": {
+   "title": "DynaWeb: Model-Based Reinforcement Learning of Web Agents",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2411.06559": {
+   "title": "Is Your LLM Secretly a World Model of the Internet? Model-Based Planning for Web Agents",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2602.05842": {
+   "title": "Reinforcement World Model Learning for LLM-based Agents",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2610.06100": {
+   "title": "From Traces to Agentic Worlds: Agentic Language World Models for Interactive Environment Simulation",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2610.40927": {
+   "title": "Agentic World Modeling for Agent Test-time Scaling without Environment Replica",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2610.26828": {
+   "title": "Agent World Model in the Wild: Computer-Use Agent Environment Synthesis",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2402.15391": {
+   "title": "Genie: Generative Interactive Environments",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2310.06114": {
+   "title": "Learning Interactive Real-World Simulators",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2606.16415": {
+   "title": "Posterior Twins: Distributional Behavioral Simulation for Enterprise Decisions",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2606.27650": {
+   "title": "GenWorld: Empirically Grounded Urban Simulation Infrastructure for Scalable LLM-Agent Studies",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2609.03787": {
+   "title": "DNative-Twin: Decision Graphs and Digital Twins for Reconstructable Agentic Decisions",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2604.06610": {
+   "title": "TwinLoop: Simulation-in-the-Loop Digital Twins for Online Multi-Agent Reinforcement Learning",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2403.12014": {
+   "title": "EnvGen: Generating and Adapting Environments via LLMs for Training Embodied Agents",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2602.11241": {
+   "title": "Active Zero: Self-Evolving Vision-Language Models through Active Environment Exploration",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2603.18811": {
+   "title": "V-Dreamer: Automating Robotic Simulation and Trajectory Synthesis via Video Generation Priors",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2602.06366": {
+   "title": "Towards Adaptive Environment Generation for Training Embodied Agents",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2606.30111": {
+   "title": "Automating the Design of Embodied Agent Architectures",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2605.14700": {
+   "title": "SR-Platform: An Agentic Pipeline for Natural Language-Driven Robot Simulation Environment Synthesis",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2609.09578": {
+   "title": "CityPlanner: A Sandbox Agent for Executable Urban Planning",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2505.07832": {
+   "title": "A General Approach of Automated Environment Design for Learning the Optimal Power Flow",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2402.08191": {
+   "title": "THE COLOSSEUM: A Benchmark for Evaluating Generalization for Robotic Manipulation",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2605.10332": {
+   "title": "EmbodiSkill: Skill-Aware Reflection for Self-Evolving Embodied Agents",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2508.00400": {
+   "title": "Sari Sandbox: A Virtual Retail Store Environment for Embodied AI Agents",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2610.22708": {
+   "title": "GlobeBench: Evaluating Text-Based World Model Capabilities for Scalable Environment Simulations",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2608.20401": {
+   "title": "World models of environment, agent and joint agent-environment systems",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2606.31422": {
+   "title": "Ask the World Before Acting: Environment Probing for Calibrating Agent World Models",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2506.01622": {
+   "title": "General agents contain world models",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2409.06445": {
+   "title": "Learning Generative Interactive Environments By Trained Agent Exploration",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2605.30880": {
+   "title": "PatchWorld: Gradient-Free Optimization of Executable World Models for Agent Environments",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2512.18832": {
+   "title": "From Word to World: Can Large Language Models be Implicit Text-based World Models?",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2605.12178": {
+   "title": "Do Enterprise Systems Need Learned World Models? The Importance of Context to Infer Dynamics",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2606.21315": {
+   "title": "Social World Model for Lifelong Social Intelligence",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2608.06020": {
+   "title": "From Economic Agents to Agentic Economies: A Systems Blueprint for Economic World Models",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2607.06216": {
+   "title": "MoWorld: A Flash World Model",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2605.03941": {
+   "title": "iWorld-Bench: A Benchmark for Interactive World Models with a Unified Action Generation Framework",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2605.00080": {
+   "title": "World Model for Robot Learning: A Comprehensive Survey",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2601.07823": {
+   "title": "Robotic Video World Models: A Survey of Applications, Research Challenges, Future Directions",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2609.16705": {
+   "title": "The Robot Data Factory",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2606.02577": {
+   "title": "RoboDream: Compositional World Models for Scalable Robot Data Synthesis",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2610.02708": {
+   "title": "RoboChemGym: A Protocol-Driven Generative Simulation Framework for Long-Horizon Chemical Manipulation",
+   "family": "simulation",
+   "section": "6. Model-Based Simulation & Language World Models"
+  },
+  "2510.00507": {
+   "title": "Graph2Eval: Automatic Multimodal Task Generation for Agents via Knowledge Graphs",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2608.02163": {
+   "title": "From Simple QA to Deep Research: A Verifiable Benchmark Constructed through Iterative Task Evolution",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2607.01647": {
+   "title": "AgenticDataBench: A Comprehensive Benchmark for Data Agents",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2601.08988": {
+   "title": "ART: Action-based Reasoning Task Benchmarking for Medical AI Agents",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2602.10356": {
+   "title": "Autonomous Continual Learning for Environment Adaptation of Computer-Use Agents",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2608.04934": {
+   "title": "State2State: Environment-Derived Mid-Training for LLM Agents",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2607.29468": {
+   "title": "Self-Play Meets Skill Evolution: Self-Evolving Search Agents that Pose, Solve, and Remember",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2603.15432": {
+   "title": "Gym-V: A Unified Vision Environment System for Agentic Vision Research",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2508.08636": {
+   "title": "InternBootcamp: Boosting LLM Reasoning with Verifiable Task Scaling",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2506.11045": {
+   "title": "Procedural Environment Generation for Tool-Use Agents",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2506.19998": {
+   "title": "Doc2Agent: Scalable Generation of Tool-Using Agents from API Documentation",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2505.24760": {
+   "title": "REASONING GYM: Reasoning Environments for Reinforcement Learning with Verifiable Rewards",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2611.24697": {
+   "title": "Depth Before Breadth: Reverse-to-Forward Curriculum with Advantage Decomposition for LLM Agent",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2512.08545": {
+   "title": "Curriculum Guided Massive Multi Agent System Solving For Robust Long Horizon Tasks",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2608.01822": {
+   "title": "SearchMaster: Grounded and Regulated Self-Play for Search Agents",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2602.02185": {
+   "title": "Vision-DeepResearch Benchmark: Rethinking Visual and Textual Search for Multimodal Large Language Models",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2402.15491": {
+   "title": "API-BLEND: A Comprehensive Corpora for Training and Benchmarking API LLMs",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2504.15546": {
+   "title": "A Framework for Testing and Adapting REST APIs as LLM Tools",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2601.16964": {
+   "title": "AgentDrive: An Open Benchmark Dataset for Agentic AI Reasoning with LLM-Generated Scenarios in Autonomous Systems",
+   "family": "",
+   "section": "17. Key Points from Representative Works"
+  },
+  "2603.05553": {
+   "title": "EigenData: A Self-Evolving Multi-Agent Platform for Function-Calling Data Synthesis, Auditing, and Repair",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2509.25047": {
+   "title": "Scaling Synthetic Task Generation for Agents via Exploration",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2603.11076": {
+   "title": "DIVE: Scaling Diversity in Agentic Task Synthesis for Generalizable Tool Use",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2510.13913": {
+   "title": "Synthesizing Agentic Data for Web Agents with Progressive Difficulty Enhancement Mechanisms",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2607.27929": {
+   "title": "Meta-Task: Turning Terminal Task Synthesis into a Terminal Task for Scalable Agent Training",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2607.14186": {
+   "title": "NexForge: Scaling Agent Capabilities through Requirement-Driven Task Synthesis for LLMs",
+   "family": "task-scenario",
+   "section": "7. Task / Scenario Synthesis"
+  },
+  "2508.14704": {
+   "title": "MCP-Universe: Benchmarking Large Language Models with Real-World Model Context Protocol Servers",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2602.00933": {
+   "title": "MCP-Atlas: A Large-Scale Benchmark for Tool-Use Competency with Real MCP Servers",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2508.20453": {
+   "title": "MCP-Bench: Benchmarking Tool-Using LLM Agents with Complex Real-World Tasks via MCP Servers",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2506.01056": {
+   "title": "MCP-Zero: Active Tool Discovery for Autonomous LLM Agents",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2607.14642": {
+   "title": "MCPEvol-Bench: Benchmarking LLM Agent Performance Across Dynamic Evolutions of MCP Servers",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2506.11266": {
+   "title": "Live API-Bench: 2500+ Live APIs for Testing Multi-Step Tool Calling",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2611.05036": {
+   "title": "ToolSpace: Scaling Tool-Centric Environment Synthesis for Long-Horizon Agents",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2605.18548": {
+   "title": "STT-Arena: A More Realistic Environment for Tool-Using with Spatio-Temporal Dynamics",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2608.11878": {
+   "title": "ToolHazard: Scaling Adversarial Environments for Security Evaluation and Alignment of LLM-based Agents",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2609.36679": {
+   "title": "MLToolBench: Learning Tool-Augmented Agents for Machine Learning Development",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2602.20426": {
+   "title": "Learning to Rewrite Tool Descriptions for Reliable LLM-Agent Tool Use",
+   "family": "mcp-tools",
+   "section": "8. MCP Tool Environments & Ecosystem"
+  },
+  "2407.19056": {
+   "title": "OfficeBench: Benchmarking Language Agents across Multiple Applications for Office Automation",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2407.18901": {
+   "title": "AppWorld: A Controllable World of Apps and People for Benchmarking Interactive Coding Agents",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2412.14161": {
+   "title": "TheAgentCompany: Benchmarking LLM Agents on Consequential Real World Tasks",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2505.19897": {
+   "title": "ScienceBoard: Evaluating Multimodal Autonomous Agents in Realistic Scientific Workflows",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2505.19662": {
+   "title": "FieldWorkArena: Agentic AI Benchmark for Real Field Work Tasks",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2510.00795": {
+   "title": "Benchmarking Agentic Systems in Automated Scientific Information Extraction with ChemX",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2601.20882": {
+   "title": "DevOps-Gym: Benchmarking AI Agents in Software DevOps Cycle",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2602.21858": {
+   "title": "ProactiveMobile: A Comprehensive Benchmark for Boosting Proactive Intelligence on Mobile Devices",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2603.08013": {
+   "title": "PIRA-Bench: A Transition from Reactive GUI Agents to GUI-based Proactive Intent Recommendation Agents",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2602.04482": {
+   "title": "ProAgentBench: Evaluating LLM Agents for Proactive Assistance with Real-World Data",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2604.00842": {
+   "title": "Proactive Agent Research Environment: Simulating Active Users to Evaluate Proactive Assistants",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2512.06688": {
+   "title": "PersonaMem-v2: Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2603.01357": {
+   "title": "ASTRA-bench: Evaluating Tool-Use Agent Reasoning and Action Planning with Personal User Context",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2602.01313": {
+   "title": "Evaluating Long-Horizon Memory for Multi-Party Collaborative Dialogues",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2506.02548": {
+   "title": "CyberGym: Evaluating AI Agents' Real-World Cybersecurity Capabilities at Scale",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2506.14866": {
+   "title": "OS-Harm: A Benchmark for Measuring Safety of Computer Use Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2504.14064": {
+   "title": "DoomArena: A framework for Testing AI Agents Against Evolving Security Threats",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2508.15526": {
+   "title": "SafetyFlow: An Agent-Flow System for Automated LLM Safety Benchmarking",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2412.11722": {
+   "title": "GHIssuemarket: A Sandbox Environment for SWE-Agents Economic Experimentation",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2311.09835": {
+   "title": "ML-Bench: Evaluating Large Language Models and Agents for Machine Learning Tasks on Repository-Level Code",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2304.01244": {
+   "title": "Unified Emulation-Simulation Training Environment for Autonomous Cyber Agents",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2602.12984": {
+   "title": "SciAgentGym: Benchmarking Multi-Step Scientific Tool-use in LLM Agents",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2604.27977": {
+   "title": "D3-Gym: Constructing Real-World Verifiable Environments for Data-Driven Discovery",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2605.22642": {
+   "title": "Spreadsheet-RL: Advancing Large Language Model Agents on Realistic Spreadsheet Tasks via Reinforcement Learning",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2610.22412": {
+   "title": "EnterpriseSynth: Zero-Execution SFT and Evaluation Data from OpenAPI Specs",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2601.07107": {
+   "title": "MEDVISTAGYM: A Scalable Training Environment for Thinking with Medical Images via Tool-Integrated Reinforcement Learning",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2506.04405": {
+   "title": "MedAgentGym: A Scalable Agentic Training Environment for Code-Centric Reasoning in Biomedical Data Science",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2605.02943": {
+   "title": "Healthcare AI GYM for Medical Agents",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2603.29656": {
+   "title": "6GAgentGym: Tool Use, Data Synthesis, and Agentic Learning for Network Management",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2610.33503": {
+   "title": "Novel or Not? PatEx-Gym: Agentic Prior-Art Search for Novelty Assessment in Patent Examination",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2605.01250": {
+   "title": "EO-Gym: A Multimodal, Interactive Environment for Earth Observation Agents",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2308.03688": {
+   "title": "AgentBench: Evaluating LLMs as Agents",
+   "family": "enterprise-professional",
+   "section": "9. Enterprise / Office / Scientific & Professional Environments"
+  },
+  "2607.05773": {
+   "title": "Beyond Static Evaluation: Building Simulation Environments for Scalable Agentic Reinforcement Learning",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2608.16798": {
+   "title": "ClawGym II: Exploring Black-Box RL on Agent Harness",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2604.10866": {
+   "title": "OccuBench: Evaluating AI Agents on Real-World Professional Tasks via Language Environment Simulation",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2607.05174": {
+   "title": "AgentGym2: Benchmarking Large Language Model Agents in De-Idealized Real-World Environments",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2606.28480": {
+   "title": "TUA-Bench: A Benchmark for General-Purpose Terminal-Use Agents",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2601.11044": {
+   "title": "AgencyBench: Benchmarking the Frontiers of Autonomous Agents in 1M-Token Real-World Contexts",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2601.09032": {
+   "title": "The Hierarchy of Agentic Capabilities: Evaluating Frontier Models on Realistic RL Environments",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2603.23749": {
+   "title": "Efficient Benchmarking of AI Agents",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2511.11672": {
+   "title": "OSGym: Scalable OS Infra for Computer Use Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2608.19880": {
+   "title": "EnvHarness: Awakening Static Worlds for Agent Learning",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2606.12191": {
+   "title": "Agentic Environment Engineering for Large Language Models: A Survey of Environment Modeling, Synthesis, Evaluation, and Application",
+   "family": "",
+   "section": "17. Key Points from Representative Works"
+  },
+  "2608.26623": {
+   "title": "AgentJudgeBench: A Multi-Difficulty Benchmark for Evaluating LLM Judges on Agentic Tool-Calling",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2609.11115": {
+   "title": "Benchmark Radar: A Living Database and Search Engine for AI Benchmarks and Evaluation",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2603.18815": {
+   "title": "ProRL Agent: Rollout-as-a-Service for RL Training of Multi-Turn LLM Agents",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2610.03286": {
+   "title": "VenusRL: A Fully Disaggregated Agentic RL System with Priority Scheduling and Scalable Interaction",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2607.01415": {
+   "title": "The Rollout Infrastructure Tax in Coding-Agent Reinforcement Learning",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2605.24218": {
+   "title": "QUEST: Training Frontier Deep Research Agents with Fully Synthetic Tasks",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2601.18202": {
+   "title": "SAGE: Steerable Agentic Data Generation for Deep Search with Execution Feedback",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2605.15040": {
+   "title": "Orchard: An Open-Source Agentic Modeling Framework",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2503.22673": {
+   "title": "ActionStudio: A Lightweight Framework for Data and Training of Large Action Models",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2510.01051": {
+   "title": "GEM: A Gym for Agentic LLMs",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2610.36075": {
+   "title": "Jaxnasium: Embracing PyTrees For Any-Agent, Cross-Suite Reinforcement Learning",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2509.02547": {
+   "title": "The Landscape of Agentic Reinforcement Learning for LLMs: A Survey",
+   "family": "platform-infra",
+   "section": "10. Platforms / Infrastructure / Methodology"
+  },
+  "2609.30766": {
+   "title": "WeEnv: The Environment for Agentic Reinforcement Learning at WeChat",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2609.22978": {
+   "title": "DeepSeek Elastic Compute (DSec): A Sandbox Infrastructure for Effective Agentic Training at Scale",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2610.39711": {
+   "title": "Sandman: A Sandbox Service for Production Agentic Reinforcement Learning",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2611.22171": {
+   "title": "Readie: Low-Latency Code Sandboxes for AI Agents",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2610.02456": {
+   "title": "SideKernel: A Usable microVM Sandbox for AI Coding Agents on macOS",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2512.12806": {
+   "title": "Fault-Tolerant Sandboxing for AI Coding Agents: A Transactional Approach to Safe Autonomous Execution",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2609.32750": {
+   "title": "CUA-Sandbox: Efficient Environments for Computer-Use Agent Reinforcement Learning",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2605.24220": {
+   "title": "Polar: Agentic RL on Any Harness at Scale",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2610.37609": {
+   "title": "EnvSched: Environment-Aware Scheduling for Rollout-Efficient Agent Reinforcement Learning",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2610.05935": {
+   "title": "ThunderSync: Lossless Acceleration of Agentic Reinforcement Learning",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2605.24517": {
+   "title": "ECHO: Terminal Agents Learn World Models for Free",
+   "family": "sandbox",
+   "section": "11. Sandbox Infra"
+  },
+  "2604.06126": {
+   "title": "Gym-Anything: Turn any Software into an Agent Environment",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2605.25624": {
+   "title": "CUA-Gym: Scaling Verifiable Training Environments and Tasks for Computer-Use Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2508.09123": {
+   "title": "OpenCUA: Open Foundations for Computer-Use Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2404.07972": {
+   "title": "OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real Computer Environments",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2606.29537": {
+   "title": "OSWorld 2.0: Benchmarking Computer Use Agents on Long-Horizon Real-World Tasks",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2506.16042": {
+   "title": "OSWorld-Human: Benchmarking the Efficiency of Computer-Use Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2307.13854": {
+   "title": "WebArena: A Realistic Web Environment for Building Autonomous Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2510.18596": {
+   "title": "CUARewardBench: A Benchmark for Evaluating Reward Models on Computer-using Agent",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2506.07672": {
+   "title": "MCPWorld: A Unified Benchmarking Testbed for API, GUI, and Hybrid Computer Use Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2511.17131": {
+   "title": "UI-CUBE: Enterprise-Grade Computer Use Agent Benchmarking Beyond Task Accuracy to Operational Reliability",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2410.08164": {
+   "title": "Agent S: An Open Agentic Framework that Uses Computers Like a Human",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2510.02250": {
+   "title": "Scaling Agents for Computer Use",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2603.07978": {
+   "title": "OSExpert: Computer-Use Agents Learning Professional Skills via Exploration",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2511.07332": {
+   "title": "Grounding Computer Use Agents on Human Demonstrations",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2610.26071": {
+   "title": "CUA-Lite: An Open Platform for Computer Use Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2611.03126": {
+   "title": "CUA-Master: Scaling Computer-use Agents through Open-World Recursive Improvements",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2605.12501": {
+   "title": "Covering Human Action Space for Computer Use: Data Synthesis and Benchmark",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2601.15876": {
+   "title": "EvoCUA: Evolving Computer Use Agents via Learning from Scalable Synthetic Experience",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2607.09773": {
+   "title": "EvoCUA-1.5: Online Reinforcement Learning for Multi-turn Computer-Use Agents",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2610.20584": {
+   "title": "Player-1: Learning to Play from Synthetic Experience",
+   "family": "computer-use",
+   "section": "12. CUA / Computer Use"
+  },
+  "2608.27260": {
+   "title": "What Makes Good Agentic Data? An ACE Lens on Data Generation for LLM Agents",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2610.33568": {
+   "title": "Trajectory2Gym: Decision-Grounded Compositional Interaction Synthesis for Tool-Use Agents",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2604.09813": {
+   "title": "Controllable and Verifiable Tool-Use Data Synthesis for Agentic Reinforcement Learning",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2610.16867": {
+   "title": "Davinci-Tool: Scaling Agentic Tool-Use Supervision with Verifiable Executable Environments",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2610.21167": {
+   "title": "GRADS: Graph-Regulated Agentic Data Synthesis with Controllable Difficulty",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2610.13166": {
+   "title": "Scaling Agentic Data for Long-Horizon Terminal Intelligence",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2609.06124": {
+   "title": "SAP: State-Guided Data Synthesis with Argument Provenance for Multi-Turn Tool Use",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2510.17928": {
+   "title": "EvoSyn: Generalizable Evolutionary Data Synthesis for Verifiable Learning",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2608.02287": {
+   "title": "SKT: Skill-Use Training at Scale via Verified Synthetic Data Generation",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2507.15061": {
+   "title": "WebShaper: Agentically Data Synthesizing via Information-Seeking Formalization",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2602.03219": {
+   "title": "Beyond Quantity: Trajectory Diversity Scaling for Code Agents",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2601.10355": {
+   "title": "Unlocking Implicit Experience: Synthesizing Tool-Use Trajectories from Text",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2601.20144": {
+   "title": "Trajectory2Task: Training Robust Tool-Calling Agents with Synthesized Yet Verifiable Data for Complex User Intents",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2611.16174": {
+   "title": "JudgeMix: Judge-Guided Mixed-Rollout Data Synthesis for LLM Agents",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2610.12593": {
+   "title": "Know What You Don't Know: Agentic Data Synthesis by Evolving Generation Space for Closed-Loop Learning",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2611.08219": {
+   "title": "Agent-R$^2$: Scaling Agents for Realistic Productivity Work via Real-Source Data Synthesis",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2606.19047": {
+   "title": "RODS: Reward-Driven Online Data Synthesis for Multi-Turn Tool-Use Agents",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2603.24709": {
+   "title": "Training LLMs for Multi-Step Tool Orchestration with Constrained Data Synthesis and Graduated Rewards",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2511.15718": {
+   "title": "ToolMind Technical Report: A Large-Scale, Reasoning-Enhanced Tool-Use Dataset",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2608.08557": {
+   "title": "OpenVisTool: An Open Recipe for Synthesizing Instructive Visual Tool-Use Trajectories",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2508.12685": {
+   "title": "ToolACE-MT: Non-Autoregressive Generation for Agentic Multi-Turn Interaction",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2609.35025": {
+   "title": "AutoDataBench: Can Agents Write the Data That Feeds the Self-Improvement Loop?",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2212.10560": {
+   "title": "Self-Instruct: Aligning Language Models with Self-Generated Instructions",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2304.12244": {
+   "title": "WizardLM: Empowering large pre-trained language models to follow complex instructions",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2407.03502": {
+   "title": "AgentInstruct: Toward Generative Teaching with Agentic Flows",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2307.16789": {
+   "title": "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2406.18518": {
+   "title": "APIGen: Automated Pipeline for Generating Verifiable and Diverse Function-Calling Datasets",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2409.00920": {
+   "title": "ToolACE: Winning the Points of LLM Function Calling",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2312.02120": {
+   "title": "Magicoder: Empowering Code Generation with OSS-Instruct",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2402.15506": {
+   "title": "AgentOhana: Design Unified Data and Training Pipeline for Effective Agent Learning",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2306.05301": {
+   "title": "ToolAlpaca: Generalized Tool Learning for Language Models with 3000 Simulated Cases",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2506.10055": {
+   "title": "TaskCraft: Automated Generation of Agentic Tasks",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2206.08853": {
+   "title": "MineDojo: Building Open-Ended Embodied Agents with Internet-Scale Knowledge",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2305.16291": {
+   "title": "Voyager: An Open-Ended Embodied Agent with Large Language Models",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2311.05997": {
+   "title": "JARVIS-1: Open-World Multi-task Agents with Memory-Augmented Multimodal Language Models",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2305.17144": {
+   "title": "Ghost in the Minecraft: Generally Capable Agents for Open-World Environments via Large Language Models with Text-based Knowledge and Memory",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2203.07540": {
+   "title": "ScienceWorld: Is your Agent Smarter than a 5th Grader?",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2206.06994": {
+   "title": "ProcTHOR: Large-Scale Embodied AI Using Procedural Generation",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2310.13724": {
+   "title": "Habitat 3.0: A Co-Habitat for Humans, Avatars and Robots",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2204.01691": {
+   "title": "Do As I Can, Not As I Say: Grounding Language in Robotic Affordances",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2403.09227": {
+   "title": "BEHAVIOR-1K: A Human-Centered, Embodied AI Benchmark with 1,000 Everyday Activities and Realistic Simulation",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2304.03442": {
+   "title": "Generative Agents: Interactive Simulacra of Human Behavior",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2303.17760": {
+   "title": "CAMEL: Communicative Agents for \"Mind\" Exploration of Large Language Model Society",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2308.10848": {
+   "title": "AgentVerse: Facilitating Multi-Agent Collaboration and Exploring Emergent Behaviors",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2308.00352": {
+   "title": "MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2212.09689": {
+   "title": "Unnatural Instructions: Tuning Language Models with (Almost) No Human Labor",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2302.04761": {
+   "title": "Toolformer: Language Models Can Teach Themselves to Use Tools",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2112.09332": {
+   "title": "WebGPT: Browser-assisted question-answering with human feedback",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2306.02707": {
+   "title": "Orca: Progressive Learning from Complex Explanation Traces of GPT-4",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2310.12823": {
+   "title": "AgentTuning: Enabling Generalized Agent Abilities for LLMs",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2309.10691": {
+   "title": "MINT: Evaluating LLMs in Multi-turn Interaction with Tools and Language Feedback",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2304.08244": {
+   "title": "API-Bank: A Comprehensive Benchmark for Tool-Augmented LLMs",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2311.18760": {
+   "title": "TaskBench: Benchmarking Large Language Models for Task Automation",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2305.15334": {
+   "title": "Gorilla: Large Language Model Connected with Massive APIs",
+   "family": "data-synthesis",
+   "section": "13. Data Synthesis (Trajectories / Tool-Use / Reasoning Data)"
+  },
+  "2601.21449": {
+   "title": "Nimbus: A Unified Embodied Synthetic Data Generation Framework",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2609.36171": {
+   "title": "SkillWeaver: Agentic Exploration over Neural Interaction Skills for Scalable Robot Data Generation",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2610.07969": {
+   "title": "EmbodiedSmith: Scaling Embodied Data through Recursive Self-Improvement Flywheel in Simulation",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2604.09036": {
+   "title": "V-CAGE: Vision-Closed-Loop Agentic Generation Engine for Robotic Manipulation",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2610.32978": {
+   "title": "SceneBloom: Agentic Indoor Environment Generation with Realistic and Diverse Layouts for Embodied Learning",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2506.04217": {
+   "title": "OWMM-Agent: Open World Mobile Manipulation With Multi-modal Agentic Data Synthesis",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2407.10943": {
+   "title": "GRUtopia: Dream General Robots in a City at Scale",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2411.00081": {
+   "title": "PARTNR: A Benchmark for Planning and Reasoning in Embodied Multi-agent Tasks",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2610.18355": {
+   "title": "ABot-ER: Unified Embodied Reasoning through Agentic Data-Model Co-Evolution",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2512.01078": {
+   "title": "SimWorld: An Open-ended Realistic Simulator for Autonomous Agents in Physical and Social Worlds",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2605.20917": {
+   "title": "SubTGraph: Large-Scale Subterranean Environment Synthesis with Controllable Topological Variability for Robotic Autonomy Validation",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2602.07243": {
+   "title": "Realistic Synthetic Household Data Generation at Scale",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2209.07753": {
+   "title": "Code as Policies: Language Model Programs for Embodied Control",
+   "family": "embodied",
+   "section": "14. Embodied / Robotic Environment Synthesis"
+  },
+  "2605.26203": {
+   "title": "AgentSociety: Incentivizing Agentic Social Intelligence",
+   "family": "multi-agent",
+   "section": "15. Multi-Agent / Social Simulation Environments"
+  },
+  "2411.03865": {
+   "title": "AdaSociety: An Adaptive Environment with Social Structures for Multi-Agent Decision-Making",
+   "family": "multi-agent",
+   "section": "15. Multi-Agent / Social Simulation Environments"
+  },
+  "2611.01728": {
+   "title": "MAC-Bench: Benchmarking Multi-Agent Collaboration via Interconnected Tasks",
+   "family": "multi-agent",
+   "section": "15. Multi-Agent / Social Simulation Environments"
+  },
+  "2510.01353": {
+   "title": "MEMTRACK: Evaluating Long-Term Memory and State Tracking in Multi-Platform Dynamic Agent Environments",
+   "family": "multi-agent",
+   "section": "15. Multi-Agent / Social Simulation Environments"
+  },
+  "2605.02063": {
+   "title": "Coopetition-Gym v1: A Formally Grounded Platform for Mixed-Motive Multi-Agent Reinforcement Learning under Strategic Coopetition",
+   "family": "multi-agent",
+   "section": "15. Multi-Agent / Social Simulation Environments"
+  },
+  "2303.03376": {
+   "title": "MAESTRO: Open-Ended Environment Design for Multi-Agent Reinforcement Learning",
+   "family": "multi-agent",
+   "section": "15. Multi-Agent / Social Simulation Environments"
+  },
+  "2205.06946": {
+   "title": "Unified Distributed Environment",
+   "family": "multi-agent",
+   "section": "15. Multi-Agent / Social Simulation Environments"
+  },
+  "2307.07924": {
+   "title": "ChatDev: Communicative Agents for Software Development",
+   "family": "multi-agent",
+   "section": "15. Multi-Agent / Social Simulation Environments"
+  },
+  "2308.08155": {
+   "title": "AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation",
+   "family": "multi-agent",
+   "section": "15. Multi-Agent / Social Simulation Environments"
+  },
+  "2605.06869": {
+   "title": "Agentick: A Unified Benchmark for General Sequential Decision-Making Agents",
+   "family": "",
+   "section": "17. Key Points from Representative Works"
+  }
+ }
+}

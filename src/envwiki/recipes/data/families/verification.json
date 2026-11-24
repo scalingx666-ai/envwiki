@@ -1,0 +1,235 @@
+{
+  "family": "verification",
+  "recipes": [
+    {
+      "id": "irt-calibrated-difficulty-banding",
+      "name": "Difficulty calibration by attempt statistics and IRT",
+      "family": "verification",
+      "summary": "Treat difficulty as a measured property of a task relative to a declared solver population, not as an intrinsic label. Build a pool of candidate tasks from the source, collect attempt outcomes from several rollouts of the target model population, and fit an item response theory model, or a Glicko-2 rating, to convert the raw attempt data into a numerical difficulty score per task. The pool is then filtered into a declared band: items every attempt solves carry no signal, and items no attempt solves usually indicate a broken environment or an unsatisfiable instruction rather than a hard task. The band is re-estimated as the population improves, so the task set keeps its discriminating power instead of saturating. The fitted score, the population and the attempt count travel with the task as metadata.",
+      "when_to_use": [
+        "many candidate tasks exist and a subset that actually measures something must be selected",
+        "the source yields tasks of widely varying length, grounding or dependency depth",
+        "the task set must stay discriminative as the agent improves"
+      ],
+      "not_when_to_use": [
+        "a single task is being built and no attempt data can be collected",
+        "the solver population is unknown or changes so fast that any fit goes stale immediately"
+      ],
+      "inputs": [
+        "a pool of candidate tasks derived from the source",
+        "the solver population and the rollout budget used for calibration",
+        "a fitting procedure for an item response theory or rating model"
+      ],
+      "steps": [
+        {
+          "title": "Declare the population and the metric",
+          "detail": "Fix which model family and which rollout configuration the difficulty number describes. A difficulty score without a declared population is meaningless, and a score for one model is not a score for another."
+        },
+        {
+          "title": "Build the candidate pool",
+          "detail": "Generate many task instances from the source and record, per instance, the structural properties expected to drive difficulty, such as number of dependencies, number of distinct lookups and depth of the chain."
+        },
+        {
+          "title": "Collect attempt data",
+          "detail": "Run each candidate a fixed number of times against the solver population and record success, failure, step count and failure reason. Repetition is what separates a flaky task from a hard one."
+        },
+        {
+          "title": "Fit a difficulty model",
+          "detail": "Fit an item response theory model, or Glicko-2, to the attempt data to obtain per-item difficulty and discrimination. Discrimination matters as much as difficulty: an item everyone passes and an item everyone fails are equally uninformative for a model of different ability."
+        },
+        {
+          "title": "Filter to the target band",
+          "detail": "Keep items whose estimated success probability for the population falls inside the declared band; drop the floor items solved by every attempt and the ceiling items solved by none. A ceiling item is inspected first for a broken environment or an underspecified instruction, and repaired if that is the cause."
+        },
+        {
+          "title": "Check that the ranking reproduces",
+          "detail": "Split the attempt data into two independent halves, fit both, and require the item ordering to agree. A ranking that flips between halves is sampling noise rather than difficulty."
+        },
+        {
+          "title": "Re-calibrate on a schedule",
+          "detail": "As the agent improves, re-collect attempts on the retained items and re-fit, so the band follows the frontier instead of decaying into saturation. Store the score, the population and the timestamp with the task."
+        }
+      ],
+      "verifier": [
+        "every retained item carries a numerical difficulty score together with the population, attempt count and fit timestamp",
+        "items solved by every attempt and items solved by no attempt are absent from the retained set",
+        "scores fitted on two disjoint halves of the attempt data produce item rankings that agree above a declared rank-correlation threshold",
+        "a re-fit on a fresh attempt batch yields a score within a declared tolerance of the stored one, and the same attempt data reproduces the same scores on a rerun"
+      ],
+      "pitfalls": [
+        "fitting difficulty from a single solver's rollouts measures that solver rather than the task",
+        "an item nobody solves is usually a broken environment or an ambiguous instruction; dropping it silently hides a build defect",
+        "difficulty labels taken from human judgement or from a model's estimate carry no guarantee that they match solver behaviour",
+        "a fixed band goes stale as the agent improves, and the task set then measures memorisation"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2409.18433",
+          "title": "Easy2Hard-Bench: Standardized Difficulty Labels for Profiling LLM Performance and Generalization",
+          "note": "numerical difficulty scores assigned from abundant human and leaderboard performance data using IRT and Glicko-2, over a collection deliberately weighted toward challenging problems"
+        },
+        {
+          "arxiv_id": "2407.16711",
+          "title": "Benchmarks as Microscopes: A Call for Model Metrology",
+          "note": "difficulty and capability as measurable properties assessed dynamically, the metrology argument for measuring what predicts deployment behaviour instead of a static score"
+        }
+      ]
+    },
+    {
+      "id": "state-diff-goal-state-verifier",
+      "name": "Goal-state diff verifier with sub-goal credit",
+      "family": "verification",
+      "summary": "Define success as a predicate over the environment's final state rather than over the agent's output. The environment is a deterministic, resettable store (database rows, files, orders, settings); the task is annotated with a goal state, and the checker diffs the store after the episode against that goal state, restricted to the fields the task is allowed to touch. Multi-turn requirements are expressed as state changes as well: information only the user holds is kept by a simulated user operating under a domain policy, and every fact the user discloses is written into the store, so the check stays a state comparison rather than a judgement about a conversation. The goal state is decomposed into independently evaluated sub-goals, so partial credit is measurable and two agents with the same final success rate can be told apart by how far they got.",
+      "when_to_use": [
+        "the source exposes a stateful surface the task changes: records, files, orders, settings",
+        "the task has multi-step requirements whose partial completion should be distinguishable",
+        "you want a reward a training loop can compute without a judge model in the loop"
+      ],
+      "not_when_to_use": [
+        "the success condition lives in free text, prose or an unrecorded artifact",
+        "the environment is not resettable, so the same goal state cannot be reached twice under identical conditions"
+      ],
+      "inputs": [
+        "a deterministic, resettable state store the environment writes to",
+        "the domain policy or rule sheet that constrains what the agent may do",
+        "a reference solution path used to validate the annotated goal state"
+      ],
+      "steps": [
+        {
+          "title": "Choose the state surface and freeze it",
+          "detail": "Identify the concrete records or files the task will create, modify or delete, and record a digest of the pristine state. The check can only be exact if the store is deterministic and restorable."
+        },
+        {
+          "title": "Write the task as instruction plus policy",
+          "detail": "State the goal in the agent's own terms and put the domain rules (permitted operations, required steps, forbidden actions) in a separate policy block the agent must consult, so rule-following is part of what the task measures."
+        },
+        {
+          "title": "Annotate the goal state, not the trajectory",
+          "detail": "Write the expected end state as fields and values, and list the fields that must remain untouched. The checker compares only those fields; comparing the whole store couples the reward to unrelated drift."
+        },
+        {
+          "title": "Split the goal state into independent sub-goals",
+          "detail": "Break the goal into sub-goals that each map to one checkable field set, and record a partial credit value for each. Partial credit then separates an agent that completed two of three steps from one that completed none."
+        },
+        {
+          "title": "Record multi-turn facts into the state",
+          "detail": "If the task needs information only the user holds, let a simulated user answer under the policy and persist every disclosed fact into the store, so the final diff can confirm the fact was obtained and used rather than merely that a conversation happened."
+        },
+        {
+          "title": "Implement the diff as code",
+          "detail": "Write the checker as a function that reads the store after the episode and returns per-sub-goal booleans plus the aggregate, so the harness can call it without a model in the loop."
+        },
+        {
+          "title": "Validate the annotation against an executed reference",
+          "detail": "Run the reference solution in a clean copy, require the diff to pass, then require the check to fail on the pristine store. An annotation that matches only the annotator's expectation, and not an executed state, is wrong."
+        }
+      ],
+      "verifier": [
+        "the checker returns false on the pristine state and true after the reference solution is executed in a reset copy of the environment",
+        "the checker reads only the annotated field set, so a field outside the task scope cannot flip the result",
+        "each sub-goal predicate evaluates independently and the aggregate equals the fraction of satisfied sub-goals",
+        "a run that reaches the goal state by a different route than the reference still passes when the checker is re-run"
+      ],
+      "pitfalls": [
+        "checking the agent's final message or a screenshot instead of the state reintroduces the judge noise the state diff was meant to remove",
+        "a goal state copied from a single successful run encodes that run's incidental side effects, which then fail for other valid solutions",
+        "partial credit computed from overlapping sub-goals double-counts the same state change",
+        "an environment that cannot be restored to the same state makes the goal state unverifiable on the second attempt"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2406.12045",
+          "title": "$τ$-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains",
+          "note": "evaluation by comparing the final database state with the annotated goal state, with domain policies and a language-model user that holds task information, plus pass^k as a reliability measure"
+        },
+        {
+          "arxiv_id": "2401.13178",
+          "title": "AgentBoard: An Analytical Evaluation Board of Multi-turn LLM Agents",
+          "note": "progress-rate metric over sub-goals and an easy/hard split by sub-goal, so partial completion is scored instead of collapsed into a single success bit"
+        }
+      ]
+    },
+    {
+      "id": "verifier-ensemble-negative-control-screen",
+      "name": "Verifier ensemble screening with negative controls",
+      "family": "verification",
+      "summary": "Before a task enters a benchmark, its checker passes three screens. Decomposition: the success condition is split into independent aspects, each with its own check, so a checker that approves everything is exposed rather than hidden behind an aggregate. Negative control: deliberately corrupted variants of the reference solution, such as a skipped step, a wrong entity, a reversed order or an untouched field, are run against the checker, which must reject every one of them. Reliability: the reference solution is executed k times independently and must pass every time, since an intermittently failing check measures luck as much as competence. Contamination is screened with a canary: the task statement is reformulated with a watermark that survives paraphrase and radioactivity in a candidate solver's output is tested statistically, so a memorised task is not reported as a capability measurement.",
+      "when_to_use": [
+        "the checker is model-based, rubric-based or otherwise fallible",
+        "a reference solution exists and near-miss variants of it can be constructed",
+        "the task set must remain trustworthy as models improve"
+      ],
+      "not_when_to_use": [
+        "the checker is a single exact predicate over a deterministic store and needs no ensemble",
+        "no reference solution or solver budget is available to run the screens"
+      ],
+      "inputs": [
+        "a reference solution that satisfies the task",
+        "a mechanism for corrupting the reference into plausible near-miss variants",
+        "one or more independent check functions, at least one of them model-based"
+      ],
+      "steps": [
+        {
+          "title": "Decompose success into aspects",
+          "detail": "Write the success condition as a small set of independent aspects, such as the required object exists, the forbidden object does not, the ordering constraint holds. Each aspect gets its own check, and the task passes only if all of them hold."
+        },
+        {
+          "title": "Build the positive control",
+          "detail": "Execute the reference solution in a clean environment and require every aspect to pass. If the reference fails, the annotation or the environment is wrong; fix that before touching the checker."
+        },
+        {
+          "title": "Build plausible negative controls",
+          "detail": "Create near-miss variants of the reference: skip a step, substitute a neighbouring entity, reverse the order, leave one field at its initial value. Each must still look plausible to a model-based checker, since only plausible near-misses are informative."
+        },
+        {
+          "title": "Run the discrimination screen",
+          "detail": "Require the checker to accept the positive control and reject every negative control. A negative control that passes identifies a specific missing assertion; strengthen the checker instead of deleting the control."
+        },
+        {
+          "title": "Screen for flakiness",
+          "detail": "Run the whole set k times independently, requiring the positive control to pass every time and the negative controls to fail every time. A control with mixed outcomes is a flaky check, and its noise is indistinguishable from agent failure."
+        },
+        {
+          "title": "Screen the prompt for contamination",
+          "detail": "Reformulate the task statement so it carries a statistical watermark while its utility is preserved, and later test a candidate solver's completion for radioactivity. A task whose watermark shows up is memorised and must not be reported as a capability measurement."
+        },
+        {
+          "title": "Record the screen results",
+          "detail": "Store, per task, the aspect list, the negative controls used and the pass rates of positive and negative controls. When a later model improves, the same screens can be re-run to detect a checker that has stopped discriminating."
+        }
+      ],
+      "verifier": [
+        "the positive control passes every aspect check in each of k independent runs",
+        "each negative control is rejected by the check in each of k independent runs",
+        "per-aspect results are reported separately, so a checker that approves every aspect is visible in the record",
+        "the contamination statistic on the solver's output for the watermarked task is at or below the declared threshold"
+      ],
+      "pitfalls": [
+        "a checker written by the same model that wrote the task shares its blind spots; the negative controls are what expose them",
+        "negative controls that are obviously wrong teach nothing, since a trivial check already rejects them",
+        "reporting a single success rate hides that some checks are flaky and some task statements are ambiguous",
+        "watermarking the prompt alters its surface form, so the task's difficulty must be re-checked after reformulation"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2502.20379",
+          "title": "Multi-Agent Verification: Scaling Test-Time Compute with Multiple Verifiers",
+          "note": "aspect verifiers, off-the-shelf models prompted to check different aspects of an output, combined so that agreement across aspects rather than a single verdict drives the decision"
+        },
+        {
+          "arxiv_id": "2406.12045",
+          "title": "$τ$-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains",
+          "note": "pass^k over repeated independent trials as the measure of reliability, showing a strong agent can succeed often yet stay inconsistent across attempts"
+        },
+        {
+          "arxiv_id": "2502.17259",
+          "title": "Detecting Benchmark Contamination Through Watermarking",
+          "note": "reformulating benchmark items with a watermarked model without changing their utility, then detecting radioactivity statistically to show a model has been trained on the item"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,236 @@
+{
+  "family": "environment-synthesis",
+  "recipes": [
+    {
+      "id": "cloned-site-programmatic-verifier",
+      "name": "Cloned site environment with programmatic verifier",
+      "family": "environment-synthesis",
+      "summary": "Clone the source site or app into a locally served replica that the agent can explore and reset safely, expose the replica's internals through a programmatic interface, and let the agent author its own tasks against it. Rewards come from deterministic checks over the replica's state, so no LLM judge sits in the loop and no real service is put at risk. The build is specification-first and test-driven: one unified specification describes the pages and their behaviour, and the evaluators are generated together with the environment instead of being annotated afterwards. The result is a task surface where the agent can discover what to do and where the check is a state query.",
+      "when_to_use": [
+        "the source is a web app, dashboard or site with multi-page behaviour",
+        "the real site cannot be reset, rate-limited or safely explored",
+        "you want the agent to discover the task surface rather than follow a fixed script"
+      ],
+      "not_when_to_use": [
+        "the source is a CLI tool or a library with no served interface",
+        "the behaviour depends on live third-party APIs that cannot be replicated"
+      ],
+      "inputs": [
+        "a crawl or export of the source site: pages, links, scripts and API responses",
+        "a local serving stack for the replica",
+        "a programmatic interface into the replica's state for task authoring and checking"
+      ],
+      "steps": [
+        {
+          "title": "Capture the source's observable behaviour",
+          "detail": "Collect pages, links, forms and the API calls each page makes. A replica is only useful if it reproduces the transitions an agent can observe, not just the pixels."
+        },
+        {
+          "title": "Write one unified specification",
+          "detail": "Describe the entities, routes and states of the site in a single spec so the pages stay interconnected. Generating one page at a time produces isolated stubs that cannot support multi-step tasks."
+        },
+        {
+          "title": "Rebuild and serve the replica locally",
+          "detail": "Materialize the spec into a served application, pages plus a local backend, so every request is answered deterministically and the site can be reset to a known state between attempts."
+        },
+        {
+          "title": "Expose internals through a programmatic interface",
+          "detail": "Give the agent an SDK-style handle into the replica's state, so it can author tasks, read state and confirm outcomes without scraping the UI."
+        },
+        {
+          "title": "Generate tasks and evaluators together",
+          "detail": "Produce each task with its own evaluator in the same pass. An evaluator written afterwards drifts from what the replica actually does."
+        },
+        {
+          "title": "Express the reward as a state check",
+          "detail": "Define success as a predicate over the replica's state, such as a record created, a field set or a row deleted, so the reward is deterministic and needs neither an LLM judge nor DOM heuristics."
+        },
+        {
+          "title": "Test-drive the build",
+          "detail": "Write executable checks for the spec before accepting the replica. A replica whose pages load but whose forms do not persist state produces tasks that are unsolvable."
+        }
+      ],
+      "verifier": [
+        "the evaluator returns a boolean by querying the replica's state store",
+        "the replica resets to an identical initial state between attempts, by state digest equality",
+        "task-specific checks fail on the pristine replica and pass after the reference action sequence",
+        "every route referenced by a task exists in the served replica and returns the expected page"
+      ],
+      "pitfalls": [
+        "reproducing the look of a site without its state transitions yields tasks that cannot be checked",
+        "letting the agent propose tasks without a programmatic state interface pushes the reward back onto an LLM judge",
+        "a replica assembled page by page loses the cross-page flows that long-horizon tasks need"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2603.10505",
+          "title": "Safe and Scalable Web Agent Learning via Recreated Websites",
+          "note": "clones real websites into fully executable, verifiable synthetic environments; controlled internal access via a Python SDK lets agents self-generate tasks with deterministic programmatic rewards"
+        },
+        {
+          "arxiv_id": "2601.04126",
+          "title": "InfiniteWeb: Scalable Web Environment Synthesis for GUI Agent Training",
+          "note": "unified specification plus task-centric test-driven development, with a seed site plus reference design image for diversity and generated task evaluators"
+        }
+      ]
+    },
+    {
+      "id": "code-as-task-source-behavioral-spec",
+      "name": "Code as task source via behavioral specification",
+      "family": "environment-synthesis",
+      "summary": "Treat an existing codebase as the only task signal: an agent explores what the code actually implements, writes a behavioral specification of that behaviour, and constructs tests grounded in executing the original code. Candidates are filtered by execution checks and by repeated solution rollouts, so only tasks that are executable, non-trivial and not already solved by the obvious patch survive. Several complementary task shapes can be derived from one repository, such as reproduce a result, complete a subflow, finish a missing piece or repair a defect, which is how a single repo yields many environments without mining issues or commits.",
+      "when_to_use": [
+        "the source is a repository with implemented behaviour but few usable issues or commits",
+        "you need many tasks per repository and want to avoid rebuilding environments at old revisions",
+        "the task should be derived from real behaviour rather than from an invented prompt"
+      ],
+      "not_when_to_use": [
+        "the repository has no runnable code or no way to execute it",
+        "the source is prose or a paper with no implementation to mine"
+      ],
+      "inputs": [
+        "a runnable checkout of the source with its dependency environment",
+        "an executor that can run the original code and the candidate tests",
+        "an agent budget for exploring the code and replaying solution attempts"
+      ],
+      "steps": [
+        {
+          "title": "Make the repository executable first",
+          "detail": "Build a working environment for the repo, install dependencies and confirm a main entry point runs, before deriving any task. An unrunnable repo yields no ground truth for the behaviour."
+        },
+        {
+          "title": "Explore what the code implements",
+          "detail": "Read the modules, entry points and public functions and list the behaviours that are actually implemented, each with a concrete invocation that triggers it."
+        },
+        {
+          "title": "Write a behavioral specification per behaviour",
+          "detail": "State the observable contract in terms of inputs and outputs, so the task can be specified independently of the issue text and of the original implementation's internals."
+        },
+        {
+          "title": "Generate tests grounded in execution",
+          "detail": "Derive the test cases by running the original code, so expected outputs come from what the implementation really does rather than from what a model assumes it does."
+        },
+        {
+          "title": "Derive complementary task shapes",
+          "detail": "From the same behaviour generate different task types, such as reproduction, subflow completion, function completion and correction, each with its own verifier and difficulty profile."
+        },
+        {
+          "title": "Filter by execution checks",
+          "detail": "Run the candidate test on the original code and on the altered variant; keep only those that pass on the original and fail on the variant, and repair the ones that fail for setup reasons rather than behavioural ones."
+        },
+        {
+          "title": "Filter by repeated solution rollouts",
+          "detail": "Have a solver attempt each candidate several times and drop those that fall to a trivial patch or that no solver can complete, since neither case improves the pool."
+        },
+        {
+          "title": "Recycle the failures",
+          "detail": "When a candidate fails only because the environment is under-provisioned, fix the environment and retry the same candidate rather than discarding it."
+        }
+      ],
+      "verifier": [
+        "the candidate test passes on the original code and fails on the altered code",
+        "the environment runs the code's main entry point without error",
+        "the task's expected outputs were produced by executing the original implementation",
+        "a solver rollout of the reference solution reaches the passing state within the declared budget"
+      ],
+      "pitfalls": [
+        "specifications written from the issue text alone describe intent, not the implemented behaviour",
+        "tests that pass on the original code carry no signal for a repair task",
+        "discarding every candidate that fails to set up wastes the repairable majority of the pool"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2609.22068",
+          "title": "CodeMidas: Scaling Agentic Coding RL Environments from Code Itself",
+          "note": "source code as the only task-specific input: agents explore implemented functionality, formulate behavioral specifications, construct tests grounded in execution of the original code, and filter by execution checks and repeated solution rollouts"
+        },
+        {
+          "arxiv_id": "2610.32448",
+          "title": "POSEIDON: Scaling Training Environments for Scientific Agents from Code Repositories",
+          "note": "four complementary task types (Reproduction, Subflow, Completion, Correction) plus a recursive improvement loop that refines failed candidates and recovers discarded environments"
+        },
+        {
+          "arxiv_id": "2611.21152",
+          "title": "From Repositories to Training Environments: Scaling Long-Horizon Coding Agents with Environment Evolution Loop",
+          "note": "converts real repositories into verifiable environments and optimizes validity, structural coupling and implementation scope through proxy feedback rather than end-of-pipeline metrics"
+        }
+      ]
+    },
+    {
+      "id": "self-play-executable-env",
+      "name": "Self-play executable environment synthesis",
+      "family": "environment-synthesis",
+      "summary": "Let one model play two roles: an environment designer writes the environment as executable code, and a solver agent attempts it. Difficulty is steered by the solver's gap between a hinted and an unhinted attempt, so the environment lands just inside the edge of what the agent can almost do. Code-driven and database-backed state keeps transitions consistent and the reward computable instead of judged.",
+      "when_to_use": [
+        "the source is a tool or API set that can be reconstructed as code",
+        "you need many diverse environments, not one hand-built sandbox",
+        "the reward can be computed from state rather than judged by a model"
+      ],
+      "not_when_to_use": [
+        "the task needs the real system with real side effects",
+        "no executable runtime is available for the environment code"
+      ],
+      "inputs": [
+        "a corpus of tools, APIs or documents to ground the environment skeleton",
+        "an executable runtime for the generated environment code",
+        "a solver agent to play the environment during difficulty calibration"
+      ],
+      "steps": [
+        {
+          "title": "Mine a skeleton",
+          "detail": "Collect topics from the source, model the logic each environment needs (tool set, state variables, invariants), and score candidates for diversity so the pool does not collapse onto one shape."
+        },
+        {
+          "title": "Write the environment as code",
+          "detail": "Produce a complete executable environment with a reset()/step() style interface, explicit state transitions, a reward function and its verification code, so one interface spans both single-step reasoning and multi-step tool use."
+        },
+        {
+          "title": "Back the state with a real store",
+          "detail": "Put the state in a database or another deterministic store instead of letting a language model simulate it; hallucinated state is the main way synthetic environments become unusable."
+        },
+        {
+          "title": "Generate scenarios and validators",
+          "detail": "For each environment, produce several scenarios plus a rule-based trajectory validation function, so every task has a programmatic pass condition."
+        },
+        {
+          "title": "Calibrate difficulty with privileged hints",
+          "detail": "Run the solver twice, with and without hints. The gap between the two rewards estimates regret; keep environments where the gap is small but non-zero, i.e. reachable but not yet solved."
+        },
+        {
+          "title": "Ship the verifier with the environment",
+          "detail": "The reward and verification code are part of the environment artifact, not a later annotation pass, so every generated task ships with a deterministic check."
+        }
+      ],
+      "verifier": [
+        "reward computed from state transitions in code, not scored by a model",
+        "a rule-based validator per scenario",
+        "fail-to-pass: the scenario is not already solved by the environment as built"
+      ],
+      "pitfalls": [
+        "language-model-simulated state drifts and makes trajectories non-reproducible",
+        "a frozen verifier stops discriminating once the agent improves",
+        "an environment the model can write but not solve is only useful with difficulty control"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2608.19197",
+          "title": "SPADE: Self-Play in Adaptive Synthetic Executable Environments",
+          "note": "two-role self-play, Gym-style environments written as code, regret estimated from the hinted-vs-unhinted gap"
+        },
+        {
+          "arxiv_id": "2601.05808",
+          "title": "EnvScaler: Scaling Tool-Interactive Environments for LLM Agent via Programmatic Synthesis",
+          "note": "skeleton mining plus scenario generation, with rule-based trajectory validation functions"
+        },
+        {
+          "arxiv_id": "2602.10090",
+          "title": "Agent World Model: Infinity Synthetic Environments for Agentic Reinforcement Learning",
+          "note": "code-driven, database-backed environments make state transitions reliable and rewards computable"
+        }
+      ]
+    }
+  ]
+}

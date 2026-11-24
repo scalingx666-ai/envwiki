@@ -1,0 +1,172 @@
+{
+  "family": "platform-infra",
+  "recipes": [
+    {
+      "id": "harness-sandbox-call-capture-replay",
+      "name": "Harness-in-sandbox call capture and trajectory replay",
+      "family": "platform-infra",
+      "summary": "Wrap the source system in the same agent harness the task is graded with, run it inside a disposable sandbox, and intercept the model boundary with a proxy so every call and every tool invocation is recorded. The recorded calls are reassembled into a prefix tree, which yields a replayable multi-turn trajectory and a state trace the verifier can compare against. Keeping the harness inside the sandbox and the policy outside it is what makes one procedure serve both grading a single Harbor task and collecting rollouts: the sandbox boundary is the isolation guarantee, the proxy is the observation point, and the prefix tree is the artifact that names the intermediate states a correct solution has to pass through.",
+      "when_to_use": [
+        "the source is an agent harness, a multi-tool app or a service with side effects",
+        "the task must be checked on intermediate tool-call state, not only on the final artifact",
+        "each attempt needs its own isolated environment instance"
+      ],
+      "not_when_to_use": [
+        "the task is a single deterministic command with a file-level answer",
+        "no proxy or harness layer can be inserted between the model and the tools"
+      ],
+      "inputs": [
+        "the source system or repository plus a runnable harness that drives it",
+        "a disposable sandbox substrate whose files and processes survive between turns",
+        "a proxy endpoint placed between the model and the harness"
+      ],
+      "steps": [
+        {
+          "title": "Stand up a disposable sandbox per attempt",
+          "detail": "Each task instance gets its own temporary sandbox holding the source checkout, its dependencies and its starting files, and the harness runs inside it so no state leaks between attempts. Keep harness and task environment inside the same sandbox boundary instead of splitting them across hosts."
+        },
+        {
+          "title": "Insert a proxy at the model boundary",
+          "detail": "Route every model call through a local proxy that records request and response payloads verbatim. Policy decisions stay outside the sandbox while observation happens inside, so capture never changes the execution environment."
+        },
+        {
+          "title": "Instrument tool execution separately",
+          "detail": "Have the harness log each tool call with its arguments, exit status and the stdout or stderr it produced. The tool log, not the model's narration, is the ground truth about what happened to the environment."
+        },
+        {
+          "title": "Rebuild the multi-turn trajectory as a prefix tree",
+          "detail": "Group the captured calls by shared prefix so the trajectory branches wherever the agent could have diverged. The tree is the reconstruction of the multi-turn conversation and it makes the ordered sequence of intermediate states explicit."
+        },
+        {
+          "title": "Extract the state checkpoints a correct run must hit",
+          "detail": "From the tool log, mark the points where the source system's observable state changed in a way the task depends on: a file written, a record moved to another status, a request accepted. These become the intermediate assertions, rather than checking only the final artifact."
+        },
+        {
+          "title": "Pin the verifier to the state trace",
+          "detail": "Write the checker against the recorded state transitions plus the final artifact, so a run that reaches the same end state through an illegal path still fails."
+        },
+        {
+          "title": "Re-run in a fresh sandbox to confirm reproducibility",
+          "detail": "Rebuild the instance from scratch and replay the reference trajectory. An identical tool-call sequence and an identical final state digest must be reproduced; otherwise the environment has hidden state and the task will be flaky."
+        }
+      ],
+      "verifier": [
+        "the reference run's tool-call sequence and final state digest are reproduced identically on a fresh sandbox",
+        "named intermediate assertions hold at their checkpoints (a file exists with expected content, a record carries the expected status)",
+        "every recorded tool call carries an exit status equal to the reference",
+        "no two task instances share a sandbox or a mutable path"
+      ],
+      "pitfalls": [
+        "a proxy that rewrites requests silently breaks consistency between capture and grading",
+        "reconstructing the trajectory from the model's messages alone loses tool output and no longer matches what ran",
+        "state living outside the sandbox, such as host paths or shared caches, makes the environment non-reproducible"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2608.16798",
+          "title": "ClawGym II: Exploring Black-Box RL on Agent Harness",
+          "note": "sandbox execution infrastructure isolating task environments and harnesses in temporary sandboxes; serving proxy at the model boundary; prefix trees to reconstruct multi-turn trajectories"
+        },
+        {
+          "arxiv_id": "2603.18815",
+          "title": "ProRL Agent: Rollout-as-a-Service for RL Training of Multi-Turn LLM Agents",
+          "note": "standardized, extensible sandbox environments served over an API, with the rollout lifecycle decoupled from the caller"
+        },
+        {
+          "arxiv_id": "2608.19880",
+          "title": "EnvHarness: Awakening Static Worlds for Agent Learning",
+          "note": "treats the policy as a black box, observes execution trajectories to synthesize changes, and validates them with fresh rollouts while retaining the original verifier"
+        }
+      ]
+    },
+    {
+      "id": "simulated-api-ui-state-validated",
+      "name": "Simulated API/UI environment with internal state validation",
+      "family": "platform-infra",
+      "summary": "Model the source system as a simulator: tools and UI endpoints are re-implemented over an explicit internal state store, and every response is derived from that store instead of being improvised. Two properties make the result usable as a Harbor task. The simulator validates its own internal state after every transition, so inconsistent or reward-hacking trajectories are rejected rather than rewarded, and faults are injected in controlled proportions, which lets a task test whether the agent notices degraded data rather than whether it memorised a happy path. Instances are then filtered to the mid difficulty band where models neither pass trivially nor fail always.",
+      "when_to_use": [
+        "the source is a web app, an admin UI or a service whose responses can be re-implemented",
+        "many task instances are needed over the same product surface",
+        "the check must read the state store rather than an LLM judge"
+      ],
+      "not_when_to_use": [
+        "the behaviour depends on live third-party services that cannot be re-implemented",
+        "the task requires pixel-exact rendering of the real interface"
+      ],
+      "inputs": [
+        "the source's API or UI specification plus a corpus of real requests and pages",
+        "an explicit state schema for the simulated domain",
+        "a fault-injection policy and agent rollouts used for difficulty calibration"
+      ],
+      "steps": [
+        {
+          "title": "Extract the domain model first",
+          "detail": "Derive the entities, fields and transitions the source system exposes and write the state schema down before writing any endpoint, because the state store is what the verifier will read."
+        },
+        {
+          "title": "Re-implement the tool and UI surface over that state",
+          "detail": "Each endpoint or screen action becomes a deterministic function of the state plus the request, and responses are rendered from the store rather than generated free-form."
+        },
+        {
+          "title": "Keep an explicit, inspectable state store",
+          "detail": "Hold all state in a queryable database or file tree so a checker can read it directly and a simulated interaction can be replayed step by step."
+        },
+        {
+          "title": "Validate internal state after every transition",
+          "detail": "After each action, run consistency checks over the store, covering referential integrity, required fields and legal state transitions, and reject the trajectory when they fail. This is what stops an agent from satisfying the goal by writing fields directly or by exploiting the simulator."
+        },
+        {
+          "title": "Inject faults in controlled proportions",
+          "detail": "Schedule explicit errors such as timeouts and 5xx responses, implicit degradations such as truncated records and missing fields, and mixed cases. Keep the level such that the agent can recover but has to notice the degradation instead of trusting the response."
+        },
+        {
+          "title": "Write tasks and checkers against the store",
+          "detail": "Express the goal as a predicate over final state, for example a row updated, a file written or an approval recorded, so the check is a query with a boolean answer rather than a rubric read by a model."
+        },
+        {
+          "title": "Calibrate difficulty on the mid band",
+          "detail": "Run several agents on the instance and keep those whose historical pass rate sits around 30 to 70 percent. Instances that are always solved or always failed carry no ranking signal and only inflate cost."
+        },
+        {
+          "title": "Confirm solvability and record the grading",
+          "detail": "Verify that a reference path exists for the instance before shipping it, and record which state predicates are checked so the grader is reproducible by a third party."
+        }
+      ],
+      "verifier": [
+        "a final-state predicate is evaluated directly against the state store, for example a specific field equals a specific value",
+        "internal consistency checks pass at every transition of a valid trajectory",
+        "the fault schedule is fixed and reproducible, so the same instance injects the same faults on replay",
+        "a reference solution reaches the goal state from the pristine instance"
+      ],
+      "pitfalls": [
+        "responses generated by a model instead of computed from the state drift, and the checker no longer describes what the agent actually saw",
+        "fault injection that is too loud trains error avoidance instead of error detection",
+        "difficulty that comes from phrasing rather than from state is solved by capable models regardless of skill"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2607.05773",
+          "title": "Beyond Static Evaluation: Building Simulation Environments for Scalable Agentic Reinforcement Learning",
+          "note": "decouples environment creation from scalable execution, moves grading to verifiable execution outcomes, and mitigates reward hacking through rigorous internal state validation and testing"
+        },
+        {
+          "arxiv_id": "2604.10866",
+          "title": "OccuBench: Evaluating AI Agents on Real-World Professional Tasks via Language Environment Simulation",
+          "note": "language environment simulators with LLM-driven tool response generation; synthesis pipeline with guaranteed solvability and calibrated difficulty; explicit, implicit and mixed fault injection"
+        },
+        {
+          "arxiv_id": "2607.05174",
+          "title": "AgentGym2: Benchmarking Large Language Model Agents in De-Idealized Real-World Environments",
+          "note": "de-idealized instances without pre-packaged tool interfaces, requiring exploratory tool discovery and robustness to noisy, underspecified inputs"
+        },
+        {
+          "arxiv_id": "2603.23749",
+          "title": "Efficient Benchmarking of AI Agents",
+          "note": "mid-range historical pass-rate filter, around 30 to 70 percent, preserves ranking fidelity while cutting the number of evaluated tasks"
+        }
+      ]
+    }
+  ]
+}

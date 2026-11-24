@@ -1,0 +1,163 @@
+{
+  "family": "sandbox",
+  "recipes": [
+    {
+      "id": "layered-substrate-isolation-compose",
+      "name": "Isolation substrate selection with layered image composition",
+      "family": "sandbox",
+      "summary": "Choose the isolation substrate from the task's actual requirements instead of by default, then compose the environment image out of independently versioned layers so a dependency change republishes one small layer rather than the whole image. The reported evidence is that substrate choice dominates cold-start and setup cost, and that composing from versioned layer groups with on-demand content fetch cuts environment initialization by roughly an order of magnitude. For a Harbor task this turns an unbuildable container into a per-layer, per-dependency problem with a measurable success condition, and it makes environment variants cheap because they differ by one layer.",
+      "when_to_use": [
+        "the task runs commands with side effects and must not reach the host",
+        "the source needs a specific dependency set that differs between task variants",
+        "setup time is a practical concern because the same environment is rebuilt repeatedly"
+      ],
+      "not_when_to_use": [
+        "the task is a pure text or single-file edit with no execution",
+        "the environment must run in a kernel namespace or microVM the host cannot provide"
+      ],
+      "inputs": [
+        "the source repository with its dependency manifest and lockfile",
+        "a substrate matching the isolation requirement: namespace, container, microVM or virtual machine",
+        "a layer scheme with independent versioning per component"
+      ],
+      "steps": [
+        {
+          "title": "State the isolation requirement first",
+          "detail": "Write down whether the task needs network denial, privileged operations, persistence across turns or accelerator access. The substrate follows from that list rather than from habit."
+        },
+        {
+          "title": "Choose the lightest substrate that satisfies it",
+          "detail": "A namespace-isolated workspace with pre-cached content is enough for many code tasks and avoids image storage and container privileges. Escalate to a container, microVM or full virtual machine only when a stated requirement demands it."
+        },
+        {
+          "title": "Resolve dependencies deterministically",
+          "detail": "Pin every dependency to an exact version from the lockfile and install it into a layer at build time. An environment that resolves installs on first boot fails on a cold run."
+        },
+        {
+          "title": "Split the image into independently versioned layer groups",
+          "detail": "Keep base runtime, system libraries, language toolchain and task-specific dependencies as separate layers, so that changing one republishes only that layer and the rest stay cached."
+        },
+        {
+          "title": "Load content on demand instead of baking it in",
+          "detail": "Keep large assets, datasets and model weights outside the image and fetch them at first use, so the warm path starts fast and the image stays small enough to replicate."
+        },
+        {
+          "title": "Size resources from observed usage",
+          "detail": "Measure the CPU and memory of a representative run and set quotas from that measurement. A static ceiling copied from the task declaration over-provisions memory and slows every launch."
+        },
+        {
+          "title": "Verify isolation empirically",
+          "detail": "Assert from inside the sandbox that the host filesystem, the network and other task instances are unreachable, and record the probe output so a substrate change cannot silently break isolation."
+        }
+      ],
+      "verifier": [
+        "a dependency resolution command inside the sandbox exits 0 and prints the pinned versions",
+        "an isolation probe from inside the sandbox cannot reach the host path or the network",
+        "rebuilding the image yields an identical installed package set at the same image hash",
+        "cold-start environment creation time is measured and under the declared budget"
+      ],
+      "pitfalls": [
+        "defaulting to the heaviest substrate hides the cost in setup time rather than in the task",
+        "one fat image means every dependency change rebuilds everything",
+        "quotas copied from the task declaration over-provision memory and slow every launch"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2609.22978",
+          "title": "DeepSeek Elastic Compute (DSec): A Sandbox Infrastructure for Effective Agentic Training at Scale",
+          "note": "one SDK over function-call, container, microVM and full-VM backends; environments composed from independently versioned layers; image data loaded on demand"
+        },
+        {
+          "arxiv_id": "2609.30766",
+          "title": "WeEnv: The Environment for Agentic Reinforcement Learning at WeChat",
+          "note": "components packaged as independently published layer groups, contents fetched on demand, CPU and memory provisioned elastically from observed usage"
+        },
+        {
+          "arxiv_id": "2602.11210",
+          "title": "SWE-MiniSandbox: Container-Free Reinforcement Learning for Building Software Engineering Agents",
+          "note": "container-free isolation backed by kernel-level mechanisms with environment pre-caching, avoiding per-task container images"
+        }
+      ]
+    },
+    {
+      "id": "state-capsule-transactional-lifecycle",
+      "name": "State capsule with transactional reset and readiness gating",
+      "family": "sandbox",
+      "summary": "Separate what must be private per attempt from what can be shared. The mutable state of a task lives in a private capsule, while the initialized runtime, meaning image, installed toolchain and template files, is shared and reset transactionally; that is what makes a reset cheap and exact instead of a rebuild. A small daemon inside the sandbox keeps files and processes alive between calls, and creation is paced and gated on an explicit readiness check so a task never starts against a half-initialized environment. Launch latency is handled by a set of small pre-warmed snapshots rather than one large one, since a single snapshot cannot be both compact and cover all workloads.",
+      "when_to_use": [
+        "the task mutates state across several tool calls within one attempt",
+        "many attempts run in parallel and each reset must be exact",
+        "environment startup dominates the wall clock of the task runs"
+      ],
+      "not_when_to_use": [
+        "the task is stateless and each attempt can start from a fresh container",
+        "the runtime cannot be shared between attempts"
+      ],
+      "inputs": [
+        "the source application or toolchain together with the mutable state it owns",
+        "a daemon or supervisor that keeps the runtime alive inside the sandbox",
+        "a snapshot set or image pool with an explicit readiness probe"
+      ],
+      "steps": [
+        {
+          "title": "Split runtime from state",
+          "detail": "List the artifacts identical for every attempt, such as image, packages and templates, and the ones that diverge, such as the working tree, database rows or browser storage. Only the second group needs per-attempt isolation."
+        },
+        {
+          "title": "Give each attempt a private state capsule",
+          "detail": "Mount or copy the mutable state per attempt, so two concurrent attempts cannot see each other's writes even though they share the runtime."
+        },
+        {
+          "title": "Keep the runtime alive between calls",
+          "detail": "Install a small daemon inside the environment that holds processes and files across successive tool calls, so a multi-step task does not pay process startup between steps."
+        },
+        {
+          "title": "Make reset transactional",
+          "detail": "Implement reset and branch as operations on the state capsule rather than as a runtime rebuild; after a reset the capsule digest must equal the initial digest."
+        },
+        {
+          "title": "Gate on readiness, not on creation",
+          "detail": "Wait for an explicit readiness probe, a daemon heartbeat plus a probe command that succeeds, before handing the environment to the agent. Pacing creation requests avoids a burst that starves the shared host."
+        },
+        {
+          "title": "Own cleanup explicitly",
+          "detail": "Keep cleanup responsibility with the service even when the client times out or cancels, so an aborted attempt does not leave a running environment behind."
+        },
+        {
+          "title": "Split the snapshot pool",
+          "detail": "Prepare several small pre-warmed snapshots that each cover a subset of the workloads and pick the closest match per task, instead of one large image that initializes slowly."
+        }
+      ],
+      "verifier": [
+        "state capsule digests are identical before and after a reset",
+        "the readiness probe succeeds within the declared timeout on every created environment, and the per-attempt creation latency from the snapshot pool is measured against a declared budget",
+        "a process or file written in one attempt is not visible from a concurrent attempt's capsule",
+        "no environment remains after the client exits or cancels"
+      ],
+      "pitfalls": [
+        "sharing the runtime but not isolating the state lets concurrent attempts corrupt each other's files",
+        "starting the agent before the readiness check yields flaky failures that look like task bugs",
+        "one large snapshot with everything preinstalled is slow to start and brittle to change"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2609.32750",
+          "title": "CUA-Sandbox: Efficient Environments for Computer-Use Agent Reinforcement Learning",
+          "note": "private state capsules separated from shared runtimes, state-scoped execution, transactional reset and branch, original software interfaces and task evaluators retained"
+        },
+        {
+          "arxiv_id": "2610.39711",
+          "title": "Sandman: A Sandbox Service for Production Agentic Reinforcement Learning",
+          "note": "small daemon mounted into unmodified task images preserves files and processes across calls; paced creation, readiness checks, cleanup retained after client timeout"
+        },
+        {
+          "arxiv_id": "2611.22171",
+          "title": "Readie: Low-Latency Code Sandboxes for AI Agents",
+          "note": "a set of small learned startup snapshots covers most workloads, which a single compact snapshot cannot do"
+        }
+      ]
+    }
+  ]
+}

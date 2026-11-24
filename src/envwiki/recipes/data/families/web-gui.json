@@ -1,0 +1,246 @@
+{
+  "family": "web-gui",
+  "recipes": [
+    {
+      "id": "code-native-guid-reconstruction",
+      "name": "Code-native GUI environment reconstruction",
+      "family": "web-gui",
+      "summary": "Reconstruct a real application as a lightweight, fast, self-contained web environment with a code model, then make the reward code-native: executable assertions over DOM and application state instead of noisy visual proxies. One unified specification plus task-centric test-driven development keeps multi-page applications coherent.",
+      "when_to_use": [
+        "the source is a web or desktop application, or a screenshot of one",
+        "training on the real application is too slow, too costly or not reproducible",
+        "you need many trials, so environment latency dominates the budget"
+      ],
+      "not_when_to_use": [
+        "the task depends on the real backend, real user data or real network calls",
+        "the visual fidelity of the original application is itself the graded property"
+      ],
+      "inputs": [
+        "the target application or a reference design image",
+        "a code model able to emit a working front-end",
+        "a seed describing the site or app to keep reconstructions diverse"
+      ],
+      "steps": [
+        {
+          "title": "Pick the application and the scope",
+          "detail": "Choose which screens, flows and data actually matter for the task; a faithful clone of everything is neither cheap nor necessary."
+        },
+        {
+          "title": "Reconstruct as a lightweight web environment",
+          "detail": "Have a multimodal code model rebuild the application as a small self-contained web environment, with local seed data and no external calls."
+        },
+        {
+          "title": "Write one unified specification",
+          "detail": "Specify routes, pages, shared components and the data model once, so every generated page belongs to the same application."
+        },
+        {
+          "title": "Develop task-centric, test first",
+          "detail": "Build the smallest environment that supports the task, with the test written before the page; task-centric test-driven development is what stops multi-page apps from drifting."
+        },
+        {
+          "title": "Seed diversity",
+          "detail": "Vary the reconstruction with a website seed plus a reference design image, otherwise every environment converges on the same look and the same flows."
+        },
+        {
+          "title": "Attach code-native rewards",
+          "detail": "Express the reward as executable assertions over DOM text, element state or application state; a visual estimate of success is too noisy to train on."
+        },
+        {
+          "title": "Generate the task evaluators",
+          "detail": "Derive a verifiable evaluator per task so the reward can be dense during training rather than only at the end."
+        }
+      ],
+      "verifier": [
+        "executable assertions over the DOM or application state",
+        "an evaluator that fails on the pristine environment",
+        "environment latency low enough to run many trials per epoch"
+      ],
+      "pitfalls": [
+        "visual proxies for success are noisy and reward formatting instead of behaviour",
+        "multi-page coherence breaks unless one specification drives every page",
+        "a reconstruction that silently needs the network is not reproducible"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2602.14093",
+          "title": "GUI-GENESIS: Automated Synthesis of Efficient Environments with Verifiable Rewards for GUI Agent Post-Training",
+          "note": "reconstructs real applications into lightweight web environments with code-native executable rewards"
+        },
+        {
+          "arxiv_id": "2601.04126",
+          "title": "InfiniteWeb: Scalable Web Environment Synthesis for GUI Agent Training",
+          "note": "unified specification, task-centric test-driven development, seed plus reference design image for diversity, generated evaluators"
+        }
+      ]
+    },
+    {
+      "id": "explore-first-reverse-task-synthesis",
+      "name": "Explore-first reverse task synthesis for web agents",
+      "family": "web-gui",
+      "summary": "Invert the usual order: the agent acts in the environment first and the task is written afterwards from what it saw. Exploration is a structured sweep, not free-form scrolling, and it produces a map of the site's functionally distinct page states and the executable interactions that move between them, so rare branches are covered instead of over-sampled popular ones. Candidate tasks are proposed from that map, executed in the environment, and jointly repaired with their trajectories whenever the instruction and the execution disagree; a trajectory-level reward model rejects pairs whose wording is not grounded in what was actually performed. The map also supplies the graph structure used to compose multi-step tasks without cycles.",
+      "when_to_use": [
+        "the source is a live or captured site whose task surface is not known in advance",
+        "many diverse tasks are needed and manual authoring does not scale",
+        "tasks must be grounded in behaviours the site actually exposes"
+      ],
+      "not_when_to_use": [
+        "the site's functionality is fully known and small, so a direct task list is cheaper",
+        "the environment has destructive or irreversible side effects that exploration must not trigger"
+      ],
+      "inputs": [
+        "an executable environment for the site, live or replayed",
+        "an explorer agent that can act and observe",
+        "a proposal model that turns observed states into candidate instructions"
+      ],
+      "steps": [
+        {
+          "title": "Explore with a structured sweep",
+          "detail": "Move through the site by its own navigation affordances, recording each distinct page state and the interaction that produced it. Uniform random clicking over-samples common flows and misses the rare transitions that make tasks worth training on."
+        },
+        {
+          "title": "Assemble the website map",
+          "detail": "Organise the observations into a map of functionally distinct page states and the transitions between them, with the elements that trigger each transition. The map is the artifact the tasks are derived from and the ground for any coverage claim."
+        },
+        {
+          "title": "Propose tasks from the map",
+          "detail": "Derive candidate instructions from the observed states and transitions, so the task language is anchored in what the site supports rather than in what the model imagines a website of that kind should contain."
+        },
+        {
+          "title": "Execute and record",
+          "detail": "Run each candidate in the environment and keep the trajectory that reached the goal together with the states visited, so the instruction can later be checked against the execution rather than trusted."
+        },
+        {
+          "title": "Co-repair instruction and trajectory",
+          "detail": "When instruction and trajectory disagree, edit both: fix the wording where the trajectory is right, and regenerate the trajectory where the instruction states a behaviour the site does support. Accepting the mismatch leaves supervision that teaches the agent to describe something other than what it did."
+        },
+        {
+          "title": "Filter for alignment",
+          "detail": "Score the pairs with a trajectory-level reward model that checks the instruction against the executed trajectory, and drop the pairs whose wording cannot be grounded in the performance."
+        },
+        {
+          "title": "Compose along the transition graph",
+          "detail": "Extend verified tasks along the map's graph by planning paths that do not revisit a state, so multi-step tasks grow long without turning into cyclic loops."
+        },
+        {
+          "title": "Keep the coverage record",
+          "detail": "Retain the map and the set of states covered by the retained tasks, so later rounds can target the states and transitions that are still unrepresented."
+        }
+      ],
+      "verifier": [
+        "each retained instruction is graded against its own recorded trajectory, and pairs whose trajectory does not support the instruction are rejected",
+        "every state in a composed task's path is distinct, so the path contains no cycle",
+        "each candidate task was executed in the environment and reached its stated goal state at least once",
+        "the recorded trajectory replays in the environment and produces the same final state"
+      ],
+      "pitfalls": [
+        "tasks proposed before exploration describe a website that does not exist and are unexecutable by construction",
+        "unfiltered exploration over-samples the landing page and yields many near-duplicate tasks",
+        "repairing only the instruction, or only the trajectory, leaves the pair misaligned",
+        "a trajectory collected on a live site stops replaying once the site changes"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2412.19723",
+          "title": "OS-Genesis: Automating GUI Agent Trajectory Construction via Reverse Task Synthesis",
+          "note": "agents perceive the environment and interact step by step first, then the task is derived retrospectively from the trajectory, with a trajectory reward model enforcing quality"
+        },
+        {
+          "arxiv_id": "2608.12429",
+          "title": "SynWeaver: Website-Prior Task and Trajectory Co-Synthesis for Web Agents",
+          "note": "structured exploration producing a website map of functionally distinct page states and executable interactions, page-level and transition-level supervision, and joint repair of inconsistent task-trajectory pairs"
+        },
+        {
+          "arxiv_id": "2607.18046",
+          "title": "SEE: Structure-aware Exploring & Exploiting for Long-horizon GUI Agent Trajectory Synthesis",
+          "note": "explicit UI transition graph over screens and elements, then graph-based synthesis that plans multi-step trajectories and controls sampling to prevent spurious cycles"
+        }
+      ]
+    },
+    {
+      "id": "http-capture-replay-site-replica",
+      "name": "HTTP capture and replay replica with repair loop",
+      "family": "web-gui",
+      "summary": "The fidelity of a synthetic web environment comes from the real site rather than from a code model, so the site is captured at the HTTP layer and replayed. A browser session records the response bodies, headers and redirects for every URL it reaches, and a local server serves those recordings, so pages look and behave like the original while the environment stays deterministic, resettable and cheap to run per rollout. The capture is not a blind dump: an explorer drives the site to discover its reachable URLs and interaction outcomes, and an independent verifier checks the frozen candidate and directs repairs, either fixing the local replay or recapturing only the URLs that cannot be fixed. Tasks are then written over the navigation skills the exploration actually confirmed, which keeps them inside the behaviour the replica supports.",
+      "when_to_use": [
+        "the source is a real website whose visual fidelity and content matter",
+        "the live site is unstable, login-gated or too slow to afford per rollout",
+        "thousands of rollouts are needed, so per-episode setup cost must approach zero"
+      ],
+      "not_when_to_use": [
+        "the task depends on live backend state changing in response to the agent, which a replay cannot reproduce",
+        "the source is a desktop or mobile application rather than a web page"
+      ],
+      "inputs": [
+        "a browser session, authenticated if needed, against the source site",
+        "a recording layer that captures responses at the HTTP layer",
+        "a local server that replays the recording plus a repair loop that can recapture URLs"
+      ],
+      "steps": [
+        {
+          "title": "Scope the site to a bounded surface",
+          "detail": "Decide which pages, entry points and authenticated areas the tasks will use. A capture of an entire site is unbounded, and the replay drifts as the site's reachable surface grows."
+        },
+        {
+          "title": "Record at the HTTP layer",
+          "detail": "Drive a browser session through the scoped surface and store the response body, status, headers and redirect target under each request key. Cache assets instead of re-fetching them so a rollout costs no network time."
+        },
+        {
+          "title": "Replay locally behind the same URLs",
+          "detail": "Serve the recording from a local origin that mirrors the original path structure, so links, forms and redirects behave as they did and the agent sees the real page rather than a mock-up of it."
+        },
+        {
+          "title": "Explore to complete the capture",
+          "detail": "Run an explorer over the replica to discover the URLs the pages actually link to and the interactions that work. Any URL reached but not recorded is either recaptured or explicitly marked unavailable, so the replay never serves an empty body for a real link."
+        },
+        {
+          "title": "Verify and repair the frozen candidate",
+          "detail": "Have an independent checker confirm the captured pages against the source for structural and content fidelity and point at the mismatches; repair locally where possible and recapture only the URLs that cannot be fixed, so the loop terminates."
+        },
+        {
+          "title": "Ground tasks in observed navigation",
+          "detail": "Write tasks from the navigation skills exploration confirmed, such as filtering, paging, form entry and cross-page linking, so each task is one the replica can actually support."
+        },
+        {
+          "title": "Attach deterministic checks",
+          "detail": "Express each task's success against the replica's recorded artifacts and backend state, so the reward is a comparison over bytes and rows rather than a visual estimate."
+        },
+        {
+          "title": "Freeze the capture with checksums",
+          "detail": "Store the recording and its checksums with the task set. A replica whose capture drifts silently makes earlier scores incomparable and turns replay failures into environment noise."
+        }
+      ],
+      "verifier": [
+        "every URL referenced by a task returns the recorded response in the replay, with matching status and content checksum",
+        "the local replay returns identical bytes for a recorded URL across repeated requests",
+        "a task's success check is a comparison over replica state or recorded artifacts, not a visual or model judgement",
+        "the environment resets to the recorded initial state by checksum equality"
+      ],
+      "pitfalls": [
+        "capturing pages without capturing their transitions yields a replica in which the task cannot be completed",
+        "a replay that silently serves an empty body for an uncached link looks broken to the agent and to the check",
+        "letting the verifier and the capturer share the same code path hides systematic capture errors",
+        "content that changes on the live site makes the capture a snapshot, and tasks depending on that part cannot be verified from it"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2605.06761",
+          "title": "Weblica: Scalable and Reproducible Training Environments for Visual Web Agents",
+          "note": "HTTP-level caching that captures and replays stable visual states while preserving interactive behaviour, combined with LLM-based environment synthesis grounded in real websites and core web navigation skills"
+        },
+        {
+          "arxiv_id": "2610.37786",
+          "title": "WebAnything: From the Wild Web to Scalable Agent Environments",
+          "note": "Explorer-Builder collects browser-observable structures, resources and interaction outcomes from real URLs, and an independent verifier checks frozen candidates and directs local repair or targeted source recapture"
+        },
+        {
+          "arxiv_id": "2611.03634",
+          "title": "WebHarbor: Docking Real Websites for Evolving GUI Agent Environments",
+          "note": "task-driven reconstruction that keeps visual interfaces, content and functional workflows faithful, with audits of visual fidelity, functional correctness and task validity"
+        }
+      ]
+    }
+  ]
+}

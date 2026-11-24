@@ -1,0 +1,247 @@
+{
+  "family": "computer-use",
+  "recipes": [
+    {
+      "id": "deterministic-app-docking-tasks",
+      "name": "Deterministic application docking with audited checkpoint tasks",
+      "family": "computer-use",
+      "summary": "Reconstruct the target application or site as a deterministic, self-contained executable environment that keeps the original interfaces and workflows but removes live content, then author tasks on top of it with rule-based, multi-checkpoint evaluation. The reconstruction is task-driven rather than a wholesale clone: each new task expands the functional scope the environment must implement, and a human then audits the implementation for visual fidelity, functional correctness and task validity. Checkpoints are what make long, multi-application runs gradable - each sub-goal is scored separately, so two runs with the same Pass@1 can be distinguished by how much of the workflow each actually completed - and capability annotations record whether a task exercised the GUI, the command line, several applications or a long horizon. The environment must reset to the same state every time, otherwise checkpoint results are not comparable across attempts.",
+      "when_to_use": [
+        "the source is a web site, desktop application or OS image that must be run repeatedly",
+        "live content, authentication walls and network drift would make evaluation non-reproducible",
+        "the task spans many steps or several applications and needs partial credit"
+      ],
+      "not_when_to_use": [
+        "the task's success is defined by live backend state that cannot be reproduced",
+        "the visual fidelity of the original product is itself the graded property"
+      ],
+      "inputs": [
+        "the target application, site, or a reference capture of it",
+        "a container or VM template able to run the reconstructed environment",
+        "a human auditor for fidelity, functional correctness and task validity"
+      ],
+      "steps": [
+        {
+          "title": "Scope the workflows, not the product",
+          "detail": "Enumerate the screens and flows the tasks will touch and implement only those; the environment's cost is driven by breadth, and breadth no task exercises is pure overhead."
+        },
+        {
+          "title": "Dock the interface deterministically",
+          "detail": "Rebuild the visual interface, content and functional workflow of the real service under local control, with seeded content and no live calls, so a reset returns the environment to an identical state."
+        },
+        {
+          "title": "Let the task list drive the functional scope",
+          "detail": "Implement the rarely exercised paths, including post-authentication flows, only when a task requires them, and keep an audit trail of what was added and why."
+        },
+        {
+          "title": "Author tasks with checkpoints",
+          "detail": "Write each task as an instruction plus an ordered list of rule-based checks over observable state (file created, field set, item moved, process exited), one check per sub-goal, so partial completion is scored rather than flattened to a boolean."
+        },
+        {
+          "title": "Annotate the capabilities each task exercises",
+          "detail": "Tag every task with its modality (graphical only, command line, multi-application, long-horizon) so the report can separate a generally weak model from one that fails on a specific modality."
+        },
+        {
+          "title": "Audit the instances",
+          "detail": "Human reviewers check visual fidelity against the reference, functional correctness of the implemented flows, and whether the task is valid and unambiguous; repair or drop instances that fail the audit."
+        },
+        {
+          "title": "Confirm the pristine environment fails",
+          "detail": "Run every task against the untouched environment: the checks must fail there and pass after the reference solution is applied, so no task ships already satisfied."
+        }
+      ],
+      "verifier": [
+        "each task's rule-based checks exit non-zero on the pristine environment and zero after the reference solution runs",
+        "every task declares an ordered checkpoint list and reports per-checkpoint results rather than a single boolean",
+        "a human audit record exists for every task covering fidelity, functional correctness and task validity",
+        "resetting the environment twice yields an identical state snapshot hash"
+      ],
+      "pitfalls": [
+        "an environment that drifts between runs makes checkpoint results incomparable across attempts",
+        "cloning the whole product instead of the task's workflows inflates build time for no gain",
+        "single-boolean scoring hides partial progress and makes capability differences invisible"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2611.03634",
+          "title": "WebHarbor: Docking Real Websites for Evolving GUI Agent Environments",
+          "note": "153 executable, dockerized website environments reconstructed under deterministic control; task-driven human-agent collaboration where environments grow with the task set and humans audit fidelity, functional correctness and task validity, covering 3,518 tasks including post-authentication workflows"
+        },
+        {
+          "arxiv_id": "2606.06560",
+          "title": "MacArena: Benchmarking Computer Use Agents on an Online macOS Environment",
+          "note": "421 manually verified tasks across 50 applications, combining ported and platform-native tasks and showing that rankings invert between them"
+        },
+        {
+          "arxiv_id": "2606.22557",
+          "title": "MacAgentBench: Benchmarking AI Agents on Real-World macOS Desktop",
+          "note": "676 tasks across 25 applications with nearly 60% involving GUI and CLI, deterministic rule-based evaluation and fine-grained multi-checkpoint scoring with capability annotations"
+        }
+      ]
+    },
+    {
+      "id": "execution-gated-interface-task-synthesis",
+      "name": "Execution-gated synthesis of cross-interface tasks",
+      "family": "computer-use",
+      "summary": "Generate long-horizon tasks for a computer-use agent and admit them only if they pass execution-based quality gates. The environment is executable and supports several interaction modes over one shared state - graphical interface, command line, and service interfaces - so a task can require switching between them and revisiting one later. Tasks are woven from reusable operations over seed files, which makes difficulty controllable rather than accidental, and the exploration that supports them builds an explicit transition graph over screens and elements, so trajectory generation is reproducible and spurious cycles are excluded. The gates are the substance of the method: a task must be solvable, must not already be complete when the agent starts, must be non-trivial, and its verdict must survive a cross-judge agreement check plus a counterfactual probe that perturbs the evidence the judge sees. A pipeline that admits a small fraction of its drafts is the normal outcome, not a failure.",
+      "when_to_use": [
+        "many long-horizon tasks are needed and hand-authoring does not scale",
+        "the environment supports more than one interaction mode over shared state",
+        "tasks must be proven solvable and non-trivial before entering the training or evaluation set"
+      ],
+      "not_when_to_use": [
+        "the environment cannot be executed end to end, so the gates have nothing to run against",
+        "a single-interface, single-step task set is sufficient"
+      ],
+      "inputs": [
+        "an executable environment exposing graphical and command-line interfaces over shared state",
+        "seed files defining the operations that tasks are woven from",
+        "a pool of rollout agents and judge models for the agreement and counterfactual gates"
+      ],
+      "steps": [
+        {
+          "title": "Build the multi-interface environment",
+          "detail": "Reconstruct the applications to be reproduced into deterministic environments and expose a command-line surface for each alongside its graphical interface, so both act on the same state and the agent can choose between them."
+        },
+        {
+          "title": "Curate the operation library over seed files",
+          "detail": "Enumerate reusable operations (open, filter, rename, upload, run, configure) together with the seed files they act on; tasks are woven from these later, which makes both generation and difficulty controllable."
+        },
+        {
+          "title": "Explore to build a transition graph",
+          "detail": "Walk the environment to build an explicit graph of screens and elements and the edges between them, so the generator knows which sequences are reachable and can plan against the graph instead of improvising."
+        },
+        {
+          "title": "Weave the task from operations",
+          "detail": "Compose operations into an instruction with a controllable number of sub-steps and interface switches, and record the reference state the task ends in."
+        },
+        {
+          "title": "Run the solver and the execution gates",
+          "detail": "Execute candidate tasks with a heterogeneous set of solver agents; a task is admitted only if it is solvable by at least one solver, is not already complete at the start, and is non-trivial, with the solver pass rate low but non-zero."
+        },
+        {
+          "title": "Check the verdict with cross-judge agreement and a counterfactual probe",
+          "detail": "Have independent judges verify the outcome and require agreement between them, then perturb the evidence the judge sees and confirm the verdict changes; a judge that passes every probe makes the agreement number meaningless."
+        },
+        {
+          "title": "Mine the goal state for anchors",
+          "detail": "From the successful rollouts, annotate the task-relevant interface elements in the goal state as reference anchors, giving a scalable per-element reward signal for later training without rewriting rule-based checks."
+        }
+      ],
+      "verifier": [
+        "each admitted task has a recorded solver trajectory that reaches the goal state, so solvability is demonstrated rather than assumed",
+        "the task is not already complete in the pristine environment",
+        "cross-judge verdict agreement and kappa are recorded per task and disagreements cause rejection",
+        "the counterfactual probe flips the verdict on a perturbed instance, otherwise the task is dropped"
+      ],
+      "pitfalls": [
+        "gates that only check solvability admit tasks that are already done or trivial",
+        "a judge that never fails the counterfactual probe makes the agreement number meaningless",
+        "generating long tasks without a transition graph produces trajectories full of spurious cycles"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2610.26828",
+          "title": "Agent World Model in the Wild: Computer-Use Agent Environment Synthesis",
+          "note": "executable environments jointly supporting GUI, service and command-line interfaces over shared state; five execution-based quality gates (verdict agreement, initially-incomplete, solvable, difficulty, counterfactual probe) cut 2,551 drafts to 341 long-horizon tasks, with 95% verifier-agent agreement and kappa 0.90"
+        },
+        {
+          "arxiv_id": "2609.05374",
+          "title": "CUA-Universe: A Scalable and Dynamic Environment for Hybrid GUI+CLI Agents",
+          "note": "App-Forge adapts applications into reproducible VMs and command-line surfaces; Task-Weave synthesizes hybrid tasks of controllable difficulty from reusable operations over seed files"
+        },
+        {
+          "arxiv_id": "2607.18046",
+          "title": "SEE: Structure-aware Exploring & Exploiting for Long-horizon GUI Agent Trajectory Synthesis",
+          "note": "two-stage synthesis: an exploration stage builds an explicit UI transition graph over screens and elements, then a graph-based stage composes multi-step trajectories by planning and controlled sampling, explicitly preventing spurious cycles"
+        },
+        {
+          "arxiv_id": "2608.22847",
+          "title": "GSAR: Goal-State-Anchor Rewards for Mobile GUI Agents with Self-Evolving Data Synthesis",
+          "note": "self-evolving synthesis produces multiple environments by executing tasks and generating diverse goal states; a state-anchor mechanism annotates task-relevant elements in successful goal states to give scalable rewards"
+        }
+      ]
+    },
+    {
+      "id": "perturbation-recovery-task-construction",
+      "name": "Error-recovery task construction by controlled perturbation",
+      "family": "computer-use",
+      "summary": "Take a task a working agent can complete, deliberately break it, and require the agent to recover. The error modes are enumerated first and injected in a controlled way - a stale value left in a field, a mis-click on the wrong row, a skipped confirmation, a closed document - and each injection carries the recovery steps that undo it, so the instance is scored on the recovery rather than on luck. Scoring is deterministic and multi-checkpoint: the work and the correction are checked separately, so an agent that produces the right end state without noticing the breakage is distinguishable from one that handled it. The environment must change observably between actions for this to work; a single screenshot after each action leaves the breakage invisible and turns the instance into a coin flip.",
+      "when_to_use": [
+        "you need to test whether an agent recovers from its own mistakes",
+        "the environment has dynamic state that changes between actions",
+        "partial progress must be separated from full completion in long tasks"
+      ],
+      "not_when_to_use": [
+        "the environment is a one-shot script with no intermediate observable state",
+        "the task is so short that no mistake can be made"
+      ],
+      "inputs": [
+        "a working task whose reference solution passes",
+        "a catalog of injectable error modes together with the recovery for each",
+        "a deterministic multi-checkpoint checker for the task"
+      ],
+      "steps": [
+        {
+          "title": "Enumerate the error modes",
+          "detail": "List the failure modes a real user or agent produces in this environment (wrong argument, wrong target, skipped confirmation, stale view, undone step) and rank them by frequency, so the injected errors are representative rather than exotic."
+        },
+        {
+          "title": "Design the injection points",
+          "detail": "For each error mode decide where in the flow it is injected and what it breaks, for example a field pre-filled with a stale value that the agent must notice and correct."
+        },
+        {
+          "title": "Attach and validate the recovery steps",
+          "detail": "Record the steps that restore the correct state for each injection, then run them in the environment; an instance is only meaningful if a correct recovery exists and is itself verified."
+        },
+        {
+          "title": "Write the multi-checkpoint checker",
+          "detail": "Score the sub-goals individually and require both the work and the correction, so an agent that reaches the right end state without noticing the injected error earns no full credit."
+        },
+        {
+          "title": "Verify the discriminating power",
+          "detail": "Run an agent that does not recover and one that does: the first must lose at least one checkpoint and the second must pass all of them, otherwise the instance does not actually measure recovery."
+        },
+        {
+          "title": "Make the breakage observable",
+          "detail": "Ensure the interface surfaces the changed state between actions (a re-rendered panel, an updated value) and that the agent's observation window includes it; a single screenshot per action hides exactly the evidence the task depends on."
+        },
+        {
+          "title": "Tree the variants and keep them balanced",
+          "detail": "Expand each error mode into several instances through a tree of injections, and keep the set balanced across modes so no single failure dominates the reported score."
+        }
+      ],
+      "verifier": [
+        "the non-recovering rollout scores strictly lower than the recovering rollout on the checkpoint list",
+        "the recovery steps, executed directly, pass all checkpoints in the pristine environment",
+        "every instance declares its error mode and injection point, and the set is balanced across the catalog",
+        "the checker is rule-based and deterministic, returning the same result on repeated runs"
+      ],
+      "pitfalls": [
+        "a stale or single-frame observation hides the injected error, so the task measures luck instead of recovery",
+        "single-boolean scoring cannot distinguish an agent that recovered from one that got lucky",
+        "injecting errors that no recovery can fix produces instances that are simply impossible"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2605.29447",
+          "title": "Recovering Policy-Induced Errors: Benchmarking and Trajectory Synthesis for Robust GUI Agents",
+          "note": "GUI-RobustEval's 1,216 executable test cases measure error recovery across a broad spectrum of error modes, and RoTS discovers error modes with a tree-based pipeline that synthesizes the corresponding recovery steps"
+        },
+        {
+          "arxiv_id": "2604.25380",
+          "title": "Benchmarking and Improving GUI Agents in High-Dynamic Environments",
+          "note": "online benchmark of interfaces whose state changes importantly between actions; the dynamic perceiver clusters frames and selects the informative ones because a single screenshot leaves key state unobserved"
+        },
+        {
+          "arxiv_id": "2606.22557",
+          "title": "MacAgentBench: Benchmarking AI Agents on Real-World macOS Desktop",
+          "note": "deterministic rule-based evaluation with fine-grained multi-checkpoint scoring and capability annotations, which separates sub-goal completion from overall Pass@1"
+        }
+      ]
+    }
+  ]
+}

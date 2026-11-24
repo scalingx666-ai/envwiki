@@ -1,0 +1,230 @@
+{
+  "family": "experience-synthesis",
+  "recipes": [
+    {
+      "id": "execution-first-trace-anchored-task",
+      "name": "Execution-first trace-anchored task construction",
+      "family": "experience-synthesis",
+      "summary": "Build the executable artifact before the prompt. A workflow structure is mapped onto the source's real tools through dependency-aware assignment, materialized in a sandbox, executed, and validated; only a trajectory that survives execution becomes the substrate for the natural-language request, the reference answer, and the check. Writing the prompt last removes the dominant failure of query-first synthesis, namely a plausible request that no valid call sequence can satisfy, and it makes the task's verifier a byproduct of the run rather than a separate annotation pass.",
+      "when_to_use": [
+        "the source is a repository, API collection, or CLI whose steps can actually be executed",
+        "the ground truth should come from a real run rather than from an author's reasoning",
+        "the environment can be provisioned reproducibly in a sandbox"
+      ],
+      "not_when_to_use": [
+        "the source is prose-only, or the steps cannot be run anywhere",
+        "the outcome is subjective output quality with no state to check"
+      ],
+      "inputs": [
+        "a source repository or API surface that can be executed",
+        "a sandbox runtime with the project's dependencies installed",
+        "a way to write and run an executable check (tests or a state-diff script)"
+      ],
+      "steps": [
+        {
+          "title": "Pick the workflow before the prompt",
+          "detail": "Choose one concrete multi-step workflow in the source (a build and test pipeline, a data-processing chain, a service call sequence) and enumerate its atomic steps together with the dependencies between them. The workflow, not the phrasing, is the unit of design."
+        },
+        {
+          "title": "Map steps to tools by dependency",
+          "detail": "Assign each atomic step to the tool or command that realizes it, respecting that the output of step i becomes an argument of step j. Steps with no available tool are dropped or recorded as an explicit gap rather than invented."
+        },
+        {
+          "title": "Materialize the sandbox",
+          "detail": "Provision the environment for the workflow: install dependencies, seed fixtures and inputs, pin the runtime, and record the provisioning commands so the environment can be rebuilt from scratch. A workflow that only runs in a hand-tuned interactive shell is not a task."
+        },
+        {
+          "title": "Write the check before the request",
+          "detail": "Author the executable check that will judge success (unit tests for code, a state-diff or output-match script for data and tool flows) and confirm it currently fails on the unmodified workspace. The check, not the prompt, defines what success means."
+        },
+        {
+          "title": "Execute and validate the reference trace",
+          "detail": "Run the workflow in the sandbox and capture the ordered call sequence with its observations. Any call that errors, or that returns a value the later steps cannot consume, invalidates the instance: fix the mapping or drop the workflow."
+        },
+        {
+          "title": "Derive the request from the validated artifacts",
+          "detail": "Write the natural-language task from the observed artifacts (files, fixtures, failing check names, available tools) rather than from an intended solution. The request must be satisfiable by the validated trace and must not name the steps that resolve it."
+        },
+        {
+          "title": "Package instance, environment, and check",
+          "detail": "Ship the workspace provisioning script, the executable check, the reference trace, and the request as one artifact so the check can be run against a candidate solution without re-deriving the environment."
+        }
+      ],
+      "verifier": [
+        "the check command exits non-zero on the unmodified workspace and zero once the reference change or trace is applied",
+        "every call in the recorded reference trace returns a non-error observation replayable with the same inputs",
+        "the provisioning script recreates the workspace from a clean checkout and exits 0",
+        "the request mentions no file, symbol, or command name absent from the provisioned workspace"
+      ],
+      "pitfalls": [
+        "request written first: it reads plausibly but no valid call sequence satisfies it",
+        "environment that only works in the author's interactive shell, so the check cannot be reproduced",
+        "check that already passes before any change, which makes the task trivially solved",
+        "request that leaks the solution path, turning a multi-step task into transcription"
+      ],
+      "effort": "high",
+      "source_papers": [
+        {
+          "arxiv_id": "2607.29175",
+          "title": "Execution-First Synthetic Tool-Use Trace Generation for LLM Agents",
+          "note": "workflow structures first, dependency-aware tool assignment, execution and validation before the query is synthesized"
+        },
+        {
+          "arxiv_id": "2602.09892",
+          "title": "Immersion in the GitHub Universe: Scaling Coding Agents to Mastery",
+          "note": "sandboxed multi-agent workflow that separates environment setup, test creation, and problem-description synthesis"
+        }
+      ]
+    },
+    {
+      "id": "grounded-mcp-frontier-interaction-synthesis",
+      "name": "Protocol-anchored interaction synthesis at the competence frontier",
+      "family": "experience-synthesis",
+      "summary": "Unconstrained task generation degenerates into sampling the model's own priors, so the environment is anchored to a real protocol surface: the tools and schemas the source actually exposes. Structure-guided planning then traverses that environment, forcing each step to depend on an observation produced by an earlier one and injecting at least one adversarial element (a distractor tool, an ambiguous request, an action that must be refused). Difficulty is calibrated by probing a solver at its competence frontier, where the hinted attempt succeeds and the unhinted attempt does not, so the task lands just inside the edge of solvability rather than in the trivially solved or unreachable regions.",
+      "when_to_use": [
+        "the source exposes a structured tool or protocol surface that can be replicated",
+        "single-call tasks are uninteresting and long-horizon dependency-bearing requests are needed",
+        "an agent is available to probe difficulty before the task is frozen"
+      ],
+      "not_when_to_use": [
+        "no protocol, schema, or tool list can be extracted from the source",
+        "difficulty cannot be probed because no solver can be run against the environment"
+      ],
+      "inputs": [
+        "the source's tool list, parameter schemas, and protocol surface",
+        "a replayable environment implementing that surface with observable state",
+        "a solver agent and a hint condition for frontier probing"
+      ],
+      "steps": [
+        {
+          "title": "Anchor the environment to the real protocol",
+          "detail": "Extract the tool names, parameter schemas, and state the source exposes and implement them as the environment's only legal surface. Invented tools and undocumented actions are excluded, so an error response is a meaningful signal rather than noise."
+        },
+        {
+          "title": "Choose a target state and force dependencies",
+          "detail": "Pick a target state, then build the path to it so that each step consumes an observation produced by an earlier step. Every dependency edge is recorded with the prerequisite call and the field it supplies, which is what makes the trajectory checkable later."
+        },
+        {
+          "title": "Inject one adversarial element",
+          "detail": "Add at least one of: a distractor tool that is plausible but wrong for the goal, an ambiguous request that must be disambiguated, or a policy that forbids the obvious action and demands a refusal or an alternative. Without it the task collapses into one obvious call chain."
+        },
+        {
+          "title": "Synthesize the request and the interaction",
+          "detail": "Generate the user request that implies the target state without naming the tool sequence, plus the multi-turn assistant and tool transcript that reaches it, including the observations that justify each call."
+        },
+        {
+          "title": "Probe the competence frontier",
+          "detail": "Run the solver twice, once with a hint naming the required goal and once without. Keep the task when the hinted run succeeds and the unhinted run fails or is unstable; discard tasks solved unhinted and tasks failed even with the hint."
+        },
+        {
+          "title": "Freeze the surface and the probe result",
+          "detail": "Snapshot the environment state and the tool schemas alongside the transcript and the recorded hint and no-hint outcomes, so the difficulty claim is inspectable rather than asserted."
+        },
+        {
+          "title": "Reject degenerate interactions",
+          "detail": "Remove transcripts that contain error returns, unanswered prerequisites, or a resolution achievable by a single call."
+        }
+      ],
+      "verifier": [
+        "every tool call in the transcript is present in the frozen schema list and returns a non-error observation",
+        "the recorded probe file shows hint-run success and no-hint failure for the kept task",
+        "each dependency edge holds: the argument used by call j appears in the observation of its prerequisite call i",
+        "replaying the transcript from the frozen snapshot reproduces the same observations"
+      ],
+      "pitfalls": [
+        "invented tools: the transcript is internally consistent but unexecutable against any real surface",
+        "no enforced dependency, so every request reduces to one obvious call",
+        "difficulty probed with the same prompt as the task, which makes the frontier self-confirming",
+        "adversarial element absent from the success criteria, so it penalizes correct behaviour"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2606.02001",
+          "title": "Scaling Agentic Capabilities via Grounded Interaction Synthesis",
+          "note": "protocol-anchored environments derived from real MCP servers, then structure-guided planning with enforced dependencies and adversarial policies"
+        },
+        {
+          "arxiv_id": "2602.21320",
+          "title": "Tool-R0: Self-Evolving LLM Agents for Tool-Learning from Zero Data",
+          "note": "generator proposes tasks at the solver's competence frontier and the solver attempts them with real tool calls"
+        }
+      ]
+    },
+    {
+      "id": "mock-world-user-simulator-rubric",
+      "name": "Mock tool world with user simulator and rubric check",
+      "family": "experience-synthesis",
+      "summary": "The source's tools are re-implemented as a deterministic mock system rather than called live, and the request is deliberately underspecified: the task author keeps some details private and a user simulator holds them, so the agent has to query the user in order to finish. Success is written as a task-level rubric over required subgoals, required user-agent interactions, and forbidden behaviours, so the check is a list of assertions rather than a model verdict. The world is treated as editable: when dry-run trajectories show a stochastic user, an unreliable mock tool, or a misfiring rubric item, those components are diagnosed and repaired instead of being accepted as noise.",
+      "when_to_use": [
+        "the tools exist but live APIs are unstable, slow, or side-effecting",
+        "the interesting part of the task is handling a partially specified request",
+        "success can be expressed as concrete subgoals and forbidden actions"
+      ],
+      "not_when_to_use": [
+        "the task must exercise the real service and its real side effects",
+        "no rubric can be derived because success is purely aesthetic"
+      ],
+      "inputs": [
+        "the tool surface to mock, including the fields each tool returns",
+        "the details to withhold from the request and give to the user simulator",
+        "a rubric format that a deterministic checker can evaluate"
+      ],
+      "steps": [
+        {
+          "title": "Mock the tool system",
+          "detail": "Re-implement the tools the task needs as stubs returning fixed, stable responses, including the error cases the request can trigger. The mock must not touch the network."
+        },
+        {
+          "title": "Create the task with private details",
+          "detail": "Write the full task with every detail a competent solver needs, then remove a chosen subset from the request and move it into the private record. What is removed determines what the agent has to ask for."
+        },
+        {
+          "title": "Attach the user simulator",
+          "detail": "Give the simulator the private record and a policy of releasing withheld details only when the agent asks for them, in consistent phrasing. Persona and seed are pinned so replays match."
+        },
+        {
+          "title": "Write the rubric as machine-checkable assertions",
+          "detail": "Express the rubric as required subgoals, required user-agent interactions, and forbidden behaviours, each mapped to a concrete observation in the transcript or the mock state, so a checker evaluates it without a model judge."
+        },
+        {
+          "title": "Dry-run and repair the world",
+          "detail": "Run a few trajectories and inspect tool traces and rewards. Where the user simulator contradicts itself, a mock tool errors unexpectedly, or a rubric item misfires, repair the simulator, the stub, or the rubric and re-run; the world is an artifact under construction, not a fixed fixture."
+        },
+        {
+          "title": "Check the request is underspecified but inferable",
+          "detail": "Confirm that the withheld details cannot be guessed from the request and that the rubric does not require them without an asking turn; otherwise the agent bypasses the user entirely."
+        },
+        {
+          "title": "Freeze the world",
+          "detail": "Pin the simulator persona, the mock responses, and the rubric version together with the request."
+        }
+      ],
+      "verifier": [
+        "the rubric file enumerates required subgoals and forbidden behaviours, each with a deterministic evaluator",
+        "the checker exits non-zero on an empty transcript and zero on a reference compliant transcript",
+        "two runs of the mock return byte-identical responses for the same call sequence",
+        "the simulator withholds exactly the fields listed in the private record and supplies them when asked"
+      ],
+      "pitfalls": [
+        "live API calls left in the loop, so the same task yields different transcripts",
+        "underspecified request whose missing detail is guessable, so the agent never asks the user",
+        "rubric only a model judge can read, leaving no mechanical check",
+        "repairing the agent's behaviour instead of the faulty simulator, stub, or rubric"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2601.22511",
+          "title": "Mock Worlds, Real Skills: Building Small Agentic Language Models with Synthetic Tasks, Simulated Environments, and Rubric-Based Rewards",
+          "note": "teacher-generated tasks rewritten into underspecified instructions, an LLM user simulator holding private details, a mock tool system, and rubric rewards over subgoals, interactions, and forbidden behaviours"
+        },
+        {
+          "arxiv_id": "2610.16523",
+          "title": "EAU: Environment-Agent-User Co-evolution for Training User-Centric Agents",
+          "note": "the user simulator, environment, and reward are editable artifacts that are diagnosed from trajectories and hot-swapped when they are unstable or incorrect"
+        }
+      ]
+    }
+  ]
+}

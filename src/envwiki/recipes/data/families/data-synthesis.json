@@ -1,0 +1,233 @@
+{
+  "family": "data-synthesis",
+  "recipes": [
+    {
+      "id": "ace-candidate-verify-then-complicate",
+      "name": "ACE candidate construction, verification, and oracle-preserving complication",
+      "family": "data-synthesis",
+      "summary": "Agentic data is treated as a factorized instance of environment specification, task signal, interaction, and verifier, and generation as constrained distribution design: accuracy fixes the feasible support of grounded and internally consistent data, complexity places the learning mass relative to a declared learner and execution configuration, diversity controls coverage against redundancy. Construction is kept separate from verification and selection, so the checker does not inherit the generator's blind spots. Once the support is verified, environmental complexity is raised with augmentations that hold the oracle call sequence and the final answer exactly, which keeps the success signal computable by reference matching while the environment becomes harder.",
+      "when_to_use": [
+        "you need many instances and must guarantee each one is executable and verifiable",
+        "the existing pool is easy and difficulty must come from the environment",
+        "a checker can be implemented independently of the generator"
+      ],
+      "not_when_to_use": [
+        "the source is a single hand-built instance, where distribution machinery is overkill",
+        "no independent verification signal exists beyond the generator's own output"
+      ],
+      "inputs": [
+        "an executable environment with observable state",
+        "a generator and a verifier implemented separately",
+        "a declared learner assumption to calibrate complexity against"
+      ],
+      "steps": [
+        {
+          "title": "Factor the instance",
+          "detail": "Represent every candidate as the four records: environment specification, task signal, interaction, verifier. A candidate missing the verifier record is not yet usable, whatever its other parts look like."
+        },
+        {
+          "title": "Establish the feasible support",
+          "detail": "Validate at several levels (schema and argument validity, then execution against the environment) and drop every candidate whose interaction contradicts the environment state. Only candidates inside this support enter the pool."
+        },
+        {
+          "title": "Separate construction from verification",
+          "detail": "Keep the generator and the checker independent, then re-score the pool with a second check that was not used during construction. The fraction that flips between the two scores is reported, since it marks where the generator's blind spots live."
+        },
+        {
+          "title": "Place complexity against a declared learner",
+          "detail": "State the learner assumption explicitly (which tools exist, how many attempts, what feedback is visible) and admit only interactions whose required depth beats a trivial baseline yet stays within reach of that learner. Measure the baseline-to-reference gap instead of asserting difficulty."
+        },
+        {
+          "title": "Control coverage rather than redundancy",
+          "detail": "Measure the pool's coverage over tool subsets, environment states, and task shapes, and reject near-duplicates that add volume without adding coverage."
+        },
+        {
+          "title": "Complicate with oracle preservation",
+          "detail": "Add distractor tools, indirect or ambiguous queries, and noisy, multi-format, or erroneous tool outputs while holding the oracle call sequence and the final answer fixed. The oracle is recorded before augmentation and compared after."
+        },
+        {
+          "title": "Recompute the success signal",
+          "detail": "Recompute the verifier for the complicated instance: reference matching for standard cases, with special cases such as detecting and reporting a tool error handled explicitly and separately."
+        }
+      ],
+      "verifier": [
+        "every retained instance carries all four records, and its recorded interaction executes end to end in the environment",
+        "the oracle call sequence and final answer are byte-identical before and after augmentation",
+        "the baseline-to-reference gap is recorded per instance and the count of instances that flip between the two independent checks is reported",
+        "coverage statistics over tool subsets and environment states are emitted with the pool"
+      ],
+      "pitfalls": [
+        "verification folded into generation, so blind spots survive into the pool",
+        "complexity added without holding the oracle fixed, producing unsolvable instances",
+        "volume mistaken for coverage: many near-identical trajectories",
+        "judge-only success signals, which leave nothing to check mechanically",
+        "difficulty asserted from the prompt rather than measured against a baseline"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2608.27260",
+          "title": "What Makes Good Agentic Data? An ACE Lens on Data Generation for LLM Agents",
+          "note": "data factored into environment, task, interaction, and verifier; generation as constrained distribution design with construction separated from verification and selection"
+        },
+        {
+          "arxiv_id": "2604.09813",
+          "title": "Controllable and Verifiable Tool-Use Data Synthesis for Agentic Reinforcement Learning",
+          "note": "self-evolving synthesis with multi-level validation, then oracle-preserving augmentation with distractor tools, ambiguous queries, and noisy tool outputs"
+        }
+      ]
+    },
+    {
+      "id": "decision-grounded-skill-package-synthesis",
+      "name": "Decision-grounded trajectories over composed skill packages",
+      "family": "data-synthesis",
+      "summary": "A successful trajectory is not automatically useful supervision: it may leave out the observation-action dependencies that matter, and its actions may not be justified by the information visible at decision time. Two requirements therefore drive construction, compositional coverage so the important observation-action dependencies appear, and decision grounding so every supervised action is supported by the learner-visible history. Instances are built as skill packages: a configuration of one or several skills drawn from the source, a task that requires them, and an executable trajectory in which each skill is actually exercised. Verification is rule-based plus agent-based with feedback-guided repair, and only trajectories that substantively use every required skill are retained.",
+      "when_to_use": [
+        "the source documents procedures, commands, or workflows that can be packaged as skills",
+        "you need coverage of compositions rather than many instances of one task",
+        "an executable environment is available to produce and validate trajectories"
+      ],
+      "not_when_to_use": [
+        "the source has no reusable procedures to compose",
+        "only single-step calls are needed, where composition is irrelevant"
+      ],
+      "inputs": [
+        "a pool of skills, each with an executable procedure",
+        "an environment where the skills can be run and observed",
+        "a rule-based checker and an agent-based checker for the same instance"
+      ],
+      "steps": [
+        {
+          "title": "Extract and select the skill configuration",
+          "detail": "Turn the source's documented procedures into skills with an explicit trigger and effect, then select configurations, single skill and multi-skill combinations, that the environment can actually execute. A configuration naming skills that cannot be applied is dropped."
+        },
+        {
+          "title": "Generate the task for the configuration",
+          "detail": "Synthesize a task that requires the selected skills, together with the observable start state it assumes, so the skills are necessary rather than decorative."
+        },
+        {
+          "title": "Execute to obtain the trajectory",
+          "detail": "Run the configuration in the environment and record the full trajectory with the observations available at each decision point; that observation history is what grounding is judged against."
+        },
+        {
+          "title": "Check compositional coverage",
+          "detail": "Identify the observation-action dependencies the task depends on and confirm the trajectory contains instances of each. Where a dependency is under-supported, construct additional interactions around it instead of reusing the same success."
+        },
+        {
+          "title": "Check decision grounding",
+          "detail": "For each supervised action verify that the learner-visible history supports it, that is, the needed observation appears earlier in the trajectory. Actions that only make sense with hindsight are dropped from supervision."
+        },
+        {
+          "title": "Verify with two checkers and repair",
+          "detail": "Run a rule-based checker and an agent-based checker on the same instance and use their feedback to repair the task or the trajectory; instances that still fail are discarded rather than patched by hand."
+        },
+        {
+          "title": "Retain by substantive use",
+          "detail": "Keep only trajectories where every required skill is exercised to a meaningful degree, and record the structural-support selection that decided which instances to keep."
+        }
+      ],
+      "verifier": [
+        "each retained trajectory exercises every skill named in its configuration, checked by a per-skill usage counter",
+        "the rule-based checker exits zero on the retained trajectory and non-zero on discarded ones",
+        "the agent-based checker agrees with the rule-based checker on the retained set at the reported rate",
+        "coverage statistics over the selected configurations are emitted with the pool"
+      ],
+      "pitfalls": [
+        "successful trajectories reused wholesale, leaving the important dependencies unrepresented",
+        "actions supervised that the visible history does not justify, teaching hindsight reasoning",
+        "configurations naming skills the environment cannot run",
+        "only the agent-based checker used, which passes instances the deterministic rules reject",
+        "near-duplicate instances differing in wording but not in structure"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2610.33568",
+          "title": "Trajectory2Gym: Decision-Grounded Compositional Interaction Synthesis for Tool-Use Agents",
+          "note": "compositional coverage and decision grounding as the two requirements on trajectory supervision, with structural-support selection over constructed interactions"
+        },
+        {
+          "arxiv_id": "2608.02287",
+          "title": "SKT: Skill-Use Training at Scale via Verified Synthetic Data Generation",
+          "note": "selection of single and multi-skill configurations, rule-based and agent-based verification with feedback-guided repair, and retention of trajectories that substantially use every required skill"
+        }
+      ]
+    },
+    {
+      "id": "deterministic-api-cache-provenance",
+      "name": "Deterministic API cache with argument provenance",
+      "family": "data-synthesis",
+      "summary": "A deterministic environment is built from a cache of real API responses, keyed by the request, so multi-step traces are valid and replayable instead of depending on live services. A dependency-ordered workflow graph is synthesized over that surface with dependency depth as the explicit complexity knob, and every argument in the trace is bound by provenance to a prior observation, a prior tool result, or a value stated in the request, which is what prevents the right tool from being called with a fabricated or stale parameter. Validation runs turn by turn against the resulting state, and grading is graduated, separating per-call atomic validity from orchestration consistency so partial correctness stays visible.",
+      "when_to_use": [
+        "the source is an API or service surface whose responses can be captured once",
+        "long-range argument dependencies matter, not only tool selection",
+        "rollouts must be reproducible for verification"
+      ],
+      "not_when_to_use": [
+        "the source's tools have side effects that cannot be recorded and replayed",
+        "the task does not depend on arguments across calls, so plain mocking suffices"
+      ],
+      "inputs": [
+        "the request and response pairs of the tools the source exposes",
+        "a cache keyed by request, with deterministic behaviour for unknown keys",
+        "a provenance rule for each argument position"
+      ],
+      "steps": [
+        {
+          "title": "Capture the surface and cache the responses",
+          "detail": "Record the real requests and responses for the tools in scope, keyed by the parameters that determine the reply. The cache is the ground truth of the mock and is stored with the task."
+        },
+        {
+          "title": "Build the deterministic replay environment",
+          "detail": "The mock returns the cached response for a known key and a deterministic error for an unknown one, so an invalid call sequence fails loudly instead of being silently tolerated. Replaying the same keys twice returns identical bytes."
+        },
+        {
+          "title": "Synthesize the workflow graph",
+          "detail": "Pick a target outcome and derive a dependency-ordered sequence of calls in which the output of one call supplies an argument of the next. The dependency depth is set deliberately and recorded as the instance's complexity."
+        },
+        {
+          "title": "Bind arguments by provenance",
+          "detail": "For every argument in the trace record its source: an observation the agent saw, an earlier tool result, or a value stated in the request. Values with no such source are fabricated and are rejected even when the tool choice is right."
+        },
+        {
+          "title": "Validate turn by turn",
+          "detail": "After each turn compare the resulting state with the expected state and re-check the provenance constraints; repair the offending turn or drop the instance."
+        },
+        {
+          "title": "Grade with graduated checks",
+          "detail": "Score each call on atomic validity at increasing granularity (exact match, type or slot match, partial) and separately score orchestration consistency (ordering and dependency respected). Keep the per-call and per-order breakdown so partial credit is mechanical."
+        },
+        {
+          "title": "Freeze cache, trace, and checks",
+          "detail": "Ship the cache, the trace with its provenance annotations, and the per-call checks as one artifact."
+        }
+      ],
+      "verifier": [
+        "replaying the recorded request keys returns byte-identical responses, and an unknown key raises the deterministic error",
+        "every argument in the trace resolves to a recorded provenance source, checked by a script over the annotations",
+        "the per-call and the per-order checks are reported separately for every instance",
+        "the cache file is committed alongside the task, so the environment needs no network"
+      ],
+      "pitfalls": [
+        "cache keys that do not match the request shape, so valid calls look like errors",
+        "plausible but unsourced arguments, which pass a tool-choice check and fail on execution",
+        "a single binary reward, which discards the partial-correctness signal",
+        "live calls left in the loop, breaking reproducibility",
+        "cache kept in sync by hand after a schema change"
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2603.24709",
+          "title": "Training LLMs for Multi-Step Tool Orchestration with Constrained Data Synthesis and Graduated Rewards",
+          "note": "deterministic environment backed by a cache of real API responses; graduated reward splits atomic call validity from orchestration consistency"
+        },
+        {
+          "arxiv_id": "2609.06124",
+          "title": "SAP: State-Guided Data Synthesis with Argument Provenance for Multi-Turn Tool Use",
+          "note": "state guidance, tool-argument provenance constraints, and turn-level validation prevent fabricated or stale arguments in long-range trajectories"
+        }
+      ]
+    }
+  ]
+}
