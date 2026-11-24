@@ -53,6 +53,10 @@ def test_server_exposes_the_recipe_tools():
         "recommend_recipes",
         "plan_task",
         "list_recipe_families",
+        "stage_source",
+        "list_staged",
+        "scaffold_task",
+        "validate_task",
     }
 
 
@@ -96,3 +100,93 @@ def test_get_recipe_and_unknown_id():
     assert recipe["id"] == "dockerized-terminal-blueprint"
     assert len(recipe["steps"]) >= 5
     assert missing["error"]
+
+VERIFIER_CODE = (
+    "#!/bin/bash" + chr(10)
+    + "mkdir -p /logs/verifier" + chr(10)
+    + "echo 1 > /logs/verifier/reward.txt" + chr(10)
+    + "test -f /app/out.txt" + chr(10)
+)
+
+
+def test_stage_source_stages_an_upload(tmp_path):
+    upload = tmp_path / "notes.md"
+    upload.write_text("material", encoding="utf-8")
+    workspace = tmp_path / "stage"
+
+    async def body(session):
+        res = await session.call_tool(
+            "stage_source",
+            {"uploads": [str(upload)], "workspace": str(workspace)},
+        )
+        return json.loads(res.content[0].text)
+
+    payload = _run_client(body)
+    assert payload["staging_dir"].startswith(str(workspace))
+    assert payload["sources"]
+    assert "uploads/notes.md" in payload["tree"]
+    assert "material" in payload["digest"]
+
+
+def test_scaffold_task_writes_the_task_and_names_the_org(tmp_path):
+    staging = tmp_path / "stage"
+    staging.mkdir()
+
+    async def body(session):
+        res = await session.call_tool(
+            "scaffold_task",
+            {
+                "name": "demo-task",
+                "instruction_md": "Do the thing.",
+                "verifier_code": VERIFIER_CODE,
+                "staging_dir": str(staging),
+                "org": "acme",
+                "source_notes": "following dockerized-terminal-blueprint",
+            },
+        )
+        return json.loads(res.content[0].text)
+
+    payload = _run_client(body)
+    task_dir = Path(payload["task_dir"])
+    assert task_dir == staging / "tasks" / "demo-task"
+    toml_text = (task_dir / "task.toml").read_text(encoding="utf-8")
+    assert 'name = "acme/demo-task"' in toml_text
+    assert "dockerized-terminal-blueprint" in payload["recipes"]
+    assert "tests/test.sh" in payload["files"]
+
+
+def test_validate_task_accepts_what_scaffold_task_wrote(tmp_path):
+    staging = tmp_path / "stage"
+    staging.mkdir()
+
+    async def body(session):
+        made = await session.call_tool(
+            "scaffold_task",
+            {
+                "name": "demo-task",
+                "instruction_md": "Do the thing.",
+                "verifier_code": VERIFIER_CODE,
+                "staging_dir": str(staging),
+            },
+        )
+        task_dir = json.loads(made.content[0].text)["task_dir"]
+        checked = await session.call_tool("validate_task", {"task_dir": task_dir})
+        return json.loads(checked.content[0].text)
+
+    payload = _run_client(body)
+    assert payload["ok"] is True
+    assert payload["errors"] == []
+
+
+def test_validate_task_reports_a_broken_task(tmp_path):
+    task_dir = tmp_path / "task"
+    task_dir.mkdir()
+
+    async def body(session):
+        res = await session.call_tool("validate_task", {"task_dir": str(task_dir)})
+        return json.loads(res.content[0].text)
+
+    payload = _run_client(body)
+    assert payload["ok"] is False
+    assert payload["errors"]
+

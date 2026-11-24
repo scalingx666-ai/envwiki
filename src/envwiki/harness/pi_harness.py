@@ -216,6 +216,8 @@ class PiHarness(Harness):
 
         env = self.config.harness_env()
         env.setdefault("NO_COLOR", "1")
+        # The envwiki MCP server writes into this workspace by default.
+        env["ENVWIKI_STAGING_DIR"] = str(cwd)
 
         try:
             proc = subprocess.run(

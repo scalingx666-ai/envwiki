@@ -1,76 +1,84 @@
 ---
 name: env-synthesis
-description: Turn source material (a repository, a document, a dataset, a web or terminal application) into a verifiable Harbor benchmark task. Use when authoring a Harbor task, or when you must choose an environment or task synthesis method - the envwiki MCP server serves recipes distilled from the synthesis literature.
+description: Build a verifiable Harbor benchmark task from source material (a repository, a document, a dataset, a web or terminal application). Use when authoring a Harbor task, or when you must choose an environment or task synthesis method - the envwiki MCP server serves recipes distilled from the synthesis literature plus the tools that write and check the task.
 ---
 
 # Environment and task synthesis
 
-envwiki serves a library of **recipes**: each one is an environment or task
-synthesis method abstracted from the papers that describe it, with the
-procedure, the required inputs, the verification strategy and the pitfalls.
+You build one Harbor task out of the material you are given. The method comes
+from the envwiki MCP server, not from you.
 
-Do not invent a method from scratch. Pick the recipe that fits the material,
-then execute it.
+## The tools
+
+| tool | what it is for |
+| --- | --- |
+| `mcp__envwiki__plan_task` | describe the material, get the ranked methods plus the full procedure of the best one |
+| `mcp__envwiki__get_recipe` | read one method in full: inputs, steps, verification, pitfalls, papers |
+| `mcp__envwiki__search_recipes`, `mcp__envwiki__list_recipes` | when the fit is unclear |
+| `mcp__envwiki__stage_source` | resolve a link or an upload into material you can explore (the CLI usually does this for you) |
+| `mcp__envwiki__scaffold_task` | write the task directory from your spec |
+| `mcp__envwiki__validate_task` | check it, and fix whatever it reports |
+
+`scaffold_task` is your only way to write files. `validate_task` is
+the only way to know the task is acceptable.
 
 ## Workflow
 
-1. **Profile the source.** One paragraph: what the material is, what capability
-   it exercises, and what could be checked without a network.
-2. **Ask for candidates.** Call the envwiki MCP server's
-   `mcp__envwiki__plan_task` tool with that paragraph. It returns the
-   ranked recipes, and the full procedure of the best one.
-3. **Read the winner.** Call `mcp__envwiki__get_recipe` with the
-   chosen id for the full procedure. `mcp__envwiki__recommend_recipes`,
-   `mcp__envwiki__search_recipes` and `mcp__envwiki__list_recipes` are
-   there when the fit is unclear.
-4. **Execute the recipe.** The recipe is a method; the source material is
-   fixed; the task is one concrete instance of it. Keep only the steps that
-   the material can actually support.
-5. **Build the Harbor task.** Follow the recipe's verifier section, then the
-   non-negotiables below.
+1. **Profile the material.** One paragraph: what it is, what capability it
+   exercises, what could be checked without a network.
+2. **Pick a method.** Call `plan_task` with that paragraph and read the
+   top result's steps. If they do not fit, read the alternatives with
+   `get_recipe`.
+3. **Follow the method.** A method is a procedure, the material is fixed, and
+   the task is one concrete instance of it. Keep the steps the material can
+   actually support.
+4. **Scaffold.** Call `scaffold_task` with your spec.
+5. **Validate.** Call `validate_task`. Fix every error, and every
+   warning you can, then validate again.
 
-## Writing the source profile
+## What a good task is
 
-Good profiles name the artefact, the capability and the observable outcome:
+- One concrete, checkable outcome. Not "improve the code", not "write good
+  tests". The check should be a file, an exit code, an output line, a state.
+- Grounded in something that really exists in the material: a real script, a
+  real defect, a real data file, a real API contract, a real document section.
+- Solvable offline, from the instruction alone, in the sandbox.
 
-    A Python CLI that converts CSV to JSON. The capability is data wrangling
-    with argument parsing; the outcome is a JSON file whose rows and key
-    order can be compared exactly.
+## The verifier is the contract
 
-    A bilingual markdown reading list. The capability is precise extraction
-    from a long document; the outcome is a sorted report file.
+- Deterministic, and it must fail on an untouched workspace.
+- It writes the reward to ```/logs/verifier/reward.txt```: "1" pass,
+  "0" fail. It exits 0 either way; the reward file is the signal.
+- Prefer small checks: file contents, command output, exit codes.
+- Never needs the network, never depends on which tools the agent used.
 
-Avoid profiles that only say "a repository" or "a paper".
+## The reference solution
 
-## Non-negotiables for the task
+- It must make the verifier pass, run from the environment's working directory.
+- It is the proof that the task is solvable, so write it as if you were
+  solving the task, not as a sketch.
+- It must not depend on anything the verifier itself created.
 
-- The verifier is deterministic and must fail on an untouched workspace.
-- It writes the reward to `/logs/verifier/reward.txt`
-  ("1" pass, "0" fail) and exits 0 either way.
-- The reference solution makes the verifier pass, from the environment workdir.
-- No network at solve time or verify time.
-- The instruction, the verifier and the solution must name the same paths. A
-  file listed in `copy_from_staging` lands at the root of the working
-  directory under its own file name, so `repos/x/readme.md` becomes
-  `/app/readme.md`.
-- One concrete, checkable outcome. Not "improve the code".
+## Paths
 
-## Environment rules
-
-- `environment/Dockerfile` is built with `environment/` as the
+- ```environment/Dockerfile``` is built with ```environment/``` as the
   Docker build context.
-- Default base image `ubuntu:24.04`, working directory `/app`.
+- A file you list in ```copy_from_staging``` lands at the root of the
+  working directory under its own file name: ```repos/x/readme.md```
+  becomes ```/app/readme.md```. Name that exact path in the
+  instruction, in the verifier and in the solution.
+- Base image ```ubuntu:24.04``` and working directory ```/app``` are
+  safe defaults.
 - Install what the task needs at build time; the sandbox has no network later.
+- The task name is org/name: ```scaffold_task``` prefixes the org you pass it,
+  so pass the org the task belongs to.
 
-## Before answering
+## Before you validate
 
 ```
-1. The recipe was fetched and followed, and the summary says which one.
-2. The task is solvable from instruction.md alone, offline, in the sandbox.
-3. The verifier fails on an empty workspace and passes on the solution result.
-4. The verifier writes /logs/verifier/reward.txt.
-5. Instruction, verifier and solution agree on every file path.
+1. The task is solvable from instruction.md alone, offline, in the sandbox.
+2. The verifier fails on an empty workspace and passes on the solution result.
+3. The verifier writes /logs/verifier/reward.txt.
+4. The instruction, the verifier and the solution agree on every path.
+5. source_notes names the recipe you followed.
 ```
-
-Return the task as a single JSON object matching the shape the caller asked
-for, and nothing else.

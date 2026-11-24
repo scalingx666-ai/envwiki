@@ -6,7 +6,8 @@ from pathlib import Path
 
 from envwiki.convert.builder import (
     asset_destinations,
-    extract_json,
+    discover_tasks,
+    publish_task,
     render_dockerfile,
     render_task_toml,
     write_task,
@@ -72,15 +73,6 @@ def test_dockerfile_copies_into_workdir():
     assert "FROM ubuntu:24.04" in dockerfile
     assert "COPY readme.md /app/readme.md" in dockerfile
     assert "WORKDIR /app" in dockerfile
-
-
-def test_extract_json_handles_fences_and_noise():
-    fenced = chr(96) * 3 + "json" + chr(10) + '{"a": 1}' + chr(10) + chr(96) * 3
-    assert extract_json(fenced) == {"a": 1}
-    noisy = "Here you go:" + chr(10) + '{"a": 2}' + chr(10) + "Hope that helps"
-    assert extract_json(noisy) == {"a": 2}
-    assert extract_json("no json here") is None
-    assert extract_json("") is None
 
 
 def test_write_task_creates_expected_layout(tmp_path: Path):
@@ -156,9 +148,42 @@ def test_validate_flags_missing_instruction(tmp_path: Path):
     assert any("instruction.md" in issue.message for issue in report.errors)
 
 
-def test_prompt_mentions_copy_semantics():
-    assert "copy_from_staging" in SYSTEM_PROMPT
-    prompt = build_user_prompt("DIGEST", "/tmp/staging", "file.txt")
+def test_discover_tasks_finds_what_the_agent_wrote(tmp_path: Path):
+    staging = tmp_path / "staging"
+    (staging / "tasks" / "demo").mkdir(parents=True)
+    (staging / "tasks" / "demo" / "task.toml").write_text("x = 1", encoding="utf-8")
+    (staging / "repos" / "o").mkdir(parents=True)
+    (staging / "repos" / "o" / "task.toml").write_text("x = 1", encoding="utf-8")
+
+    found = discover_tasks(staging)
+    assert found == [staging / "tasks" / "demo"]
+
+
+def test_discover_tasks_returns_nothing_for_empty_material(tmp_path: Path):
+    staging = tmp_path / "staging"
+    (staging / "pages").mkdir(parents=True)
+    (staging / "pages" / "a.md").write_text("hi", encoding="utf-8")
+    assert discover_tasks(staging) == []
+
+
+def test_publish_task_copies_the_task_under_the_output_root(tmp_path: Path):
+    task_dir = write_task(_draft(), tmp_path / "demo-task")
+    published = publish_task(task_dir, tmp_path / "out")
+    assert published == tmp_path / "out" / "demo-task"
+    assert (published / "task.toml").is_file()
+    assert (published / "tests" / "test.sh").is_file()
+
+
+def test_prompt_points_at_the_tools_not_at_a_task_spec():
+    assert "envwiki MCP server" in SYSTEM_PROMPT
+    assert "env-synthesis" in SYSTEM_PROMPT
+    # The task contract lives in the tool signature, never in prose.
+    assert "schema_version" not in SYSTEM_PROMPT
+    assert "copy_from_staging" not in SYSTEM_PROMPT
+    assert "scaffold_task" not in SYSTEM_PROMPT
+
+    prompt = build_user_prompt("DIGEST", "/tmp/staging", "file.txt", org="acme")
     assert "DIGEST" in prompt
     assert "/tmp/staging" in prompt
     assert "file.txt" in prompt
+    assert "acme" in prompt

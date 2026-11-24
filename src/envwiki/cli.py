@@ -8,7 +8,7 @@ from pathlib import Path
 import typer
 
 from envwiki.config import EnvwikiConfig, ModelEndpoint
-from envwiki.convert.builder import extract_json, write_task
+from envwiki.convert.builder import discover_tasks, publish_task
 from envwiki.convert.prompt import SYSTEM_PROMPT, build_user_prompt
 from envwiki.convert.validate import validate_task
 from envwiki.harness.direct import DirectHarness
@@ -16,18 +16,14 @@ from envwiki.harness.pi_harness import PiHarness, register_provider
 from envwiki.ingest.bundle import build_bundle
 from envwiki.ingest.classify import classify_url, parse_github_url
 from envwiki.llm.client import LLMClient
-from envwiki.schemas import TaskDraft
-
-NL = chr(10)
-NL2 = NL * 2
 
 app = typer.Typer(
     add_completion=False,
-    help="Turn any link or uploaded content into an initial Harbor task.",
+    help="Drive an agent that turns links or uploads into a Harbor task.",
 )
 model_app = typer.Typer(help="Inspect and register the model endpoint.")
 app.add_typer(model_app, name="model")
-mcp_app = typer.Typer(help="Serve the recipe library over MCP.")
+mcp_app = typer.Typer(help="Serve the envwiki toolbox over MCP.")
 app.add_typer(mcp_app, name="mcp")
 
 
@@ -42,33 +38,6 @@ def _endpoint(
     )
 
 
-def _draft_from_payload(payload: dict) -> TaskDraft:
-    """Map a loosely shaped model payload onto the TaskDraft schema."""
-    data = dict(payload)
-    data["name"] = str(data.get("name") or "envwiki-task")
-    instruction = data.get("instruction_md") or data.get("instruction") or ""
-    data["instruction_md"] = str(instruction)
-
-    environment = dict(data.get("environment") or {})
-    environment.setdefault("base_image", "ubuntu:24.04")
-    environment.setdefault("workdir", "/app")
-    environment.setdefault("os", "linux")
-    data["environment"] = environment
-
-    verifier = dict(data.get("verifier") or {})
-    verifier["code"] = str(verifier.get("code") or "")
-    verifier.setdefault("language", "bash")
-    data["verifier"] = verifier
-
-    solution = data.get("solution")
-    if not isinstance(solution, dict) or not str(solution.get("code") or "").strip():
-        solution = None
-    data["solution"] = solution
-
-    data["metadata"] = dict(data.get("metadata") or {})
-    return TaskDraft.model_validate(data)
-
-
 @app.command("build")
 def build_cmd(
     links: list[str] | None = typer.Argument(None, help="Links to ingest."),
@@ -76,7 +45,10 @@ def build_cmd(
         None, "--upload", "-u", help="File to upload (repeatable)."
     ),
     out: Path = typer.Option(
-        Path("envwiki-tasks"), "--out", "-o", help="Where the task directory is written."
+        Path("envwiki-tasks"),
+        "--out",
+        "-o",
+        help="Where the finished task directories are written.",
     ),
     harness: str = typer.Option("pi", "--harness", help="Harness backend: pi or direct."),
     workspace: Path | None = typer.Option(
@@ -116,7 +88,7 @@ def build_cmd(
     timeout: float = typer.Option(1800.0, "--timeout", help="Harness timeout in seconds."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Ingest only, do not call the model."),
 ) -> None:
-    """Ingest links or uploads and synthesise one Harbor task."""
+    """Stage the material, let the agent build a task, validate what it wrote."""
     link_list = [link.strip() for link in (links or []) if link and link.strip()]
     upload_list = [Path(p).expanduser() for p in (upload or [])]
     if not link_list and not upload_list:
@@ -128,7 +100,7 @@ def build_cmd(
     if workspace is not None:
         config.workspace = workspace
 
-    typer.echo("ingesting sources ...")
+    typer.echo("staging sources ...")
     bundle = build_bundle(link_list, upload_list, config.workspace, config.max_context_chars)
     for warning in bundle.warnings:
         typer.echo("warning: " + warning, err=True)
@@ -165,7 +137,7 @@ def build_cmd(
         raise typer.Exit(2)
 
     prompt = build_user_prompt(
-        bundle.digest, str(bundle.staging_dir), bundle.tree
+        bundle.digest, str(bundle.staging_dir), bundle.tree, org=org
     )
     typer.echo("running harness (" + harness + ") ...")
     result = agent.run(
@@ -177,39 +149,42 @@ def build_cmd(
     )
     if not result.ok:
         typer.echo("harness failed: " + result.error, err=True)
+        if result.text:
+            typer.echo(result.text[:1500], err=True)
         raise typer.Exit(1)
 
-    payload = extract_json(result.text)
-    if payload is None and result.text:
-        payload = extract_json(result.text[-8000:])
-    if payload is None:
-        typer.echo("harness output contained no JSON task spec", err=True)
-        typer.echo(result.text[:1500], err=True)
+    produced = discover_tasks(bundle.staging_dir)
+    if not produced:
+        typer.echo(
+            "the agent wrote no task under " + str(bundle.staging_dir), err=True
+        )
+        typer.echo(
+            "scaffold_task writes tasks/<name>/task.toml there; nothing was found",
+            err=True,
+        )
+        if result.text:
+            typer.echo(result.text[:1500], err=True)
         raise typer.Exit(1)
 
-    try:
-        draft = _draft_from_payload(payload)
-    except Exception as exc:
-        typer.echo("the task spec was not usable: " + str(exc)[:400], err=True)
-        raise typer.Exit(1) from exc
+    failed = False
+    for task_dir in produced:
+        report = validate_task(task_dir)
+        for issue in report.issues:
+            typer.echo(issue.level + ": " + issue.message, err=(issue.level == "error"))
+        published = publish_task(task_dir, out)
+        typer.echo("task: " + str(published))
+        typer.echo(
+            "validation: "
+            + ("ok" if report.ok else "failed")
+            + " (schema source: "
+            + report.schema_source
+            + ")"
+        )
+        if not report.ok:
+            failed = True
 
-    task_dir = write_task(
-        draft, out / draft.name, staging_dir=bundle.staging_dir, org=org
-    )
-    report = validate_task(task_dir)
-    for issue in report.issues:
-        typer.echo(issue.level + ": " + issue.message, err=(issue.level == "error"))
-
-    typer.echo("task: " + str(task_dir))
-    typer.echo(
-        "validation: "
-        + ("ok" if report.ok else "failed")
-        + " (schema source: "
-        + report.schema_source
-        + ")"
-    )
     typer.echo("staging dir: " + str(bundle.staging_dir))
-    if not report.ok:
+    if failed:
         raise typer.Exit(1)
 
 
@@ -297,7 +272,7 @@ def mcp_serve(
     host: str = typer.Option("127.0.0.1", "--host"),
     port: int = typer.Option(8765, "--port"),
 ) -> None:
-    """Serve the synthesis recipe library over MCP."""
+    """Serve the envwiki toolbox over MCP: recipes, staging and scaffolding."""
     from envwiki.mcp_server import server
 
     if transport == "stdio":

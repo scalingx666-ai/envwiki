@@ -1,11 +1,17 @@
-#"""Task synthesis and Harbor task construction."""
+"""Task synthesis and Harbor task construction."""
 
-from envwiki.convert.builder import extract_json, render_task_toml, write_task
+from envwiki.convert.builder import (
+    discover_tasks,
+    publish_task,
+    render_task_toml,
+    write_task,
+)
 from envwiki.convert.prompt import SYSTEM_PROMPT, build_user_prompt
 from envwiki.convert.validate import Issue, ValidationReport, validate_task
 
 __all__ = [
-    "extract_json",
+    "discover_tasks",
+    "publish_task",
     "render_task_toml",
     "write_task",
     "SYSTEM_PROMPT",

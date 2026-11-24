@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-import re
+import os
 import shutil
 from pathlib import Path
 
@@ -16,8 +16,11 @@ DEFAULT_ORG = "envwiki"
 
 NL = chr(10)
 
-#: A triple backtick fence, built without embedding backticks in source.
-_FENCE = chr(96) * 3
+#: The file that marks a directory as a Harbor task.
+TASK_FILE = "task.toml"
+
+#: Staged source directories: a task is never found inside the material.
+SOURCE_DIRS = {"repos", "pages", "uploads"}
 
 
 def _toml_str(value: str) -> str:
@@ -229,49 +232,52 @@ def write_task(
     return out_dir
 
 
-def extract_json(text: str) -> dict | None:
-    """Pull a JSON object out of a model response that may wrap it in fences."""
-    text = (text or "").strip()
-    if not text:
-        return None
+def discover_tasks(root: Path) -> list[Path]:
+    """Every task directory the agent produced under root.
 
-    pattern = re.escape(_FENCE) + r"(?:json)?\s*(.*?)" + re.escape(_FENCE)
-    fenced = re.search(pattern, text, re.DOTALL)
-    candidates = [fenced.group(1).strip()] if fenced else []
-    candidates.append(text)
+    The agent writes through the scaffolding tool, so the task shows up as a
+    directory that holds a task.toml. Anything inside the staged material is
+    ignored: the source is data, not a task.
+    """
+    root = Path(root).expanduser().resolve()
+    found: list[Path] = []
 
-    start = text.find("{")
-    if start >= 0:
-        depth = 0
-        in_str = False
-        esc = False
-        for i in range(start, len(text)):
-            ch = text[i]
-            if in_str:
-                if esc:
-                    esc = False
-                elif ch == chr(92):
-                    esc = True
-                elif ch == '"':
-                    in_str = False
-                continue
-            if ch == '"':
-                in_str = True
-            elif ch == "{":
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0:
-                    candidates.append(text[start : i + 1])
-                    break
+    def add(path: Path) -> None:
+        if path not in found:
+            found.append(path)
 
-    for cand in candidates:
-        if not cand:
-            continue
-        try:
-            parsed = json.loads(cand)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(parsed, dict):
-            return parsed
-    return None
+    if (root / TASK_FILE).is_file():
+        add(root)
+
+    tasks_root = root / "tasks"
+    if tasks_root.is_dir():
+        for child in sorted(tasks_root.iterdir()):
+            if (child / TASK_FILE).is_file():
+                add(child)
+
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [
+            name
+            for name in dirnames
+            if not name.startswith(".")
+            and name not in SOURCE_DIRS
+            and name != "node_modules"
+        ]
+        if TASK_FILE in filenames:
+            add(Path(dirpath))
+
+    return found
+
+
+def publish_task(task_dir: Path, out_root: Path) -> Path:
+    """Copy a finished task directory under out_root and return the copy."""
+    task_dir = Path(task_dir).expanduser().resolve()
+    out_root = Path(out_root).expanduser().resolve()
+    out_root.mkdir(parents=True, exist_ok=True)
+    target = out_root / task_dir.name
+    if target == task_dir:
+        return task_dir
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(task_dir, target)
+    return target

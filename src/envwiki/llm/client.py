@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +18,8 @@ class ChatResult:
     ok: bool
     error: str = ""
     raw: dict[str, Any] | None = None
+    #: Tool calls the model asked for, in OpenAI wire format.
+    tool_calls: list[dict[str, Any]] = field(default_factory=list)
 
 
 def image_data_url(path: Path) -> str:
@@ -28,6 +30,24 @@ def image_data_url(path: Path) -> str:
     mime = mimetypes.guess_type(path.name)[0] or "image/png"
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
     return f"data:{mime};base64,{encoded}"
+
+
+def _tool_calls(message: dict[str, Any]) -> list[dict[str, Any]]:
+    """Normalise the tool calls of one assistant message."""
+    calls: list[dict[str, Any]] = []
+    for raw in message.get("tool_calls") or []:
+        function = raw.get("function") or {}
+        calls.append(
+            {
+                "id": str(raw.get("id") or ""),
+                "type": "function",
+                "function": {
+                    "name": str(function.get("name") or ""),
+                    "arguments": str(function.get("arguments") or "{}"),
+                },
+            }
+        )
+    return calls
 
 
 class LLMClient:
@@ -56,6 +76,7 @@ class LLMClient:
         *,
         max_tokens: int | None = None,
         temperature: float | None = None,
+        tools: list[dict[str, Any]] | None = None,
         extra: dict[str, Any] | None = None,
     ) -> ChatResult:
         body: dict[str, Any] = {
@@ -63,6 +84,9 @@ class LLMClient:
             "messages": messages,
             "stream": False,
         }
+        if tools:
+            body["tools"] = tools
+            body["tool_choice"] = "auto"
         if max_tokens:
             body["max_tokens"] = max_tokens
         if temperature is not None:
@@ -95,7 +119,7 @@ class LLMClient:
         text = (message.get("content") or "").strip()
         if not text and message.get("reasoning_content"):
             text = str(message["reasoning_content"]).strip()
-        return ChatResult(text, True, raw=payload)
+        return ChatResult(text, True, raw=payload, tool_calls=_tool_calls(message))
 
     def chat_with_images(
         self,
