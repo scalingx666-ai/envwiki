@@ -209,11 +209,18 @@ def stage_source(
     target = Path(workspace).expanduser() if workspace else Path(
         tempfile.mkdtemp(prefix="envwiki-stage-")
     )
-    bundle = build_bundle(
-        list(urls or []),
-        [Path(u) for u in (uploads or [])],
-        target,
-    )
+    try:
+        bundle = build_bundle(
+            list(urls or []),
+            [Path(u) for u in (uploads or [])],
+            target,
+        )
+    except Exception as exc:
+        return {
+            "error": "could not stage the material: "
+            + type(exc).__name__ + ": " + str(exc)[:400],
+            "hint": "check the url and that the workspace is writable",
+        }
     return {
         "staging_dir": str(bundle.staging_dir),
         "tree": bundle.tree,
@@ -239,6 +246,38 @@ def list_staged(staging_dir: str) -> dict[str, Any]:
 # ---------------------------------------------------------------- scaffolding
 
 
+def _target_dir(task_dir: str, staging: Path | None, name: str) -> tuple[Path, str]:
+    """Where the task should be written, and a note when it could not go there.
+
+    An agent that asks for a path it cannot write to still gets its task: it
+    lands in the workspace instead, and the note says so.
+    """
+    if task_dir:
+        out = Path(task_dir).expanduser()
+        try:
+            out.mkdir(parents=True, exist_ok=True)
+            probe = out / ".envwiki-write-probe"
+            probe.write_text("ok", encoding="utf-8")
+            probe.unlink()
+            return out, ""
+        except OSError as exc:
+            if staging is not None:
+                return (
+                    staging / "tasks" / name,
+                    "task_dir '"
+                    + str(out)
+                    + "' is not writable ("
+                    + type(exc).__name__
+                    + ": "
+                    + str(exc)
+                    + "); the task was written into the workspace instead",
+                )
+            return out, ""
+    if staging is not None:
+        return staging / "tasks" / name, ""
+    return Path(tempfile.mkdtemp(prefix="envwiki-task-")) / name, ""
+
+
 @server.tool(
     name="scaffold_task",
     description=(
@@ -249,8 +288,11 @@ def list_staged(staging_dir: str) -> dict[str, Any]:
         "/logs/verifier/reward.txt, solution_code is the reference solution. "
         "Files listed in copy_from_staging are copied into the image and "
         "land at the root of the working directory under their own file name. "
-        "Call validate_task on the result. The task name is "
-        "prefixed with the org you pass."
+        "Pass staging_dir to write into that workspace (the task lands in "
+        "<staging>/tasks/<name>); task_dir overrides the location and must be "
+        "writable, and if it is not the task goes into the workspace instead "
+        "and the answer says so. Call validate_task on the result. The task "
+        "name is prefixed with the org you pass."
     ),
 )
 def scaffold_task(
@@ -275,36 +317,50 @@ def scaffold_task(
     org: str = "envwiki",
 ) -> dict[str, Any]:
     """Materialise a Harbor task directory from a spec."""
-    draft = TaskDraft(
-        name=name,
-        description=description,
-        metadata=TaskMetadata(difficulty=difficulty, category=category, tags=list(tags or [])),
-        instruction_md=instruction_md,
-        environment=EnvironmentSpec(
-            base_image=base_image,
-            workdir=workdir,
-            os=target_os,
-            setup_commands=list(setup_commands or []),
-            copy_from_staging=list(copy_from_staging or []),
-        ),
-        verifier=VerifierSpec(language=verifier_language, code=verifier_code),
-        solution=(
-            SolutionSpec(language=solution_language, code=solution_code)
-            if solution_code.strip()
-            else None
-        ),
-        source_notes=source_notes,
-    )
+    try:
+        draft = TaskDraft(
+            name=name,
+            description=description,
+            metadata=TaskMetadata(
+                difficulty=difficulty, category=category, tags=list(tags or [])
+            ),
+            instruction_md=instruction_md,
+            environment=EnvironmentSpec(
+                base_image=base_image,
+                workdir=workdir,
+                os=target_os,
+                setup_commands=list(setup_commands or []),
+                copy_from_staging=list(copy_from_staging or []),
+            ),
+            verifier=VerifierSpec(language=verifier_language, code=verifier_code),
+            solution=(
+                SolutionSpec(language=solution_language, code=solution_code)
+                if solution_code.strip()
+                else None
+            ),
+            source_notes=source_notes,
+        )
+    except Exception as exc:
+        return {
+            "error": "the task spec was not usable: "
+            + type(exc).__name__ + ": " + str(exc)[:400],
+            "hint": "instruction_md and verifier_code are required",
+        }
+
     staging_value = staging_dir or os.environ.get("ENVWIKI_STAGING_DIR", "")
     staging = Path(staging_value).expanduser() if staging_value else None
-    if task_dir:
-        out = Path(task_dir).expanduser()
-    elif staging is not None:
-        out = staging / "tasks" / draft.name
-    else:
-        out = Path(tempfile.mkdtemp(prefix="envwiki-task-")) / draft.name
-    written = write_task(draft, out, staging_dir=staging, org=org)
-    return {
+    out, note = _target_dir(task_dir, staging, draft.name)
+    try:
+        written = write_task(draft, out, staging_dir=staging, org=org)
+    except Exception as exc:
+        return {
+            "error": "could not write the task to '"
+            + str(out) + "': " + type(exc).__name__ + ": " + str(exc)[:400],
+            "staging_dir": str(staging) if staging else "",
+            "hint": "pass staging_dir so the task lands in the workspace",
+        }
+
+    answer = {
         "task_dir": str(written),
         "name": draft.name,
         "org": org,
@@ -313,6 +369,9 @@ def scaffold_task(
             str(p.relative_to(written)) for p in written.rglob("*") if p.is_file()
         ),
     }
+    if note:
+        answer["note"] = note
+    return answer
 
 
 @server.tool(
@@ -325,7 +384,15 @@ def scaffold_task(
 )
 def validate_task_tool(task_dir: str) -> dict[str, Any]:
     """Validate a task directory against Harbor's schema."""
-    report = validate_task(Path(task_dir).expanduser())
+    try:
+        report = validate_task(Path(task_dir).expanduser())
+    except Exception as exc:
+        return {
+            "ok": False,
+            "task_dir": task_dir,
+            "errors": [type(exc).__name__ + ": " + str(exc)[:400]],
+            "warnings": [],
+        }
     return {
         "ok": report.ok,
         "task_dir": report.task_dir,

@@ -107,6 +107,29 @@ def test_write_task_copies_staged_asset_into_build_context(tmp_path: Path):
     assert copied.read_text(encoding="utf-8") == "body"
 
 
+def test_write_task_keeps_unrelated_files_in_the_directory(tmp_path: Path):
+    out = tmp_path / "task"
+    out.mkdir()
+    keep = out / "notes.md"
+    keep.write_text("keep me", encoding="utf-8")
+
+    write_task(_draft(), out)
+
+    assert keep.read_text(encoding="utf-8") == "keep me"
+    assert (out / "task.toml").is_file()
+
+
+def test_write_task_replaces_stale_files_of_the_task(tmp_path: Path):
+    out = tmp_path / "task"
+    write_task(_draft(), out)
+    (out / "tests" / "test.py").write_text("stale", encoding="utf-8")
+
+    write_task(_draft(), out)
+
+    assert not (out / "tests" / "test.py").exists()
+    assert (out / "tests" / "test.sh").is_file()
+
+
 def test_task_provenance_records_the_recipe_used(tmp_path: Path):
     draft = _draft()
     draft.source_notes = "Grounded in the paper, following dockerized-terminal-blueprint."

@@ -166,6 +166,54 @@ def test_scaffold_task_writes_the_task_and_names_the_org(tmp_path):
     assert "tests/test.sh" in payload["files"]
 
 
+def test_scaffold_task_falls_back_to_the_workspace_on_an_unusable_path(tmp_path):
+    staging = tmp_path / "stage"
+    staging.mkdir()
+    blocker = tmp_path / "blocker"
+    blocker.write_text("not a directory", encoding="utf-8")
+
+    async def body(session):
+        res = await session.call_tool(
+            "scaffold_task",
+            {
+                "name": "demo-task",
+                "instruction_md": "Do the thing.",
+                "verifier_code": VERIFIER_CODE,
+                "staging_dir": str(staging),
+                "task_dir": str(blocker / "task"),
+            },
+        )
+        return json.loads(res.content[0].text)
+
+    payload = _run_client(body)
+    assert Path(payload["task_dir"]).resolve() == (
+        staging / "tasks" / "demo-task"
+    ).resolve()
+    assert "not writable" in payload["note"]
+    assert (staging / "tasks" / "demo-task" / "task.toml").is_file()
+
+
+def test_scaffold_task_reports_a_write_failure_instead_of_failing(tmp_path):
+    blocker = tmp_path / "blocker"
+    blocker.write_text("not a directory", encoding="utf-8")
+
+    async def body(session):
+        res = await session.call_tool(
+            "scaffold_task",
+            {
+                "name": "demo-task",
+                "instruction_md": "Do the thing.",
+                "verifier_code": VERIFIER_CODE,
+                "task_dir": str(blocker / "task"),
+            },
+        )
+        return json.loads(res.content[0].text)
+
+    payload = _run_client(body)
+    assert "error" in payload
+    assert "could not write the task" in payload["error"]
+
+
 def test_validate_task_accepts_what_scaffold_task_wrote(tmp_path):
     staging = tmp_path / "stage"
     staging.mkdir()

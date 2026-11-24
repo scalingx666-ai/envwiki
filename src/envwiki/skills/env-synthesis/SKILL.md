@@ -37,8 +37,9 @@ the only way to know the task is acceptable.
    the task is one concrete instance of it. Keep the steps the material can
    actually support.
 5. **Scaffold.** Call `scaffold_task` with your spec. Give it `staging_dir`
-   (the workspace from step 1) so the task lands there, or `task_dir` for
-   the exact place you want it.
+   (the workspace from step 1): the task then lands in `<staging>/tasks/<name>`.
+   Only pass `task_dir` when you know the path is writable; if it is not,
+   the task goes into the workspace instead and the tool tells you where.
 6. **Validate.** Call `validate_task`. Fix every error, and every warning
    you can, then validate again.
 

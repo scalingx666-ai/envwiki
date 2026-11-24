@@ -175,12 +175,20 @@ def write_task(
     org: str = DEFAULT_ORG,
     author: str | None = None,
 ) -> Path:
-    """Materialise a Harbor task directory and return its path."""
+    """Materialise a Harbor task directory and return its path.
+
+    The three managed directories are rebuilt from scratch, so a task that is
+    written twice never keeps a stale file. Anything else in the directory is
+    left alone: the caller may have pointed at a directory that holds more
+    than the task.
+    """
     out_dir = out_dir.expanduser().resolve()
-    if out_dir.exists():
-        shutil.rmtree(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
     for sub in ("environment", "solution", "tests"):
-        (out_dir / sub).mkdir(parents=True, exist_ok=True)
+        target = out_dir / sub
+        if target.exists():
+            shutil.rmtree(target)
+        target.mkdir(parents=True, exist_ok=True)
 
     destinations = asset_destinations(draft)
     copied = _copy_staged_assets(draft, out_dir, staging_dir, destinations)
