@@ -32,9 +32,13 @@ schema rule and still be broken, because nothing has actually run yet.
    digest you can read without opening every file.
 2. **Profile the material.** One paragraph: what it is, what capability it
    exercises, what could be checked without a network.
-3. **Pick a method.** Call `plan_task` with that paragraph and read the top
-   result's steps. If they do not fit, read the alternatives with
-   `get_recipe`.
+3. **Pick a method.** Call `plan_task` with that paragraph. It returns
+   cards: for each candidate, the kind of material the method works on, the
+   kind of task it poses, whether it makes a task or checks one, what it
+   needs and what it produces. Compare those fields first. Only the top
+   match comes with its steps. If the fields say none of them fit, read
+   the alternatives with `get_recipe`, or search for the shape you want:
+   `search_recipes` takes words, and the fields come back in the answer.
 4. **Follow the method.** A method is a procedure, the material is fixed, and
    the task is one concrete instance of it. Keep the steps the material can
    actually support.
@@ -52,6 +56,36 @@ schema rule and still be broken, because nothing has actually run yet.
    reference solution has to earn the full reward, and an agent that does
    nothing has to earn less. Fix whatever it reports and run it again. A
    task that has not been gated has not been checked.
+
+## Reading a recipe card
+
+The card is how you choose. Each field answers one question:
+
+| field | the question it answers |
+| --- | --- |
+| `material_kind` | what kind of source does this method work on? code, web, gui, api, data, simulation, multi-agent, embodied, trajectory, specification, infrastructure |
+| `task_kind` | what kind of gap does it leave for the solver? implement, repair, reverse, optimize, extend, reproduce, none |
+| `role` | what it is for: make a task (`create`), build only a runnable environment (`environment`), check a task (`verify`), or curate a set (`curate`)? |
+| `needs` | what the material must already have, as short labels |
+| `produces` | what the solving agent ends up with |
+| `effort` | how much work the method is |
+
+When you have a repository, `material_kind` is usually `code`; when you have
+a web application it is `web` or `gui`; when you have traces of past work it
+is `trajectory`. A method whose `role` is `verify` is what you reach for
+after you have built a task, not before; one whose `role` is `environment`
+leaves you a runnable world and no task, so it is a step earlier.
+
+The steps carry an `accept` field: the condition that says the step is done.
+Follow them in order and check each one before moving on. Steps in
+`curation_notes` are advice for building a whole set of tasks and are not
+part of what you do for one task.
+
+Matching runs in two layers: the structured fields set the tier, the prose
+orders the recipes inside it. A profile that names a kind of material
+(`code`, `web`, `gui`, `api`) gets the methods that work on that material,
+whatever the prose happens to overlap with. The same question always gets
+the same answer, so running the same query twice gives the same method.
 
 ## What a good task is
 

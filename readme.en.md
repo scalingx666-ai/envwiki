@@ -142,47 +142,95 @@ id and the title of each citation are checked against the corpus index shipped
 with the package, so the tests prove that no citation is invented or
 misattributed.
 
-A recipe looks like this:
+### The card and the procedure are separate
+
+A recipe is split in two, because an agent needs them differently.
+
+The **card** is what it compares, so it has to be cheap:
 
 ```
 {
   "id": "execution-first-trace-anchored-task",
   "family": "experience-synthesis",
-  "summary": "Build the executable artifact before the prompt...",
-  "when_to_use": ["..."], "not_when_to_use": ["..."], "inputs": ["..."],
-  "steps": [{"title": "Pick the workflow before the prompt", "detail": "..."}],
-  "verifier": ["the check command exits non-zero on the unmodified workspace"],
-  "pitfalls": ["request written first: it reads plausibly but no valid call sequence satisfies it"],
-  "effort": "high",
-  "source_papers": [{"arxiv_id": "2607.29175", "title": "...", "note": "..."}]
+  "summary": "Build the artefact first, then derive the task from it",
+  "material_kind": ["trajectory"],       // what the method works on
+  "task_kind": "reverse",               // what kind of gap it poses
+  "role": "create",                     // make a task / build an environment / check one / curate
+  "needs": ["has an executable entry point", "runs offline"],
+  "produces": "an executable artefact whose behaviour the task describes",
+  "effort": "high"
 }
 ```
 
+The **procedure** is what it follows, and only the chosen one is expanded:
+
+```
+{
+  "steps": [
+    {"title": "Pick the workflow before the prompt",
+     "detail": "...",
+     "accept": "the workflow is fixed and runs offline"}
+  ],
+  "curation_notes": ["...advice that matters when building a set of tasks..."]
+}
+```
+
+`material_kind`, `task_kind` and `role` are what make two methods
+comparable: choosing between them becomes comparing three sets of fields
+rather than reading two paragraphs. `accept` gives every step a condition
+that says it is done: a step without one leaves an agent unable to tell
+whether it finished.
+
+`role` has four values: `create` (a task handed to the solver), `environment`
+(only a runnable world, no task of its own), `verify` (a checker or a
+measurement) and `curate` (a set of tasks or a curriculum). The `environment`
+value separates building the world from building the task: the first is
+the prerequisite of the second.
+
 ### How recipes are matched
 
-Recipes are not matched by bumping keywords into each other. envwiki turns
-every recipe into vectors and keeps them in **zvec**, an in-process vector
-store:
+Matching runs in two layers: the structured fields set the tier, the prose
+orders the recipes inside it.
 
-- **signal vector**: a BM25 sparse vector over summary, when_to_use,
-  not_when_to_use and inputs;
-- **detail vector**: a BM25 sparse vector over the whole recipe (steps,
-  verification, pitfalls);
-- **dense vector**: one more semantic layer when an embedding endpoint is
-  configured;
-- **full text index**: zvec's own FTS.
+**First - the structured fields set the tier.** A profile naming a kind of
+material (`code`, `web`, `gui`, `api`...), a kind of gap (`repair`,
+`reverse`...), a role (`verify`, `curate`) or one of a recipe's `needs`
+labels puts the candidates into a tier. The order of the tiers is hard: a
+material match comes first, a task kind or role match comes second. A
+profile that says it has a python repository gets the methods that work on
+code back, whatever the prose happens to overlap with. An alias table maps
+natural language onto the fields: `repository`, `cli` and `python` all mean
+`code`, `records` and `rows` mean `data`.
 
-A query searches those signals together and fuses them with reciprocal rank
-fusion. The index is cached under `~/.cache/envwiki/recipes-<hash>.zvec`,
-keyed by the content of the recipe library, so a changed library gets its
-own index.
+**Second - the prose orders them.** Inside a tier, three pieces of prose
+evidence score the recipes:
 
-The two rankings are then fused once more: the vector store contributes the
-overall similarity, the lexical matcher contributes the signal phrases the
-recipe author wrote down by hand ("this is a terminal task", "this is a web
-application"). Reciprocal rank fusion merges them, so neither buries the
-other: the vectors find the right neighbourhood, the signal phrases order it
-correctly.
+- the **signal text**: summary, background, the structured fields, needs,
+  produces, when_to_use, not_when_to_use and inputs;
+- the **whole text**: the recipe in full, steps, verification and pitfalls
+  included;
+- the **signal phrases**: the when_to_use phrases the recipe author wrote
+  down by hand (“this is a terminal task”).
+
+The first two go through the full text index of **zvec**, an in-process
+vector store, scored with exact BM25; the third is envwiki's own lexical
+matcher. The three are normalised and blended, and what is left over is
+broken by name.
+
+**The same question always gets the same answer.** This matters: the sparse
+vector top-k of zvec is approximate. Two processes asking the same question
+get different recipes back - the score of one and the same document even
+changes - so a recommendation would depend on which process happened to
+answer. The ranking therefore uses exact arithmetic only, and the index is
+there to store and look up.
+
+An embedding endpoint adds one **dense semantic** layer (weight 0.1, with a
+coarse score). It is an approximate search, so it only shifts candidates
+that were close to begin with.
+
+The index is cached under `~/.cache/envwiki/recipes-<hash>.zvec`, keyed by
+the content of the recipe library and by the version of the index layout, so
+a changed library or a changed layout gets its own index.
 
 Dense vectors need an embedding endpoint:
 
@@ -193,7 +241,12 @@ Dense vectors need an embedding endpoint:
 | `ENVWIKI_EMBEDDING_API_KEY` | API key for that endpoint (optional) |
 
 `plan_task`, `recommend_recipes` and `search_recipes` all report an `engine`
-field: `zvec-hybrid`, `zvec-bm25` or `lexical`.
+field: `zvec-fts`, `zvec-fts+dense` or `lexical`.
+
+All three return **cards**. Only `plan_task` expands the steps of the top
+match. A method you did not pick does not have to be read: its full text is
+one `get_recipe` call away. Choosing a method therefore costs a few hundred
+tokens rather than a couple of thousand.
 
 ## The MCP server: a toolbox
 
@@ -258,7 +311,23 @@ orchestrate your agent. The agent does that, through the MCP server.
 
 ## Configuration
 
-Everything comes from the environment, so envwiki can run unattended.
+**envwiki never calls a model.** The agent does that, through the MCP server,
+which does not even load the model client. These variables only change how
+envwiki itself behaves.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `HARBOR_SRC` | auto-detected | Path to Harbor's `src` directory, used for schema validation |
+| `ENVWIKI_STAGING_DIR` | empty | Workspace `scaffold_task` writes into by default |
+| `ENVWIKI_INDEX_DIR` | `~/.cache/envwiki` | Where the recipe vector index is cached |
+| `ENVWIKI_EMBEDDING_BASE_URL` | empty | OpenAI-compatible `/embeddings` endpoint for dense vectors |
+| `ENVWIKI_EMBEDDING_MODEL` | empty | Model id for dense vectors |
+| `ENVWIKI_EMBEDDING_API_KEY` | empty | API key for that embedding endpoint |
+
+### Separately: registering a model endpoint with pi
+
+These four are read by **two diagnostic commands only**. They have nothing to
+do with how envwiki behaves:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -266,12 +335,11 @@ Everything comes from the environment, so envwiki can run unattended.
 | `ENVWIKI_API_KEY` | `sk-my-secret` | API key for that endpoint |
 | `ENVWIKI_MODEL` | `hy4flash-free` | Model id |
 | `ENVWIKI_PROVIDER` | `envwiki-local` | Provider name written into pi's models.json |
-| `HARBOR_SRC` | auto-detected | Path to Harbor's `src` directory, used for schema validation |
-| `ENVWIKI_STAGING_DIR` | empty | Workspace `scaffold_task` writes into by default |
-| `ENVWIKI_INDEX_DIR` | `~/.cache/envwiki` | Where the recipe vector index is cached |
-| `ENVWIKI_EMBEDDING_BASE_URL` | empty | OpenAI-compatible `/embeddings` endpoint for dense vectors |
-| `ENVWIKI_EMBEDDING_MODEL` | empty | Model id for dense vectors |
-| `ENVWIKI_EMBEDDING_API_KEY` | empty | API key for that embedding endpoint |
+
+- `envwiki model check` asks that endpoint which models it serves.
+- `envwiki model register` writes the endpoint into **pi's** `models.json` so
+  pi's agent can use it. That is a convenience for pi, not a dependency of
+  envwiki.
 
 The API key never lands on disk: pi's `models.json` receives
 `"$ENVWIKI_API_KEY"` and the real value is exported at run time.
@@ -403,13 +471,13 @@ recipe against the paper it claims to come from.
 
 ```
 uv sync --extra dev --extra vector
-uv run pytest          # 92 tests
+uv run pytest          # 108 tests
 
 The `vector` extra installs zvec: recipe retrieval then goes through the
-vector store instead of keyword weighting. zvec ships wheels for CPython
-3.10 to 3.14 only, so the repository is pinned to 3.13 (see
-`.python-version`). Without the extra envwiki still works, on the built-in
-lexical matcher.
+full text index of the in-process vector store, scored with exact BM25.
+zvec ships wheels for CPython 3.10 to 3.14 only, so the repository is
+pinned to 3.13 (see `.python-version`). Without the extra envwiki still
+works, on the built-in lexical matcher.
 uv run ruff check src tests
 ```
 
@@ -429,8 +497,9 @@ uv run ruff check src tests
 - envwiki does not run the agent for you: the quality of the result is the
   quality of your agent and your model, and the agent may not even follow the
   tools.
-- Recipe retrieval runs on BM25 sparse vectors by default; semantic retrieval
-  needs an embedding endpoint you configure yourself.
+- Recipe retrieval runs on full text BM25 by default; semantic retrieval needs
+  an embedding endpoint you configure yourself, and that dense layer is an
+  approximate search that only shifts candidates that were close anyway.
 - The match only gets the agent into the right neighbourhood; the model
   still has to choose.
 

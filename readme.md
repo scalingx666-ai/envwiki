@@ -124,37 +124,77 @@ agent 会自己走完：`stage_source` → `plan_task` → `get_recipe` →
 每条配方都至少引用 2 篇真实论文（共 118 处引用），引用的 arXiv id 与标题会与
 随包发布的语料索引逐条比对，测试保证不越界、不篡改。
 
-配方长这样：
+### 卡片与步骤是分开的
+
+一条配方拆成两层，因为 agent 对这两层的需求完全不同：
+
+**卡片**——用来比较，必须便宜：
 
 ```
 {
   "id": "execution-first-trace-anchored-task",
   "family": "experience-synthesis",
-  "summary": "Build the executable artifact before the prompt...",
-  "when_to_use": ["..."], "not_when_to_use": ["..."], "inputs": ["..."],
-  "steps": [{"title": "Pick the workflow before the prompt", "detail": "..."}],
-  "verifier": ["the check command exits non-zero on the unmodified workspace"],
-  "pitfalls": ["request written first: it reads plausibly but no valid call sequence satisfies it"],
-  "effort": "high",
-  "source_papers": [{"arxiv_id": "2607.29175", "title": "...", "note": "..."}]
+  "summary": "先跑出产物，再从产物倒推任务描述",
+  "material_kind": ["trajectory"],       // 这方法吃什么素材
+  "task_kind": "reverse",               // 这方法给解题者留什么坑
+  "role": "create",                     // 造任务 / 只造环境 / 验任务 / 策展
+  "needs": ["has an executable entry point", "runs offline"],
+  "produces": "一个可执行产物，任务描述由它的真实行为反推",
+  "effort": "high"
 }
 ```
 
+**步骤**——用来执行，只有选定的那一条才需要展开：
+
+```
+{
+  "steps": [
+    {"title": "Pick the workflow before the prompt",
+     "detail": "...",
+     "accept": "工作流已确定，且能离线跑通"}
+  ],
+  "curation_notes": ["...批量造任务时才需要的策展步骤..."]
+}
+```
+
+`material_kind` / `task_kind` / `role` 这三个字段是横向可比的关键：两个方法之间的
+比较，从"读两段散文"变成"比三组字段"。`accept` 让每一步都有完成判据 —— 一条没有
+判据的步骤，agent 不知道自己做完没有。
+
+`role` 取四个值：`create`（交给解题者的任务）、`environment`（只造一个可执行的
+环境，本身不产任务）、`verify`（产校验器或度量）、`curate`（产一组任务或课程）。
+"environment" 这一类把"造环境"和"造任务"分开了：前者是后者的前置。
+
 ### 怎么匹配
 
-配方不是靠关键词硬碰出来的。envwiki 把每条配方向量化后放进 **zvec**（进程内向量库）：
+匹配分两层：结构化字段定层，散文在层内定序。
 
-- **信号向量**：summary + when_to_use + not_when_to_use + inputs 的 BM25 稀疏向量；
-- **细节向量**：整条配方（步骤、校验、坑）的 BM25 稀疏向量；
-- **稠密向量**：配了 embedding 端点时再加一层语义向量；
-- **全文索引**：zvec 自带的 FTS。
+**第一层 · 结构化字段定层。** 描述里出现素材类型（`code`、`web`、`gui`、`api`…）、
+任务类型（`repair`、`reverse`…）、角色（`verify`、`curate`）或某条配方的 `needs` 标签，
+就把候选分进一层。次序是硬的：**素材类型命中排第一**，任务类型与角色命中排第二。
+描述说“我有一个 python 仓库”，回来的就该是吃代码的方法，与正文碰巧重叠了哪个词无关。
+别名表把自然语言映射到字段上：`repository`、`cli`、`python` 都算 `code`，`records`、
+`rows` 算 `data`。
 
-查询时这几路信号一起检索，用 RRF 融合排序。索引按配方库内容哈希缓存在
-`~/.cache/envwiki/recipes-<hash>.zvec`，配方库一改就换一份。
+**第二层 · 散文定序。** 同层内按三路散文证据打分：
 
-两份排名还会再融合一次：向量库给的是整体相似度，词法匹配给的是配方作者亲手写下的
-`when_to_use` 信号短语（"这是个终端任务"、"这是个网页应用"这种）。RRF 把两份排名合并，
-谁也埋不掉谁——向量负责找对邻域，信号短语负责在邻域里排对顺序。
+- **信号全文**：summary + background + 结构化字段 + needs + produces +
+  when_to_use + not_when_to_use + inputs；
+- **全文**：整条配方，含步骤、校验与坑；
+- **信号短语**：配方作者亲手写下的 `when_to_use` 短语（“这是个终端任务”这种）。
+
+前两路走 **zvec**（进程内向量库）的全文索引，BM25 精确打分；第三路是 envwiki 自己的
+词法匹配。三路归一后加权求和，同分按名字排。
+
+**同一个问题永远同一个答案。** 这条不是小事：zvec 的稀疏向量 top-k 是近似检索，不同
+进程问同一个问题会拿到不同的配方（同一篇文档的分数都会变），推荐结果就变成“取决于
+恰好是谁在回答”。所以排序只用精确算分，索引只负责存和查。
+
+配了 embedding 端点时再加一层**稠密语义**（权重 0.1，分数粗粒度化）；它是近似检索，
+只影响本来就接近的候选之间的次序。
+
+索引按配方库内容哈希与索引版本缓存在 `~/.cache/envwiki/recipes-<hash>.zvec`，
+配方库或索引结构一改就换一份。
 
 稠密向量需要一个 embedding 端点：
 
@@ -165,7 +205,11 @@ agent 会自己走完：`stage_source` → `plan_task` → `get_recipe` →
 | `ENVWIKI_EMBEDDING_API_KEY` | 该端点的 key（可选） |
 
 `plan_task` / `recommend_recipes` / `search_recipes` 的返回里都有 `engine` 字段，
-写着这次是 `zvec-hybrid`、`zvec-bm25` 还是 `lexical`。
+写着这次是 `zvec-fts`、`zvec-fts+dense` 还是 `lexical`。
+
+三个检索工具返回的都是**卡片**，只有 `plan_task` 会额外展开排第一的那条的步骤。
+没选中的方法不必读完——它的全文在 `get_recipe` 里等着。这样一次选择方法的代价是
+几百 token，而不是两千多。
 
 ## MCP server：工具箱
 
@@ -226,7 +270,21 @@ uv run envwiki skill install --to <dir>       # 把 skill 装进 agent
 
 ## 配置
 
-全部通过环境变量，便于无人值守运行。
+**envwiki 自己不调用模型。** 合成由 agent 通过 MCP 完成，MCP server 连模型客户端都
+不加载。下面这些变量只影响 envwiki 自己的行为。
+
+| 变量 | 默认值 | 含义 |
+| --- | --- | --- |
+| `HARBOR_SRC` | 自动探测 | Harbor 的 `src` 目录，用于 schema 校验 |
+| `ENVWIKI_STAGING_DIR` | 空 | `scaffold_task` 默认写入的暂存区 |
+| `ENVWIKI_INDEX_DIR` | `~/.cache/envwiki` | 配方向量索引的缓存目录 |
+| `ENVWIKI_EMBEDDING_BASE_URL` | 空 | 稠密向量用的 OpenAI 兼容 `/embeddings` 端点 |
+| `ENVWIKI_EMBEDDING_MODEL` | 空 | 稠密向量用的模型 id |
+| `ENVWIKI_EMBEDDING_API_KEY` | 空 | 该 embedding 端点的 key |
+
+### 另外：给 pi 注册模型端点
+
+这四个变量**只**被两个诊断命令读，跟 envwiki 的行为无关：
 
 | 变量 | 默认值 | 含义 |
 | --- | --- | --- |
@@ -234,12 +292,10 @@ uv run envwiki skill install --to <dir>       # 把 skill 装进 agent
 | `ENVWIKI_API_KEY` | `sk-my-secret` | 该端点的 API key |
 | `ENVWIKI_MODEL` | `hy4flash-free` | 模型 id |
 | `ENVWIKI_PROVIDER` | `envwiki-local` | 写入 pi models.json 的 provider 名 |
-| `HARBOR_SRC` | 自动探测 | Harbor 的 `src` 目录，用于 schema 校验 |
-| `ENVWIKI_STAGING_DIR` | 空 | `scaffold_task` 默认写入的暂存区 |
-| `ENVWIKI_INDEX_DIR` | `~/.cache/envwiki` | 配方向量索引的缓存目录 |
-| `ENVWIKI_EMBEDDING_BASE_URL` | 空 | 稠密向量用的 OpenAI 兼容 `/embeddings` 端点 |
-| `ENVWIKI_EMBEDDING_MODEL` | 空 | 稠密向量用的模型 id |
-| `ENVWIKI_EMBEDDING_API_KEY` | 空 | 该 embedding 端点的 key |
+
+- `envwiki model check`：问这个端点有哪些模型。
+- `envwiki model register`：把这个端点写进 **pi** 的 `models.json`，好让 pi 的
+  agent 用上它。这是给 pi 用的便利功能，不是 envwiki 自己的依赖。
 
 API key 不落盘：pi 的 `models.json` 里写的是 `"$ENVWIKI_API_KEY"`，真实值在运行时
 由环境注入。
@@ -353,10 +409,10 @@ reward_repair: 1.0
 
 ```
 uv sync --extra dev --extra vector
-uv run pytest          # 92 项测试
+uv run pytest          # 108 项测试
 
-`vector` 这一档装上 zvec：配方检索走向量库而不是关键词加权。zvec 只提供
-CPython 3.10–3.14 的 wheel，所以本仓库锁在 3.13（见 `.python-version`）。
+`vector` 这一档装上 zvec：配方检索走进程内向量库的全文索引，BM25 精确打分。
+zvec 只提供 CPython 3.10–3.14 的 wheel，所以本仓库锁在 3.13（见 `.python-version`）。
 不装这一档照样能用，只是退回内置的词法匹配。
 uv run ruff check src tests
 ```
@@ -370,7 +426,8 @@ uv run ruff check src tests
 - 解题 agent 与 verifier 都没有网络，任务若需要联网取数据会失败。
 - 只支持 `linux` 与 `windows` 目标环境，与 Harbor 自身的枚举一致。
 - envwiki 不替你跑 agent：合成质量取决于你的 agent 与模型，也可能它不按工具走。
-- 配方检索默认走 BM25 稀疏向量；要语义检索得自己配一个 embedding 端点。
+- 配方检索默认走全文 BM25；要语义检索得自己配一个 embedding 端点。稠密层是近似检索，
+  只影响本来就接近的候选之间的次序。
 - 配方匹配只是把你带到正确的邻域，最终选哪条仍由模型决定。
 
 ## License
