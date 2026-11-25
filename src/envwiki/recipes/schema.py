@@ -36,6 +36,7 @@ MaterialKind = Literal[
     "embodied",       # a physical or spatial world
     "trajectory",     # traces of what someone already did
     "specification",  # a specification, with nothing to execute yet
+    "paper",           # a research paper: prose, with nothing executable
     "infrastructure", # a platform, a sandbox or a harness
 ]
 

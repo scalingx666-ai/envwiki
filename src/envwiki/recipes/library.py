@@ -69,7 +69,19 @@ MATERIAL_ALIASES: dict[str, set[str]] = {
         "infrastructure", "sandbox", "platform", "harness", "container",
         "docker", "compose",
     },
+    "paper": {
+        "paper", "papers", "article", "preprint", "arxiv", "abstract",
+        "manuscript", "study", "research", "prose", "document",
+    },
 }
+
+#: Words that say a method needs a runtime the material does not have.
+#: A profile naming one of these, without also naming something that
+#: supplies it, is asking for a method the material cannot support.
+RUNTIME_NEEDS = (
+    "runnable", "executable", "checkout", "entry", "build",
+    "installable", "resettable", "replayable",
+)
 
 
 def _tokens(text: str) -> list[str]:
@@ -190,9 +202,23 @@ class RecipeLibrary:
         The tier decides the order before any prose is read: a profile
         that says it has a repository wants a method that works on
         repositories, whatever the words happen to overlap with.
+
+        A paper-only profile is the exception. A paper is prose: it has
+        no runtime, so a method that needs a runnable checkout cannot
+        work on it. Those methods are demoted instead of ranked first.
         """
+        paper_profile = bool(MATERIAL_ALIASES["paper"] & wanted)
+        needs_runtime = any(
+            set(_tokens(need)) & set(RUNTIME_NEEDS) for need in recipe.needs
+        )
         for kind in recipe.material_kind:
             if MATERIAL_ALIASES.get(kind, {kind}) & wanted:
+                if (
+                    paper_profile
+                    and needs_runtime
+                    and kind in {"code", "web", "gui", "infrastructure"}
+                ):
+                    continue
                 return 2
         if recipe.task_kind in wanted or recipe.role in wanted:
             return 1

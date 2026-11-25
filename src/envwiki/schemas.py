@@ -72,8 +72,15 @@ class TaskMetadata(BaseModel):
 
 
 class EnvironmentSpec(BaseModel):
-    """How the Harbor environment is built."""
-    base_image: str = "ubuntu:24.04"
+    """How the Harbor environment is built.
+
+    The default carries a Python runtime: envwiki writes Python verifiers
+    and solutions into shell entry points, and a bare ubuntu image has no
+    python3, so the default image has to have one. A caller who picks a
+    different image with a Python verifier gets python3 installed by
+    render_dockerfile.
+    """
+    base_image: str = "python:3.12-slim"
     workdir: str = "/app"
     os: str = "linux"
     setup_commands: list[str] = Field(default_factory=list)

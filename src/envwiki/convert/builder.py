@@ -141,6 +141,23 @@ def asset_destinations(draft: TaskDraft) -> dict[str, str]:
     return destinations
 
 
+def _needs_python(draft: TaskDraft) -> bool:
+    """Whether any entry point shell calls python3."""
+    return draft.verifier.language == "python" or bool(
+        draft.solution and draft.solution.language == "python"
+    )
+
+
+def _python_setup(base_image: str) -> str:
+    """Install python3 on a non-Python base image, or nothing if present."""
+    if "python" in base_image.lower():
+        return ""
+    return (
+        "apt-get update && apt-get install -y --no-install-recommends python3 "
+        "&& rm -rf /var/lib/apt/lists/*"
+    )
+
+
 def render_dockerfile(draft: TaskDraft, destinations: dict[str, str] | None = None) -> str:
     """Render environment/Dockerfile (the Docker build context is environment/)."""
     env = draft.environment
@@ -148,6 +165,16 @@ def render_dockerfile(draft: TaskDraft, destinations: dict[str, str] | None = No
     if destinations is None:
         destinations = asset_destinations(draft)
     parts: list[str] = [f"FROM {env.base_image}", ""]
+
+    # A Python verifier or solution becomes a shell script that calls
+    # python3. On a bare image that command does not exist, so the task
+    # would fail with RewardFileNotFoundError and the gate would catch it
+    # only after a full container run. Install python3 at build time.
+    setup = _python_setup(env.base_image) if _needs_python(draft) else ""
+    if setup and not any("python3" in cmd for cmd in env.setup_commands):
+        parts.append("# The entry points are Python; the image must have an interpreter.")
+        parts.append("RUN " + setup)
+        parts.append("")
 
     if destinations:
         parts.append("# Material the task depends on, copied from the source material.")

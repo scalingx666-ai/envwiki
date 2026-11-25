@@ -13,7 +13,7 @@ from envwiki.recipes import load_library
 
 MATERIAL_KINDS = {
     "code", "web", "gui", "api", "data", "simulation", "multi-agent",
-    "embodied", "trajectory", "specification", "infrastructure",
+    "embodied", "trajectory", "specification", "infrastructure", "paper",
 }
 TASK_KINDS = {
     "implement", "repair", "reverse", "optimize", "extend", "reproduce", "none",

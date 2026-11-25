@@ -308,6 +308,95 @@
           "note": "code-driven, database-backed environments make state transitions reliable and rewards computable"
         }
       ]
+    },
+    {
+      "id": "paper-to-verifiable-spec-synthesis",
+      "name": "Derive a verifiable task specification from a research paper",
+      "family": "environment-synthesis",
+      "summary": "Mine a paper for formulas, thresholds and algorithms checkable offline, then turn one into a self-contained task with a deterministic verifier.",
+      "background": "A research paper is prose: it has no runtime and no dataset to execute. What it does contain are claims that can be computed - a reproduction number, a stability threshold, a scoring rule, a complexity bound, an algorithm whose output can be recomputed from a small input. The method is to read the paper for those checkable claims, pick one that can be decided from a short parameter input alone, write a behavioural specification for it, and build the environment and verifier around that specification. Only claims whose result is a number, a file, a decision or an exit code survive: a wet-lab finding or a fitted subjective judgement cannot be graded offline. The paper is cited as provenance; the task is grounded in one of its stated computations, not in the narrative around it.",
+      "material_kind": [
+        "paper",
+        "specification"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a stated formula or algorithm",
+        "result is computable offline",
+        "input fits in a small file"
+      ],
+      "produces": "One offline task: a short parameter input, a request naming the quantity to compute, and a deterministic checker that fails before the solution and passes after it.",
+      "when_to_use": [
+        "the source is a paper, a preprint or an article with no code or data",
+        "the paper states a formula, threshold or algorithm with a computable result",
+        "you need a verifiable task and can only ground it in the paper text"
+      ],
+      "not_when_to_use": [
+        "the paper only reports wet-lab or clinical findings with no computable result",
+        "the claim needs the full dataset or a trained model to evaluate",
+        "the result depends on a subjective judgement rather than a number or a file"
+      ],
+      "inputs": [
+        "the paper text (a staged abstract or full text)",
+        "one stated computation with a deterministic result",
+        "a small parameter set that exercises it"
+      ],
+      "steps": [
+        {
+          "title": "Mine the paper for checkable claims",
+          "detail": "List every formula, threshold, scoring rule or algorithm in the paper whose result can be recomputed from a short input. Drop claims that need wet-lab data, a trained model or a subjective verdict.",
+          "accept": "A list of computable claims exists, each with the input it needs and the form of its result."
+        },
+        {
+          "title": "Pick one claim that stands alone",
+          "detail": "Choose the claim whose result is a number, a decision, a file or an exit code, and whose input fits in a small file off-network. Prefer one with several independent parameter cases so a lookup table cannot pass.",
+          "accept": "One claim is chosen, with at least three distinct parameter sets that each change the expected result."
+        },
+        {
+          "title": "State the request without the answer",
+          "detail": "Write the instruction so it names the quantity to compute, the input format and the output format, but never writes the formula or the expected value. The paper is cited as provenance, not pasted as the solution.",
+          "accept": "The instruction states the goal and the formats; no formula or expected value appears in it."
+        },
+        {
+          "title": "Write the checker from the claim",
+          "detail": "Compute the expected result for each parameter set yourself and write a deterministic checker that asserts the solver output matches within a stated tolerance. The checker must fail on an empty workspace.",
+          "accept": "The checker has at least three cases, fails before the solution runs, and writes the reward file."
+        },
+        {
+          "title": "Ground the artefact in the paper",
+          "detail": "Record the paper id and title as provenance, and name the computation the task is derived from in source_notes so a reviewer can check the task against the claim.",
+          "accept": "Provenance names the paper and the specific computation the task derives from."
+        }
+      ],
+      "curation_notes": [
+        "When building a set of tasks from one paper, vary the parameter regime rather than only the numbers, so the tasks exercise different cases of the same claim.",
+        "Keep a record of which claims were rejected as not checkable: the next pass can reuse that judgement."
+      ],
+      "verifier": [
+        "The checker recomputes the expected result for each parameter set and asserts a tolerance.",
+        "Several independent parameter cases are required so a constant answer cannot pass.",
+        "The checker writes /logs/verifier/reward.txt and never needs the network."
+      ],
+      "pitfalls": [
+        "Pasting the formula from the paper into the instruction hands the answer away.",
+        "A paper finding that needs a wet lab or a fitted model cannot be graded offline: pick another claim or another paper.",
+        "One parameter case lets a solver hard-code the answer; always use several.",
+        "A paper whose only results are qualitative should not be forced into a numeric task."
+      ],
+      "effort": "medium",
+      "source_papers": [
+        {
+          "arxiv_id": "2609.22592",
+          "title": "AutoGym: Blueprint-First Generation of Verifiable Agent Gyms",
+          "note": "grounds the paper-to-spec method"
+        },
+        {
+          "arxiv_id": "2601.05808",
+          "title": "EnvScaler: Scaling Tool-Interactive Environments for LLM Agent via Programmatic Synthesis",
+          "note": "grounds the paper-to-spec method"
+        }
+      ]
     }
   ]
 }

@@ -286,17 +286,97 @@ def _static_checks(task_dir: Path, report: GateReport) -> None:
         )
 
 
+def _normalise(text: str) -> str:
+    """The text with the differences that do not change meaning removed.
+
+    Whitespace, quote style and a spaces-around-operators rewrite all
+    leave the arithmetic the same. ``a = b/(c+d)`` and ``a=b / (c + d)``
+    are the same answer, and both must be caught.
+    """
+    import re
+    text = text.lower()
+    text = re.sub(r"\s+", "", text)
+    text = text.replace(chr(39), chr(34))
+    return text
+
+
+def _expression_core(line: str) -> str:
+    """The value-bearing expression of a line, without its wrapper.
+
+    ``print(a/(b+c))`` and ``r0 = a/(b+c)`` both carry the same answer:
+    ``a/(b+c)``. Comparing the core catches a writer who states the
+    formula in the instruction instead of pasting the solution line.
+    """
+    import re
+    text = line.strip()
+    # A print(...) or echo of a single expression.
+    m = re.match(r"^print\((.*)\)$", text, re.IGNORECASE)
+    if m:
+        text = m.group(1)
+    # An assignment: keep the right-hand side.
+    if "=" in text and not re.search(r"[=!<>]=", text):
+        text = text.split("=", 1)[1]
+    # Drop a trailing comment and a semicolon.
+    text = text.split("#", 1)[0].rstrip(";")
+    return text.strip()
+
+
+def _answer_expressions(body: str) -> list[str]:
+    """The answer-bearing expressions of a solution.
+
+    Assignments and prints carry the answer; imports, loop headers and
+    shell plumbing do not. Only expressions long enough to be a real
+    computation are kept.
+    """
+    import re
+    out: list[str] = []
+    for raw in body.splitlines():
+        line = raw.strip()
+        if len(line) < 8 or line.startswith("#"):
+            continue
+        if line.startswith("ENVWIKI_PYTHON"):
+            continue
+        if re.match(r"^(import|from|echo|mkdir|cat|cd|set|python3)\b", line):
+            continue
+        if "=" in line or "print(" in line.lower():
+            core = _expression_core(line)
+            if len(core) >= 8:
+                out.append(core)
+    return out
+
+
+def _solution_lines(body: str) -> list[str]:
+    """Meaningful lines of a solution, for verbatim-leak comparison.
+
+    Even a line that carries no answer expression -- shell plumbing, an
+    echo, a redirect -- is a giveaway if the instruction reproduces it
+    verbatim. Keep every line distinctive enough to be a real command.
+    """
+    out: list[str] = []
+    for raw in body.splitlines():
+        line = raw.strip()
+        if len(line) < 8 or line.startswith("#"):
+            continue
+        if line.startswith("ENVWIKI_PYTHON"):
+            continue
+        out.append(line)
+    return out
+
+
 def _answer_leak(instruction: str, task_dir: Path) -> str:
     """Does the instruction hand the solution to the agent?
 
-    The check is deliberately literal: a distinctive line of the reference
-    solution appearing in the instruction is a disclosure. It is a
-    conservative check, not a proof: it catches the easy mistakes, and it
-    never guesses.
+    Two comparisons run after normalising away formatting. First, a line
+    copied verbatim from the reference solution (any line, including shell
+    plumbing). Second, an answer-bearing expression reformulated as a
+    formula in the instruction. This is still a heuristic, not a proof.
     """
     solution_dir = task_dir / "solution"
     if not solution_dir.is_dir():
         return ""
+    haystack = _normalise(instruction)
+    instr_cores = [_normalise(_expression_core(line)) for line in instruction.splitlines()]
+    instr_cores = [core for core in instr_cores if len(core) >= 10]
     for path in sorted(solution_dir.rglob("*")):
         if not path.is_file():
             continue
@@ -304,14 +384,20 @@ def _answer_leak(instruction: str, task_dir: Path) -> str:
             body = path.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
-        for raw in body.splitlines():
-            line = raw.strip()
-            if len(line) < 16 or line.startswith("#"):
+        # A verbatim (formatting-normalised) paste of any solution line.
+        for line in _solution_lines(body):
+            needle = _normalise(line)
+            if len(needle) < 10:
                 continue
-            if line.startswith("ENVWIKI_PYTHON"):
+            if needle in haystack:
+                return "the instruction copies a reference solution line verbatim: " + line[:120]
+        # A reformulated answer expression, even when the line differs.
+        for core in _answer_expressions(body):
+            needle = _normalise(core)
+            if len(needle) < 10:
                 continue
-            if line in instruction:
-                return "a line of the reference solution appears verbatim"
+            if needle in haystack or any(needle == c for c in instr_cores):
+                return "the instruction contains the reference solution expression: " + core[:120]
     return ""
 
 
@@ -410,13 +496,20 @@ def gate_task(
             floor, stdout, error = _run_job(
                 task_dir, workdir, "nop", "baseline", timeout_sec
             )
-            if error:
-                report.warnings.append("the baseline run failed: " + error)
+            if error or floor is None:
+                # A baseline that never produced a reward means the reward
+                # space was never measured. Reporting a pass with floor=None
+                # would hide that; the gate has to say it could not check.
+                reason = error or "the baseline run produced no reward"
+                report.errors.append(
+                    "the baseline run did not produce a reward, so the reward "
+                    "space was not measured: " + reason
+                )
                 report.checks.append(
                     GateCheck(
                         name="baseline",
-                        status="skip",
-                        detail=error,
+                        status="fail",
+                        detail=reason,
                         measured={"verifier_output": stdout},
                     )
                 )
