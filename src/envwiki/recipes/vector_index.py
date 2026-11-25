@@ -1,42 +1,41 @@
-"""Vector retrieval over the recipe library, backed by zvec.
+"""Retrieval over the recipe library, backed by zvec.
 
-The lexical matcher in library.py knows about words. This module knows about
-vectors. Every recipe is stored twice as a BM25 sparse vector - once over its
-signals (what it is for) and once over its whole text - plus a dense vector
-when an embedding endpoint is configured. A query is a vector similarity
-search over those fields, fused with the full text index by reciprocal rank
-fusion.
+zvec is the index. It holds the text of every recipe as two full text
+fields - the signal the recipe gives off, and the whole recipe - and,
+when an embedding endpoint is configured, one dense vector per recipe.
 
-zvec is an optional dependency. Without it envwiki keeps using the lexical
-matcher, and every answer says which engine produced it.
+The ranking is computed here, in plain Python, out of three pieces of
+evidence: the two full text scores, the words the recipe author wrote
+down, and the structured fields. Two reasons for not letting the index
+rank on its own:
+
+- its sparse vector top-k is approximate. Two processes asking the same
+  question get different recipes back, and a recommendation that depends
+  on which process answered is not a recommendation.
+- the structured fields are what a card is compared by, so they have to
+  be able to outrank a coincidental common word.
+
+zvec is an optional dependency. Without it envwiki keeps using the
+lexical matcher, and every answer says which engine produced it.
 """
 
 from __future__ import annotations
 
 import hashlib
-import math
 import os
 import shutil
 import tempfile
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import httpx
 
 from envwiki.recipes.schema import Recipe
-from envwiki.recipes.text import tokenize
-
-#: BM25 term saturation.
-K1 = 1.2
-#: BM25 length normalisation.
-B = 0.75
 
 try:  # pragma: no cover - the import is what the optional extra buys
     import zvec
     from zvec import FtsIndexParam
-    from zvec.extension import RrfReRanker
-    from zvec.model.param import FlatIndexParam, HnswIndexParam
+    from zvec.model.param import HnswIndexParam
     from zvec.model.param.query import Fts, Query
     from zvec.model.schema import CollectionSchema, FieldSchema, VectorSchema
     from zvec.typing import DataType
@@ -45,70 +44,30 @@ try:  # pragma: no cover - the import is what the optional extra buys
 except Exception:  # pragma: no cover
     ZVEC_AVAILABLE = False
 
+#: Bumped when the layout of the index changes, so an index built by an
+#: older version is never reused.
+INDEX_VERSION = "2"
 
-@dataclass(slots=True)
-class Bm25Space:
-    """A BM25 space over a small corpus, expressed as sparse vectors.
-
-    A document and a query become sparse vectors over the same vocabulary,
-    and their dot product is the BM25 score.
-    """
-
-    vocabulary: dict[str, int] = field(default_factory=dict)
-    document_frequency: dict[int, int] = field(default_factory=dict)
-    document_count: int = 0
-    average_length: float = 0.0
-
-    def fit(self, documents: dict[str, list[str]]) -> Bm25Space:
-        """Learn the vocabulary and the document statistics."""
-        lengths: list[int] = []
-        for tokens in documents.values():
-            lengths.append(len(tokens))
-            for token in set(tokens):
-                index = self.vocabulary.setdefault(token, len(self.vocabulary))
-                self.document_frequency[index] = self.document_frequency.get(index, 0) + 1
-        self.document_count = len(documents)
-        self.average_length = (sum(lengths) / len(lengths)) if lengths else 0.0
-        return self
-
-    def idf(self, index: int) -> float:
-        """How rare a term is, in the Robertson form."""
-        frequency = self.document_frequency.get(index, 0)
-        if frequency == 0:
-            return 0.0
-        return math.log(1.0 + (self.document_count - frequency + 0.5) / (frequency + 0.5))
-
-    def document_vector(self, tokens: list[str]) -> dict[int, float]:
-        """The BM25 weight of every term of a document."""
-        counts: dict[int, int] = {}
-        for token in tokens:
-            index = self.vocabulary.get(token)
-            if index is not None:
-                counts[index] = counts.get(index, 0) + 1
-        length = len(tokens) or 1
-        average = self.average_length or 1.0
-        normaliser = K1 * (1.0 - B + B * length / average)
-        return {
-            index: self.idf(index) * (count * (K1 + 1.0)) / (count + normaliser)
-            for index, count in counts.items()
-        }
-
-    def query_vector(self, tokens: list[str]) -> dict[int, float]:
-        """The query side of the same score."""
-        counts: dict[int, int] = {}
-        for token in tokens:
-            index = self.vocabulary.get(token)
-            if index is not None:
-                counts[index] = counts.get(index, 0) + 1
-        return {
-            index: self.idf(index) * (count * (K1 + 1.0)) / (count + K1)
-            for index, count in counts.items()
-        }
+#: How much of the score each source carries.
+SIGNAL_WEIGHT = 0.45
+BODY_WEIGHT = 0.45
+DENSE_WEIGHT = 0.10
 
 
 def signal_text(recipe: Recipe) -> str:
-    """What the recipe claims to be for."""
-    parts = [recipe.summary]
+    """What the recipe claims to be for.
+
+    The short summary is the card, but the signal a query matches against
+    has to include the longer distillation and the structured fields: a
+    summary trimmed to two sentences loses the wording a real source
+    profile would use.
+    """
+    parts = [recipe.summary, recipe.background]
+    parts.extend(recipe.material_kind)
+    parts.append(recipe.task_kind)
+    parts.append(recipe.role)
+    parts.extend(recipe.needs)
+    parts.append(recipe.produces)
     parts.extend(recipe.when_to_use)
     parts.extend(recipe.not_when_to_use)
     parts.extend(recipe.inputs)
@@ -118,7 +77,7 @@ def signal_text(recipe: Recipe) -> str:
 def detail_text(recipe: Recipe) -> str:
     """The whole recipe: signals plus the procedure."""
     parts = [signal_text(recipe)]
-    parts.extend(step.title + " " + step.detail for step in recipe.steps)
+    parts.extend(step.title + " " + step.detail + " " + step.accept for step in recipe.steps)
     parts.extend(recipe.verifier)
     parts.extend(recipe.pitfalls)
     return chr(10).join(part for part in parts if part)
@@ -153,6 +112,7 @@ def embed(texts: list[str], base: str, model: str, api_key: str) -> list[list[fl
 def fingerprint(recipes: list[Recipe]) -> str:
     """A name for the index of this exact library."""
     digest = hashlib.sha256()
+    digest.update(INDEX_VERSION.encode("utf-8"))
     for recipe in sorted(recipes, key=lambda r: r.id):
         digest.update(recipe.id.encode("utf-8"))
         digest.update(recipe.model_dump_json().encode("utf-8"))
@@ -170,56 +130,34 @@ def index_path(recipes: list[Recipe]) -> Path:
     return root / ("recipes-" + fingerprint(recipes) + ".zvec")
 
 
-def _spaces(recipes: list[Recipe]) -> tuple[Bm25Space, Bm25Space]:
-    signals = Bm25Space().fit({r.id: tokenize(signal_text(r)) for r in recipes})
-    details = Bm25Space().fit({r.id: tokenize(detail_text(r)) for r in recipes})
-    return signals, details
+def _schema(with_dense: bool, dimension: int) -> Any:
+    """The layout of the collection.
 
-
-def build(recipes: list[Recipe], path: Path | None = None) -> Path:
-    """Build the vector index of the library and return its path."""
-    if not ZVEC_AVAILABLE:
-        raise RuntimeError("zvec is not installed: pip install 'envwiki[vector]'")
-
-    target = path or index_path(recipes)
-    target.parent.mkdir(parents=True, exist_ok=True)
-
-    signals, details = _spaces(recipes)
-    settings = dense_settings()
-
-    vectors: list[Any] = [
-        VectorSchema(
-            "signal",
-            DataType.SPARSE_VECTOR_FP32,
-            dimension=0,
-            index_param=FlatIndexParam(),
-        ),
-        VectorSchema(
-            "detail",
-            DataType.SPARSE_VECTOR_FP32,
-            dimension=0,
-            index_param=FlatIndexParam(),
-        ),
-    ]
-    embeddings: list[list[float]] = []
-    if settings:
-        base, model, api_key = settings
-        embeddings = embed([detail_text(recipe) for recipe in recipes], base, model, api_key)
+    Two full text fields, one for the signal and one for the whole
+    recipe. A dense field only when there is an endpoint to embed with.
+    """
+    vectors = []
+    if with_dense:
         vectors.append(
             VectorSchema(
                 "dense",
                 DataType.VECTOR_FP32,
-                dimension=len(embeddings[0]),
+                dimension=dimension,
                 index_param=HnswIndexParam(),
             )
         )
-
-    schema = CollectionSchema(
+    return CollectionSchema(
         name="recipes",
         fields=[
             FieldSchema("id", DataType.STRING, nullable=False),
             FieldSchema(
                 "body",
+                DataType.STRING,
+                nullable=False,
+                index_param=FtsIndexParam(tokenizer_name="standard", filters=["lowercase"]),
+            ),
+            FieldSchema(
+                "signal",
                 DataType.STRING,
                 nullable=False,
                 index_param=FtsIndexParam(tokenizer_name="standard", filters=["lowercase"]),
@@ -230,29 +168,40 @@ def build(recipes: list[Recipe], path: Path | None = None) -> Path:
         vectors=vectors,
     )
 
+
+def build(recipes: list[Recipe], path: Path | None = None) -> Path:
+    """Build the index of the library and return its path."""
+    if not ZVEC_AVAILABLE:
+        raise RuntimeError("zvec is not installed: pip install 'envwiki[vector]'")
+
+    target = path or index_path(recipes)
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    settings = dense_settings()
+    embeddings: list[list[float]] = []
+    if settings:
+        base, model, api_key = settings
+        embeddings = embed([detail_text(recipe) for recipe in recipes], base, model, api_key)
+
+    schema = _schema(bool(embeddings), len(embeddings[0]) if embeddings else 0)
+
     staging = Path(tempfile.mkdtemp(prefix="envwiki-index-", dir=str(target.parent)))
     collection = zvec.create_and_open(path=str(staging / "recipes"), schema=schema)
     try:
         docs = []
         for position, recipe in enumerate(recipes):
-            doc_vectors: dict[str, Any] = {
-                "signal": signals.document_vector(tokenize(signal_text(recipe))),
-                "detail": details.document_vector(tokenize(detail_text(recipe))),
+            fields = {
+                "id": recipe.id,
+                "body": detail_text(recipe),
+                "signal": signal_text(recipe),
+                "family": recipe.family,
+                "effort": recipe.effort,
             }
             if embeddings:
-                doc_vectors["dense"] = embeddings[position]
-            docs.append(
-                zvec.Doc(
-                    id=recipe.id,
-                    fields={
-                        "id": recipe.id,
-                        "body": detail_text(recipe),
-                        "family": recipe.family,
-                        "effort": recipe.effort,
-                    },
-                    vectors=doc_vectors,
-                )
-            )
+                doc = zvec.Doc(id=recipe.id, fields=fields, vectors={"dense": embeddings[position]})
+            else:
+                doc = zvec.Doc(id=recipe.id, fields=fields)
+            docs.append(doc)
         collection.insert(docs)
         collection.flush()
     finally:
@@ -265,15 +214,55 @@ def build(recipes: list[Recipe], path: Path | None = None) -> Path:
     return target
 
 
+def _full_text_scores(collection: Any, field: str, profile: str, topk: int) -> dict[str, float]:
+    """The full text score of every document that mentions the profile."""
+    try:
+        results = collection.query(
+            queries=[Query(field_name=field, fts=Fts(match_string=profile))],
+            topk=topk,
+        )
+    except Exception:
+        return {}
+    scores = {str(doc.id): float(doc.score) for doc in results}
+    best = max(scores.values()) if scores else 0.0
+    if not best:
+        return {}
+    return {recipe_id: score / best for recipe_id, score in scores.items()}
+
+
+def _dense_scores(collection: Any, profile: str, topk: int) -> dict[str, float]:
+    """The semantic score of every document, when an endpoint is configured."""
+    settings = dense_settings()
+    if not settings:
+        return {}
+    base, model, api_key = settings
+    try:
+        vector = embed([profile], base, model, api_key)[0]
+        results = collection.query(
+            queries=[Query(field_name="dense", vector=vector)],
+            topk=topk,
+        )
+    except Exception:
+        return {}
+    scores = {str(doc.id): float(doc.score) for doc in results}
+    best = max(scores.values()) if scores else 0.0
+    if not best:
+        return {}
+    # The dense search is approximate, so its score is quantised: a near
+    # miss cannot reorder recipes that the exact scores put on the same
+    # level.
+    return {recipe_id: round(score / best, 2) for recipe_id, score in scores.items()}
+
+
 def search(
     recipes: list[Recipe],
     profile: str,
     limit: int = 6,
 ) -> list[tuple[str, float]] | None:
-    """Rank the recipes by vector similarity, or None when there is no index.
+    """Rank the recipes by text similarity, or None when there is no index.
 
-    The scores are relative: the best match is 1.0 and the rest are scaled to
-    it, so they can be compared with the lexical scores.
+    The scores are relative: the best match is 1.0 and the rest are
+    scaled to it, so they can be compared with the lexical scores.
     """
     if not ZVEC_AVAILABLE:
         return None
@@ -285,62 +274,34 @@ def search(
         except Exception:
             return None
 
-    signals, details = _spaces(recipes)
-    tokens = tokenize(profile)
-    queries = [
-        Query(field_name="signal", vector=signals.query_vector(tokens)),
-        Query(field_name="detail", vector=details.query_vector(tokens)),
-    ]
-    settings = dense_settings()
-    if settings:
-        base, model, api_key = settings
-        try:
-            queries.append(
-                Query(
-                    field_name="dense",
-                    vector=embed([profile], base, model, api_key)[0],
-                )
-            )
-        except Exception:
-            pass
-
     try:
         collection = zvec.open(path=str(path))
     except Exception:
         return None
+
+    topk = max(len(recipes), 1)
+    scores: dict[str, float] = {}
     try:
-        try:
-            results = collection.query(
-                queries=[
-                    *queries,
-                    Query(field_name="body", fts=Fts(match_string=profile)),
-                ],
-                topk=limit,
-                reranker=RrfReRanker(rank_constant=60),
-            )
-        except Exception:
-            results = collection.query(
-                queries=queries,
-                topk=limit,
-                reranker=RrfReRanker(rank_constant=60),
-            )
-    except Exception:
-        return None
+        for field, weight in (("signal", SIGNAL_WEIGHT), ("body", BODY_WEIGHT)):
+            for recipe_id, value in _full_text_scores(collection, field, profile, topk).items():
+                scores[recipe_id] = scores.get(recipe_id, 0.0) + weight * value
+        for recipe_id, value in _dense_scores(collection, profile, topk).items():
+            scores[recipe_id] = scores.get(recipe_id, 0.0) + DENSE_WEIGHT * value
     finally:
         try:
             collection.close()
         except Exception:
             pass
 
-    hits = [(str(doc.id), float(doc.score)) for doc in results]
-    if not hits:
+    if not scores:
         return []
-    best = max(score for _, score in hits) or 1.0
-    return [(recipe_id, score / best) for recipe_id, score in hits]
+    ranked = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
+    best = ranked[0][1] or 1.0
+    return [(recipe_id, score / best) for recipe_id, score in ranked[:limit]]
 
 
 def engine() -> str:
     """Which engine answers a query right now."""
     if not ZVEC_AVAILABLE:
         return "lexical"
-    return "zvec-hybrid" if dense_settings() else "zvec-bm25"
+    return "zvec-fts+dense" if dense_settings() else "zvec-fts"

@@ -5,7 +5,21 @@
       "id": "cloned-site-programmatic-verifier",
       "name": "Cloned site environment with programmatic verifier",
       "family": "environment-synthesis",
-      "summary": "Clone the source site or app into a locally served replica that the agent can explore and reset safely, expose the replica's internals through a programmatic interface, and let the agent author its own tasks against it. Rewards come from deterministic checks over the replica's state, so no LLM judge sits in the loop and no real service is put at risk. The build is specification-first and test-driven: one unified specification describes the pages and their behaviour, and the evaluators are generated together with the environment instead of being annotated afterwards. The result is a task surface where the agent can discover what to do and where the check is a state query.",
+      "summary": "Rebuild the source site as a locally served replica with a programmatic handle on its state, then author tasks whose evaluator is a state predicate: no LLM judge, no real service touched.",
+      "background": "Clone the source site or app into a locally served replica that the agent can explore and reset safely, expose the replica's internals through a programmatic interface, and let the agent author its own tasks against it. Rewards come from deterministic checks over the replica's state, so no LLM judge sits in the loop and no real service is put at risk. The build is specification-first and test-driven: one unified specification describes the pages and their behaviour, and the evaluators are generated together with the environment instead of being annotated afterwards. The result is a task surface where the agent can discover what to do and where the check is a state query.",
+      "material_kind": [
+        "web",
+        "infrastructure"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a crawl or export",
+        "has a serving stack",
+        "has a state interface",
+        "no network needed"
+      ],
+      "produces": "A served replica with a state SDK and a set of tasks, each with an evaluator that returns a boolean from a state query.",
       "when_to_use": [
         "the source is a web app, dashboard or site with multi-page behaviour",
         "the real site cannot be reset, rate-limited or safely explored",
@@ -23,32 +37,43 @@
       "steps": [
         {
           "title": "Capture the source's observable behaviour",
-          "detail": "Collect pages, links, forms and the API calls each page makes. A replica is only useful if it reproduces the transitions an agent can observe, not just the pixels."
+          "detail": "Collect pages, links, forms and the API calls each page makes. A replica is only useful if it reproduces the transitions an agent can observe, not just the pixels.",
+          "accept": "The capture covers pages, links, forms and the API calls each page makes, including the transitions an agent can observe."
         },
         {
           "title": "Write one unified specification",
-          "detail": "Describe the entities, routes and states of the site in a single spec so the pages stay interconnected. Generating one page at a time produces isolated stubs that cannot support multi-step tasks."
+          "detail": "Describe the entities, routes and states of the site in a single spec so the pages stay interconnected. Generating one page at a time produces isolated stubs that cannot support multi-step tasks.",
+          "accept": "One specification names the site's entities, routes and states, and the pages reference each other through it."
         },
         {
           "title": "Rebuild and serve the replica locally",
-          "detail": "Materialize the spec into a served application, pages plus a local backend, so every request is answered deterministically and the site can be reset to a known state between attempts."
+          "detail": "Materialize the spec into a served application, pages plus a local backend, so every request is answered deterministically and the site can be reset to a known state between attempts.",
+          "accept": "The replica answers every request deterministically and resets to a known state between attempts."
         },
         {
           "title": "Expose internals through a programmatic interface",
-          "detail": "Give the agent an SDK-style handle into the replica's state, so it can author tasks, read state and confirm outcomes without scraping the UI."
+          "detail": "Give the agent an SDK-style handle into the replica's state, so it can author tasks, read state and confirm outcomes without scraping the UI.",
+          "accept": "The agent can author tasks, read state and confirm outcomes through the SDK without scraping the UI."
         },
         {
           "title": "Generate tasks and evaluators together",
-          "detail": "Produce each task with its own evaluator in the same pass. An evaluator written afterwards drifts from what the replica actually does."
+          "detail": "Produce each task with its own evaluator in the same pass. An evaluator written afterwards drifts from what the replica actually does.",
+          "accept": "Every task ships with the evaluator written in the same pass as the task."
         },
         {
           "title": "Express the reward as a state check",
-          "detail": "Define success as a predicate over the replica's state, such as a record created, a field set or a row deleted, so the reward is deterministic and needs neither an LLM judge nor DOM heuristics."
+          "detail": "Define success as a predicate over the replica's state, such as a record created, a field set or a row deleted, so the reward is deterministic and needs neither an LLM judge nor DOM heuristics.",
+          "accept": "Each evaluator returns a boolean from a predicate over the replica's state, with no model scoring and no DOM heuristics."
         },
         {
           "title": "Test-drive the build",
-          "detail": "Write executable checks for the spec before accepting the replica. A replica whose pages load but whose forms do not persist state produces tasks that are unsolvable."
+          "detail": "Write executable checks for the spec before accepting the replica. A replica whose pages load but whose forms do not persist state produces tasks that are unsolvable.",
+          "accept": "Executable checks for the specification pass, including a form whose value persists across a reload."
         }
+      ],
+      "curation_notes": [
+        "Check that the task set covers cross-page flows; a replica assembled page by page loses the long-horizon flows that long tasks need.",
+        "Keep task authoring behind the programmatic state interface, since an agent that proposes tasks without it pushes the reward back onto an LLM judge."
       ],
       "verifier": [
         "the evaluator returns a boolean by querying the replica's state store",
@@ -79,7 +104,20 @@
       "id": "code-as-task-source-behavioral-spec",
       "name": "Code as task source via behavioral specification",
       "family": "environment-synthesis",
-      "summary": "Treat an existing codebase as the only task signal: an agent explores what the code actually implements, writes a behavioral specification of that behaviour, and constructs tests grounded in executing the original code. Candidates are filtered by execution checks and by repeated solution rollouts, so only tasks that are executable, non-trivial and not already solved by the obvious patch survive. Several complementary task shapes can be derived from one repository, such as reproduce a result, complete a subflow, finish a missing piece or repair a defect, which is how a single repo yields many environments without mining issues or commits.",
+      "summary": "Use the code as the only signal: explore what it implements, write a behavioural spec per behaviour, ground tests in running the original code, keep candidates that pass on the original and fail on the altered variant.",
+      "background": "Treat an existing codebase as the only task signal: an agent explores what the code actually implements, writes a behavioral specification of that behaviour, and constructs tests grounded in executing the original code. Candidates are filtered by execution checks and by repeated solution rollouts, so only tasks that are executable, non-trivial and not already solved by the obvious patch survive. Several complementary task shapes can be derived from one repository, such as reproduce a result, complete a subflow, finish a missing piece or repair a defect, which is how a single repo yields many environments without mining issues or commits.",
+      "material_kind": [
+        "code"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a runnable checkout",
+        "has installable dependencies",
+        "has an executable entry point",
+        "deterministic behaviour"
+      ],
+      "produces": "Task variants with behavioural specifications and tests that pass on the original code and fail on the altered code.",
       "when_to_use": [
         "the source is a repository with implemented behaviour but few usable issues or commits",
         "you need many tasks per repository and want to avoid rebuilding environments at old revisions",
@@ -97,36 +135,49 @@
       "steps": [
         {
           "title": "Make the repository executable first",
-          "detail": "Build a working environment for the repo, install dependencies and confirm a main entry point runs, before deriving any task. An unrunnable repo yields no ground truth for the behaviour."
+          "detail": "Build a working environment for the repo, install dependencies and confirm a main entry point runs, before deriving any task. An unrunnable repo yields no ground truth for the behaviour.",
+          "accept": "The main entry point runs in the environment without error."
         },
         {
           "title": "Explore what the code implements",
-          "detail": "Read the modules, entry points and public functions and list the behaviours that are actually implemented, each with a concrete invocation that triggers it."
+          "detail": "Read the modules, entry points and public functions and list the behaviours that are actually implemented, each with a concrete invocation that triggers it.",
+          "accept": "Every behaviour listed comes with a concrete invocation that triggers it."
         },
         {
           "title": "Write a behavioral specification per behaviour",
-          "detail": "State the observable contract in terms of inputs and outputs, so the task can be specified independently of the issue text and of the original implementation's internals."
+          "detail": "State the observable contract in terms of inputs and outputs, so the task can be specified independently of the issue text and of the original implementation's internals.",
+          "accept": "Each specification states the observable contract in inputs and outputs, without describing the original implementation's internals."
         },
         {
           "title": "Generate tests grounded in execution",
-          "detail": "Derive the test cases by running the original code, so expected outputs come from what the implementation really does rather than from what a model assumes it does."
+          "detail": "Derive the test cases by running the original code, so expected outputs come from what the implementation really does rather than from what a model assumes it does.",
+          "accept": "Every expected output in a test was produced by executing the original code."
         },
         {
           "title": "Derive complementary task shapes",
-          "detail": "From the same behaviour generate different task types, such as reproduction, subflow completion, function completion and correction, each with its own verifier and difficulty profile."
+          "detail": "From the same behaviour, choose the task type - reproduction, subflow completion, function completion or correction - and give it its own verifier and difficulty profile.",
+          "accept": "The chosen task type has its own verifier and a stated difficulty profile."
         },
         {
           "title": "Filter by execution checks",
-          "detail": "Run the candidate test on the original code and on the altered variant; keep only those that pass on the original and fail on the variant, and repair the ones that fail for setup reasons rather than behavioural ones."
+          "detail": "Run the candidate test on the original code and on the altered variant; keep only those that pass on the original and fail on the variant, and repair the ones that fail for setup reasons rather than behavioural ones.",
+          "accept": "The kept candidate passes on the original code and fails on the altered variant, and candidates that fail for setup reasons are repaired rather than counted as behavioural failures."
         },
         {
-          "title": "Filter by repeated solution rollouts",
-          "detail": "Have a solver attempt each candidate several times and drop those that fall to a trivial patch or that no solver can complete, since neither case improves the pool."
+          "title": "Confirm the reference solution solves the candidate",
+          "detail": "Run the reference solution against the candidate in the environment and check that it reaches the passing state inside the declared budget, so the task is neither trivial nor unreachable.",
+          "accept": "A solver rollout of the reference solution reaches the passing state within the declared budget."
         },
         {
           "title": "Recycle the failures",
-          "detail": "When a candidate fails only because the environment is under-provisioned, fix the environment and retry the same candidate rather than discarding it."
+          "detail": "When a candidate fails only because the environment is under-provisioned, fix the environment and retry the same candidate rather than discarding it.",
+          "accept": "The under-provisioned candidate is retried in the repaired environment, and the provisioning change is recorded."
         }
+      ],
+      "curation_notes": [
+        "Screen the candidate pool with repeated solution rollouts and drop candidates that fall to a trivial patch or that no solver can complete, since neither case improves the pool.",
+        "Optimize validity, structural coupling and implementation scope across the whole set using proxy feedback rather than end-of-pipeline metrics.",
+        "Derive all four complementary task types - reproduction, subflow completion, function completion and correction - from the same behaviour, each with its own verifier and difficulty profile."
       ],
       "verifier": [
         "the candidate test passes on the original code and fails on the altered code",
@@ -162,7 +213,22 @@
       "id": "self-play-executable-env",
       "name": "Self-play executable environment synthesis",
       "family": "environment-synthesis",
-      "summary": "Let one model play two roles: an environment designer writes the environment as executable code, and a solver agent attempts it. Difficulty is steered by the solver's gap between a hinted and an unhinted attempt, so the environment lands just inside the edge of what the agent can almost do. Code-driven and database-backed state keeps transitions consistent and the reward computable instead of judged.",
+      "summary": "Let a model write the environment as executable code over a deterministic state store, then let a solver play it; keep the cases where the hinted and unhinted rewards differ slightly, just inside the solver's edge.",
+      "background": "Let one model play two roles: an environment designer writes the environment as executable code, and a solver agent attempts it. Difficulty is steered by the solver's gap between a hinted and an unhinted attempt, so the environment lands just inside the edge of what the agent can almost do. Code-driven and database-backed state keeps transitions consistent and the reward computable instead of judged.",
+      "material_kind": [
+        "api",
+        "code",
+        "simulation"
+      ],
+      "task_kind": "implement",
+      "role": "environment",
+      "needs": [
+        "has an executable runtime",
+        "has a tool corpus",
+        "has a solver agent",
+        "deterministic behaviour"
+      ],
+      "produces": "Gym-style executable environments with a deterministic state store, several scenarios each, and a rule-based validator shipped with the environment.",
       "when_to_use": [
         "the source is a tool or API set that can be reconstructed as code",
         "you need many diverse environments, not one hand-built sandbox",
@@ -180,28 +246,39 @@
       "steps": [
         {
           "title": "Mine a skeleton",
-          "detail": "Collect topics from the source, model the logic each environment needs (tool set, state variables, invariants), and score candidates for diversity so the pool does not collapse onto one shape."
+          "detail": "Collect topics from the source and model the logic this environment needs: its tool set, its state variables and the invariants it holds.",
+          "accept": "The skeleton names the environment's tool set, state variables and invariants."
         },
         {
           "title": "Write the environment as code",
-          "detail": "Produce a complete executable environment with a reset()/step() style interface, explicit state transitions, a reward function and its verification code, so one interface spans both single-step reasoning and multi-step tool use."
+          "detail": "Produce a complete executable environment with a reset()/step() style interface, explicit state transitions, a reward function and its verification code, so one interface spans both single-step reasoning and multi-step tool use.",
+          "accept": "The environment exposes a reset()/step() interface with explicit state transitions, a reward function and its verification code."
         },
         {
           "title": "Back the state with a real store",
-          "detail": "Put the state in a database or another deterministic store instead of letting a language model simulate it; hallucinated state is the main way synthetic environments become unusable."
+          "detail": "Put the state in a database or another deterministic store instead of letting a language model simulate it; hallucinated state is the main way synthetic environments become unusable.",
+          "accept": "State lives in a database or another deterministic store, and no language model supplies the state values."
         },
         {
           "title": "Generate scenarios and validators",
-          "detail": "For each environment, produce several scenarios plus a rule-based trajectory validation function, so every task has a programmatic pass condition."
+          "detail": "For each environment, produce several scenarios plus a rule-based trajectory validation function, so every task has a programmatic pass condition.",
+          "accept": "Each scenario has a rule-based trajectory validation function that decides pass or fail programmatically."
         },
         {
           "title": "Calibrate difficulty with privileged hints",
-          "detail": "Run the solver twice, with and without hints. The gap between the two rewards estimates regret; keep environments where the gap is small but non-zero, i.e. reachable but not yet solved."
+          "detail": "Run the solver twice, with and without hints. The gap between the two rewards estimates regret; keep environments where the gap is small but non-zero, i.e. reachable but not yet solved.",
+          "accept": "The hinted run succeeds and the unhinted run does not, so the gap is small but non-zero."
         },
         {
           "title": "Ship the verifier with the environment",
-          "detail": "The reward and verification code are part of the environment artifact, not a later annotation pass, so every generated task ships with a deterministic check."
+          "detail": "The reward and verification code are part of the environment artifact, not a later annotation pass, so every generated task ships with a deterministic check.",
+          "accept": "Reward and verification code are part of the environment artifact, and the scenario is not already solved by the environment as built."
         }
+      ],
+      "curation_notes": [
+        "Score candidate skeletons for diversity across the pool so the environments do not collapse onto one shape.",
+        "Retain environments by the hinted-versus-unhinted regret gap, keeping those that are reachable but not yet solved.",
+        "Refresh frozen verifiers as the agent improves, so the check keeps discriminating."
       ],
       "verifier": [
         "reward computed from state transitions in code, not scored by a model",

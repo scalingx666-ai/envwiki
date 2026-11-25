@@ -5,7 +5,22 @@
       "id": "commit-reversal-task-on-current-revision",
       "name": "Commit-reversal task on a maintained revision",
       "family": "terminal-coding",
-      "summary": "Derive a coding task from a real merged pull request without rebuilding the environment at the old revision: undo the change on today's code, by patch reversal, code mapping or agent rewriting, so the task lives inside an environment that already builds and runs. A candidate is kept only if its target tests pass, fail and pass again across the healthy, task and restored states, which makes that triple the acceptance condition. Environment construction is graded by executable evidence on a maturity hierarchy rather than by a success flag, the discovered requirements are tracked in a typed dependency graph, and the construction procedure is replayed in a fresh environment to prove it reproduces.",
+      "summary": "Undo a merged pull request on today's code to get a coding task inside an environment that already builds. Keep the candidate only if its target tests pass, fail and pass again across healthy, task and restored states.",
+      "background": "Derive a coding task from a real merged pull request without rebuilding the environment at the old revision: undo the change on today's code, by patch reversal, code mapping or agent rewriting, so the task lives inside an environment that already builds and runs. A candidate is kept only if its target tests pass, fail and pass again across the healthy, task and restored states, which makes that triple the acceptance condition. Environment construction is graded by executable evidence on a maturity hierarchy rather than by a success flag, the discovered requirements are tracked in a typed dependency graph, and the construction procedure is replayed in a fresh environment to prove it reproduces.",
+      "material_kind": [
+        "code",
+        "infrastructure"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has version history",
+        "has a test suite",
+        "has a reproducible build",
+        "has an executable entry point",
+        "has target tests"
+      ],
+      "produces": "A coding task on the current revision whose target tests fail until the reverted feature is written again, with a replayable environment build.",
       "when_to_use": [
         "the source is a maintained repository with a history of merged changes",
         "rebuilding an environment at an old revision per task is too costly",
@@ -23,36 +38,43 @@
       "steps": [
         {
           "title": "Select a merged change with a test signal",
-          "detail": "Pick a pull request that added or modified tests, so the task carries an observable pass or fail condition instead of a subjective one."
+          "detail": "Pick a pull request that added or modified tests, so the task carries an observable pass or fail condition instead of a subjective one.",
+          "accept": "The chosen pull request added or modified tests, and the command that runs those tests is known."
         },
         {
           "title": "Build the environment for the current revision",
-          "detail": "Install and validate the environment on today's code using an executable-evidence hierarchy: dependencies resolved, the project's tests partially executed, the main entry point actually running."
+          "detail": "Install and validate the environment on today's code using an executable-evidence hierarchy: dependencies resolved, the project's tests partially executed, the main entry point actually running.",
+          "accept": "The project's main entry point runs and its test command executes successfully on the current revision."
         },
         {
           "title": "Track requirements in a typed dependency graph",
-          "detail": "Record each discovered requirement with its dependencies and state, discovered, satisfied or unresolved, so the construction state is not spread across the interaction history."
+          "detail": "Record each discovered requirement with its dependencies and state, discovered, satisfied or unresolved, so the construction state is not spread across the interaction history.",
+          "accept": "Every discovered requirement is recorded with its dependencies and its state: discovered, satisfied or unresolved."
         },
         {
           "title": "Reconstruct the pre-change state on the current revision",
-          "detail": "Reverse the patch, map the old code onto the new one, or have an agent rewrite the feature out, and keep the reconstruction only where the repository still builds and the targeted behaviour is gone."
+          "detail": "Reverse the patch, map the old code onto the new one, or have an agent rewrite the feature out, and keep the reconstruction only where the repository still builds and the targeted behaviour is gone.",
+          "accept": "The repository still builds at the reconstructed state and the targeted behaviour is gone."
         },
         {
           "title": "Apply the pass-fail-pass triple",
-          "detail": "Run the target tests in three states: healthy where they pass, task where they fail, and restored where they pass again. A candidate that fails in more than one of those states is not a task."
+          "detail": "Run the target tests in three states: healthy where they pass, task where they fail, and restored where they pass again. A candidate that fails in more than one of those states is not a task.",
+          "accept": "The target tests pass in the healthy state, fail in the task state and pass again in the restored state."
         },
         {
           "title": "Repair the environment, not the test",
-          "detail": "When the failure comes from a missing dependency or a broken build, extend the construction procedure and re-run, rather than editing the test to match the broken state."
+          "detail": "When the failure comes from a missing dependency or a broken build, extend the construction procedure and re-run, rather than editing the test to match the broken state.",
+          "accept": "The target test file is unmodified and the construction procedure has been extended so the build no longer breaks."
         },
         {
           "title": "Persist and replay the construction",
-          "detail": "Store the successful construction steps as a replayable procedure and apply it in a fresh environment; the reconstructed task must reproduce there with the same test behaviour."
-        },
-        {
-          "title": "Measure the shift in the evaluation signal",
-          "detail": "Compare how the same agents score on the original revision and on the reconstructed task, and drop the pairs whose per-task agreement is poor."
+          "detail": "Store the successful construction steps as a replayable procedure and apply it in a fresh environment; the reconstructed task must reproduce there with the same test behaviour.",
+          "accept": "The stored procedure rebuilds the environment in a fresh sandbox and the tests behave identically there."
         }
+      ],
+      "curation_notes": [
+        "Compare how the same agents score on the original revision and on the reconstructed task, and drop the pairs whose per-task agreement is poor.",
+        "Keep the target tests of the retained tasks disjoint, so one patch cannot pass two tasks in the set."
       ],
       "verifier": [
         "target tests pass on the healthy state, fail on the task state and pass again after restoration",
@@ -88,7 +110,22 @@
       "id": "depth-gated-recursive-task-composition",
       "name": "Depth-gated recursive terminal task composition",
       "family": "terminal-coding",
-      "summary": "Grow long-horizon terminal tasks by extending a verified seed task: take its reference solution, append the next workflow segment, realign the verifier and the instruction to the new workflow, and validate the result in a fresh sandbox before accepting it as the next seed. Depth, not length, is the gating quantity, defined as the smallest turn cap under which the task still passes; turn counts alone mostly measure the habits of the model being graded. Writing the task one segment at a time inside the real environment keeps the instruction, the initial state, the reference solution and the verifier mutually consistent, which is what stops a synthesized task from being unsolvable or mis-graded.",
+      "summary": "Grow long-horizon terminal tasks by extending a verified seed: append the next workflow segment to its reference solution, realign verifier and instruction, validate in a fresh sandbox, and gate on depth not turns.",
+      "background": "Grow long-horizon terminal tasks by extending a verified seed task: take its reference solution, append the next workflow segment, realign the verifier and the instruction to the new workflow, and validate the result in a fresh sandbox before accepting it as the next seed. Depth, not length, is the gating quantity, defined as the smallest turn cap under which the task still passes; turn counts alone mostly measure the habits of the model being graded. Writing the task one segment at a time inside the real environment keeps the instruction, the initial state, the reference solution and the verifier mutually consistent, which is what stops a synthesized task from being unsolvable or mis-graded.",
+      "material_kind": [
+        "code",
+        "trajectory",
+        "infrastructure"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has verified seed tasks",
+        "has a reference solution",
+        "has a turn-cap harness",
+        "can reset a terminal environment"
+      ],
+      "produces": "A long-horizon terminal task whose reference solution, instruction and verifier agree, with its depth recorded as the smallest passing turn cap.",
       "when_to_use": [
         "long-horizon tasks are needed but verified seed tasks are scarce",
         "the agent under evaluation is a terminal agent whose multi-turn behaviour is the target",
@@ -106,36 +143,43 @@
       "steps": [
         {
           "title": "Start from verified seeds only",
-          "detail": "Every accepted task needs a working reference solution and a verifier that fails on the pristine environment; otherwise recursion compounds the errors of its inputs."
+          "detail": "Every accepted task needs a working reference solution and a verifier that fails on the pristine environment; otherwise recursion compounds the errors of its inputs.",
+          "accept": "The seed task has a reference solution that passes and a verifier that fails on the pristine environment."
         },
         {
           "title": "Extend the reference solution",
-          "detail": "Add the next workflow segment to the reference solution so the new task endpoint is reachable by an executable path, not only describable in prose."
+          "detail": "Add the next workflow segment to the reference solution so the new task endpoint is reachable by an executable path, not only describable in prose.",
+          "accept": "The extended reference solution runs end to end and reaches the new endpoint."
         },
         {
           "title": "Realign the verifier and the instruction",
-          "detail": "Rewrite both to match the extended workflow; a verifier still pointing at the old endpoint silently passes a workflow that was never completed."
+          "detail": "Rewrite both to match the extended workflow; a verifier still pointing at the old endpoint silently passes a workflow that was never completed.",
+          "accept": "The verifier checks the new endpoint and the instruction names the same workflow the reference solution performs."
         },
         {
           "title": "Write the task segment by segment in the real environment",
-          "detail": "Materialize each segment in the actual terminal and repair the environment when a segment cannot be executed, rather than describing the segment only in text."
+          "detail": "Materialize each segment in the actual terminal and repair the environment when a segment cannot be executed, rather than describing the segment only in text.",
+          "accept": "Every segment of the workflow has been executed in the terminal and its commands are recorded."
         },
         {
           "title": "Validate in a fresh sandbox",
-          "detail": "Run the candidate from a clean environment and require the verifier to fail before the solution and to pass after it, so acceptance is based on execution rather than on inspection."
+          "detail": "Run the candidate from a clean environment and require the verifier to fail before the solution and to pass after it, so acceptance is based on execution rather than on inspection.",
+          "accept": "The verifier fails on the pristine environment and passes after the reference solution runs in a clean sandbox."
         },
         {
           "title": "Measure depth, not turns",
-          "detail": "Find the smallest turn cap under which the task still passes; that number is the depth. A task that passes within three turns has almost no depth, however many commands it takes."
+          "detail": "Find the smallest turn cap under which the task still passes; that number is the depth. A task that passes within three turns has almost no depth, however many commands it takes.",
+          "accept": "The smallest turn cap under which the task still passes is recorded as the task's depth."
         },
         {
           "title": "Keep the artifact set consistent",
-          "detail": "Use the realized container state as the shared grounding for the instruction, the reference solution and the verifier, and regenerate only the artifact that is actually broken."
-        },
-        {
-          "title": "Feed accepted tasks back as seeds",
-          "detail": "Promote validated tasks into the seed pool and repeat, tracking the median reference-solution length and the median executed-command count per round as the growth signal."
+          "detail": "Use the realized container state as the shared grounding for the instruction, the reference solution and the verifier, and regenerate only the artifact that is actually broken.",
+          "accept": "Instruction, reference solution and verifier are all regenerated from the realised container state and agree on the same endpoint."
         }
+      ],
+      "curation_notes": [
+        "Promote validated tasks into the seed pool and repeat, tracking the median reference-solution length and the median executed-command count per round as the growth signal.",
+        "Keep the workflows of one round distinct from each other and from the seeds they came from, so the set does not collapse into near-duplicates."
       ],
       "verifier": [
         "the verifier fails on the pristine environment and passes after the reference solution runs",
@@ -171,7 +215,21 @@
       "id": "dockerized-terminal-blueprint",
       "name": "Evidence-grounded Dockerized terminal blueprint",
       "family": "terminal-coding",
-      "summary": "Sample a task blueprint across a capability taxonomy, ground it in evidence from real technical material, instantiate it as a Dockerized environment, then gate the tests: rubric-gated construction, hint-conditional filtering and a strict fail-to-pass check before the task is allowed into the set.",
+      "summary": "Sample a blueprint across a capability taxonomy, ground it in evidence from real material, instantiate it as a Dockerized environment, then gate the tests on a rubric, a hint-conditional variant and a fail-to-pass check.",
+      "background": "Sample a task blueprint across a capability taxonomy, ground it in evidence from real technical material, instantiate it as a Dockerized environment, then gate the tests: rubric-gated construction, hint-conditional filtering and a strict fail-to-pass check before the task is allowed into the set.",
+      "material_kind": [
+        "code",
+        "infrastructure"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a capability taxonomy",
+        "has real technical material",
+        "has a container runtime",
+        "runs offline"
+      ],
+      "produces": "A Dockerized task environment with rubric-gated tests that fail on the pristine environment and pass on the reference solution.",
       "when_to_use": [
         "the source is code, a CLI tool, a repository or technical documentation",
         "the task must run offline in a reproducible sandbox",
@@ -189,36 +247,43 @@
       "steps": [
         {
           "title": "Sample blueprints from a taxonomy",
-          "detail": "Combine taxonomy dimensions rather than free-form prompting; surface-level retrofitting of artifacts is what produces vague instructions and shallow execution paths."
+          "detail": "Combine taxonomy dimensions rather than free-form prompting; surface-level retrofitting of artifacts is what produces vague instructions and shallow execution paths.",
+          "accept": "The blueprint's domain, skill type, capability and engineering pillar are recorded, and none of them is left blank."
         },
         {
           "title": "Ground the candidate in evidence",
-          "detail": "Do evidence-guided research over real material until the task has a concrete anchor: a real command, a real defect, a real data file. Reverse-engineering real recordings is one way to get anchors at scale."
+          "detail": "Do evidence-guided research over real material until the task has a concrete anchor: a real command, a real defect, a real data file. Reverse-engineering real recordings is one way to get anchors at scale.",
+          "accept": "The task names a concrete anchor taken from the real material: a real command, a real defect or a real data file."
         },
         {
           "title": "Write the blueprint",
-          "detail": "Specify the goal, the initial state, the expected artifacts and the difficulty, together with a reference solution written by a human-equivalent author, not by the same pass that wrote the task."
+          "detail": "Specify the goal, the initial state, the expected artifacts and the difficulty, together with a reference solution written by a human-equivalent author, not by the same pass that wrote the task.",
+          "accept": "The goal, initial state, expected artifacts, difficulty and a separately authored reference solution are all written down."
         },
         {
           "title": "Instantiate the environment",
-          "detail": "Build the Docker image, the workdir, the seeded files and the offline constraints; every task gets its own environment rather than a shared one."
+          "detail": "Build the Docker image, the workdir, the seeded files and the offline constraints; every task gets its own environment rather than a shared one.",
+          "accept": "The Docker image builds, the workdir holds the seeded files, and the environment runs with no network access."
         },
         {
           "title": "Gate the tests on a rubric",
-          "detail": "Construct the test suite against a rubric for what counts as success, so the check is exhaustive rather than a single happy-path assertion."
+          "detail": "Construct the test suite against a rubric for what counts as success, so the check is exhaustive rather than a single happy-path assertion.",
+          "accept": "The test suite covers every clause of the rubric and fails on the pristine environment."
         },
         {
           "title": "Filter with a hint-conditional variant",
-          "detail": "Run a variant with a hint; a task that is solved the same way with and without the hint carries no signal, so drop it or raise its difficulty."
+          "detail": "Run a variant with a hint; a task that is solved the same way with and without the hint carries no signal, so drop it or raise its difficulty.",
+          "accept": "The hinted and unhinted runs differ in outcome, so the task is kept or its difficulty is raised."
         },
         {
           "title": "Enforce fail-to-pass",
-          "detail": "The tests must fail on the pristine environment and pass on the reference solution. Anything else is not a task."
-        },
-        {
-          "title": "Evolve the pool",
-          "detail": "Grow the set from existing environments with adaptive control of difficulty and diversity, instead of restarting from scratch each round."
+          "detail": "The tests must fail on the pristine environment and pass on the reference solution. Anything else is not a task.",
+          "accept": "The tests fail on the pristine environment and pass after the reference solution runs."
         }
+      ],
+      "curation_notes": [
+        "Grow the set from existing environments with adaptive control of difficulty and diversity, instead of restarting from scratch each round.",
+        "Re-check the difficulty of the retained tasks as the solver population improves, because a frozen verifier stops discriminating."
       ],
       "verifier": [
         "strict fail-to-pass on the pristine environment",

@@ -5,7 +5,21 @@
       "id": "proactive-intervention-window-tasks",
       "name": "Proactive intervention-window task synthesis",
       "family": "enterprise-professional",
-      "summary": "Model the target application as a finite state machine with stateful navigation and a state-dependent action space, then drive it with a simulated active user whose behaviour produces a continuous event stream rather than an explicit instruction. A latent intent is planted in that stream; the task the agent must solve is to decide whether and when to intervene and to emit an executable function sequence drawn from a fixed pool of application APIs. Two choices keep the evaluation objective rather than impressionistic: the timing of the intervention is checked against a window around the planted intent instead of against one gold action, and each instance carries multiple acceptable answers so that one reasonable sequence is not the only way to be right. Timing prediction and assist-content generation are scored separately, and an expert audit checks factual accuracy, logical consistency and action feasibility of every retained instance.",
+      "summary": "Plant a latent intent in a simulated user's event stream over a state-machine app; the agent must decide when to intervene and which API calls to emit, scored on a timing window and on any accepted call sequence.",
+      "background": "Model the target application as a finite state machine with stateful navigation and a state-dependent action space, then drive it with a simulated active user whose behaviour produces a continuous event stream rather than an explicit instruction. A latent intent is planted in that stream; the task the agent must solve is to decide whether and when to intervene and to emit an executable function sequence drawn from a fixed pool of application APIs. Two choices keep the evaluation objective rather than impressionistic: the timing of the intervention is checked against a window around the planted intent instead of against one gold action, and each instance carries multiple acceptable answers so that one reasonable sequence is not the only way to be right. Timing prediction and assist-content generation are scored separately, and an expert audit checks factual accuracy, logical consistency and action feasibility of every retained instance.",
+      "material_kind": [
+        "simulation",
+        "api"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a state-transition model",
+        "has an api pool",
+        "has a user simulator",
+        "deterministic behaviour"
+      ],
+      "produces": "A proactive-assistance instance with a recorded user event stream, a planted intent, a timing window and the accepted API call sequences, scored on timing and content separately.",
       "when_to_use": [
         "the source describes an assistant expected to anticipate the user rather than be told what to do",
         "the application has real state and navigation, so flat tool-calling APIs would misrepresent it",
@@ -23,32 +37,38 @@
       "steps": [
         {
           "title": "Model the application as a state machine",
-          "detail": "Enumerate application states, the navigation edges between them and the action space available in each state; actions legal in one state must be illegal elsewhere, otherwise the environment collapses into a flat API list and the timing signal disappears."
+          "detail": "Enumerate application states, the navigation edges between them and the action space available in each state; actions legal in one state must be illegal elsewhere, otherwise the environment collapses into a flat API list and the timing signal disappears.",
+          "accept": "Every state names its legal actions, and an action legal in one state is illegal in another."
         },
         {
           "title": "Generate a user trajectory over the state machine",
-          "detail": "Use the simulator to act as an active user and produce a continuous event stream with realistic pacing and bursts, occasional noise, and interleaved task threads; keep the pre-assistance context, since that is what the agent observes before deciding to intervene."
+          "detail": "Use the simulator to act as an active user and produce a continuous event stream with realistic pacing and bursts, occasional noise, and interleaved task threads; keep the pre-assistance context, since that is what the agent observes before deciding to intervene.",
+          "accept": "The stream carries realistic pacing, bursts, occasional noise and interleaved task threads, and the pre-assistance context is preserved."
         },
         {
           "title": "Plant the latent intent and mark the intervention window",
-          "detail": "Insert the intention the agent should anticipate at a chosen point in the stream, record the states and events in which intervening is appropriate, and define the window generously enough that reasonable timing variations still pass."
+          "detail": "Insert the intention the agent should anticipate at a chosen point in the stream, record the states and events in which intervening is appropriate, and define the window generously enough that reasonable timing variations still pass.",
+          "accept": "The intent sits at a recorded position in the stream, and the window marks the states and events where intervening is appropriate."
         },
         {
           "title": "Generate the executable function sequence",
-          "detail": "Express the required assistance as an ordered sequence of calls drawn only from the application's API pool, so the answer is executable rather than prose, and derive several valid sequences where the intent admits more than one resolution."
+          "detail": "Express the required assistance as an ordered sequence of calls drawn only from the application's API pool, so the answer is executable rather than prose, and derive several valid sequences where the intent admits more than one resolution.",
+          "accept": "Every call in the sequence comes from the application's API pool, and more than one sequence is derived where the intent admits more than one resolution."
         },
         {
           "title": "Annotate multiple answers and the timing label",
-          "detail": "Store every acceptable function sequence together with the timing window; a single gold sequence penalizes harmless alternatives and inflates difficulty for the wrong reason."
+          "detail": "Store every acceptable function sequence together with the timing window; a single gold sequence penalizes harmless alternatives and inflates difficulty for the wrong reason.",
+          "accept": "The instance stores the timing window together with every acceptable function sequence."
         },
         {
           "title": "Score timing and content separately",
-          "detail": "Two components: whether the intervention happened inside the window, and whether the emitted sequence matches one of the accepted sequences; report both so a lucky timing with wrong content stays visible."
-        },
-        {
-          "title": "Audit the retained instances",
-          "detail": "Have experts review each retained instance for factual accuracy, internal consistency and feasibility of the action sequence, and drop or repair non-compliant entries before the set is used."
+          "detail": "Two components: whether the intervention happened inside the window, and whether the emitted sequence matches one of the accepted sequences; report both so a lucky timing with wrong content stays visible.",
+          "accept": "The scorer returns a timing result and a content result as two separate fields."
         }
+      ],
+      "curation_notes": [
+        "Audit the retained instances: have experts review each one for factual accuracy, internal consistency and feasibility of the action sequence, and drop or repair non-compliant entries before the set is used.",
+        "Reject reactive-style instruction data from the pool, so that no instance can be passed without anticipating anything."
       ],
       "verifier": [
         "the intervention timestamp falls inside the recorded window; outside it counts as a miss",
@@ -89,7 +109,22 @@
       "id": "repo-workflow-verifiable-env",
       "name": "Repository-grounded verifiable workflow environment",
       "family": "enterprise-professional",
-      "summary": "Pick one professional workflow family from a real codebase (build and configuration, monitoring, issue resolving, test generation, data-driven analysis), mine task instances from the project's own history and issue tracker, and materialize each instance as a self-contained executable environment: dependencies pre-installed, the data files the task touches copied in with a small preview, a reference solution, and an evaluation script that asserts the resulting state instead of grading the agent's narration. The construction is semi-automated rather than hand-written: extraction is scripted, while the quality decisions (coverage, non-triviality, correct gold behaviour) are made by an expert pass. Environment, reference solution and evaluation script ship as one artifact, so every task has a deterministic pass condition and the difficulty of a task can be stated as the measured failure rate of current agents on that environment.",
+      "summary": "Turn a real project's history into self-contained executable environments: dependencies pre-installed, task data copied in, a reference solution run once, and a checker that asserts the resulting state.",
+      "background": "Pick one professional workflow family from a real codebase (build and configuration, monitoring, issue resolving, test generation, data-driven analysis), mine task instances from the project's own history and issue tracker, and materialize each instance as a self-contained executable environment: dependencies pre-installed, the data files the task touches copied in with a small preview, a reference solution, and an evaluation script that asserts the resulting state instead of grading the agent's narration. The construction is semi-automated rather than hand-written: extraction is scripted, while the quality decisions (coverage, non-triviality, correct gold behaviour) are made by an expert pass. Environment, reference solution and evaluation script ship as one artifact, so every task has a deterministic pass condition and the difficulty of a task can be stated as the measured failure rate of current agents on that environment.",
+      "material_kind": [
+        "code",
+        "data",
+        "infrastructure"
+      ],
+      "task_kind": "repair",
+      "role": "environment",
+      "needs": [
+        "has version history",
+        "has an issue tracker",
+        "has a reproducible build",
+        "has tests"
+      ],
+      "produces": "An executable environment snapshot with the task's data files, a reference solution and a checker that asserts the reference post-state.",
       "when_to_use": [
         "the source is a real repository, spreadsheet corpus or scientific codebase whose artefacts can actually be executed",
         "the task should be a genuine multi-step professional workflow rather than a single function call",
@@ -107,32 +142,39 @@
       "steps": [
         {
           "title": "Choose the workflow family and the atomic boundary",
-          "detail": "Fix one workflow (build and configuration, monitoring, issue resolving, test generation, or data-driven analysis) and define the unit of work as a single issue or commit an expert could close in one session; a unit spanning the whole lifecycle is too coarse to score."
+          "detail": "Fix one workflow (build and configuration, monitoring, issue resolving, test generation, or data-driven analysis) and define the unit of work as a single issue or commit an expert could close in one session; a unit spanning the whole lifecycle is too coarse to score.",
+          "accept": "One workflow family is fixed, and the unit of work is a single issue or commit an expert could close in one session."
         },
         {
           "title": "Extract candidate instances from the project's own history",
-          "detail": "Script the mining of issues, pull requests and commits for the chosen family, then have the reviewer filter for coverage and non-triviality: keep only instances whose expected outcome is unambiguous and whose reproduction needs more than a single file edit."
+          "detail": "Script the mining of issues, pull requests and commits for the chosen family, then have the reviewer filter for coverage and non-triviality: keep only instances whose expected outcome is unambiguous and whose reproduction needs more than a single file edit.",
+          "accept": "The mined instance has an unambiguous expected outcome and needs more than a single file edit to reproduce."
         },
         {
           "title": "Materialize the instance as an executable environment",
-          "detail": "Per instance, snapshot the project at the parent commit, pre-install the toolchain and dependencies in the image, copy in the data files the task touches together with a small preview of the dataset, and freeze the configuration so the environment starts from the same state on every run."
+          "detail": "Per instance, snapshot the project at the parent commit, pre-install the toolchain and dependencies in the image, copy in the data files the task touches together with a small preview of the dataset, and freeze the configuration so the environment starts from the same state on every run.",
+          "accept": "The environment starts from the same snapshot on every run, with the toolchain and dependencies installed and the task's data files plus a small preview copied in."
         },
         {
           "title": "Write the reference solution once",
-          "detail": "Produce the expert solution for each instance and run it inside the environment to record the expected post-state; that reference run defines the gold behaviour the evaluation script will assert."
+          "detail": "Produce the expert solution for each instance and run it inside the environment to record the expected post-state; that reference run defines the gold behaviour the evaluation script will assert.",
+          "accept": "The reference solution runs to completion inside the environment and the resulting state is recorded as the gold behaviour."
         },
         {
           "title": "Synthesize the evaluation script from the reference run",
-          "detail": "Derive an executable checker that inspects environment state after the agent finishes (files produced, configuration values, test outcomes, report contents); derive it from the recorded reference state so it is neither too loose nor tuned to one phrasing."
-        },
-        {
-          "title": "Audit the checker against human labels",
-          "detail": "Sample instances, have humans annotate the expected outcome independently, and measure agreement between the automatic script and the human gold standard; repair or drop instances below the agreement threshold instead of shipping a noisy checker."
+          "detail": "Derive an executable checker that inspects environment state after the agent finishes (files produced, configuration values, test outcomes, report contents); derive it from the recorded reference state so it is neither too loose nor tuned to one phrasing.",
+          "accept": "The checker exits 0 only on the recorded reference post-state, and rejects an incorrect state."
         },
         {
           "title": "Confirm the instance is not already solved",
-          "detail": "Run a trivial baseline in the pristine environment: the instance must fail there and pass under the reference solution, which is the fail-to-pass condition the task ships with."
+          "detail": "Run a trivial baseline in the pristine environment: the instance must fail there and pass under the reference solution, which is the fail-to-pass condition the task ships with.",
+          "accept": "The instance fails under a trivial baseline in the pristine environment and passes under the reference solution."
         }
+      ],
+      "curation_notes": [
+        "Audit the checker against human labels: sample instances, have humans annotate the expected outcome independently, measure agreement with the automatic script, and repair or drop instances below the agreement threshold instead of shipping a noisy checker.",
+        "Review the mined set as a whole for workflow coverage and non-triviality, keeping only instances whose expected outcome is unambiguous.",
+        "State the difficulty of a task as the measured failure rate of current agents on that environment."
       ],
       "verifier": [
         "the evaluation script exits 0 only when the environment reaches the reference post-state",
@@ -168,7 +210,21 @@
       "id": "zero-execution-spec-tool-tasks",
       "name": "Zero-execution specification-driven tool task synthesis",
       "family": "enterprise-professional",
-      "summary": "When the real system cannot be called (access controls, compliance constraints, rate limits, risk of touching production data), build the task from the interface specification instead: parse the OpenAPI or schema documents into typed endpoints, generate one user intent per endpoint, and synthesize the call sequence that intent requires. Every candidate trajectory is validated statically against the source specification - endpoint exists, parameter names, types, formats and required fields all conform - before it is admitted, and the validator itself is hardened by planting known schema violations and requiring them to be caught. The result is a task family whose pass condition is a checked call sequence rather than a live response, with argument-level correctness scored separately from endpoint selection so the headline metric cannot overstate end-to-end competence.",
+      "summary": "Parse the interface specification into typed tools, write one intent per tool, synthesize the call sequence that intent needs, and validate every trajectory statically against the schema, so nothing is executed.",
+      "background": "When the real system cannot be called (access controls, compliance constraints, rate limits, risk of touching production data), build the task from the interface specification instead: parse the OpenAPI or schema documents into typed endpoints, generate one user intent per endpoint, and synthesize the call sequence that intent requires. Every candidate trajectory is validated statically against the source specification - endpoint exists, parameter names, types, formats and required fields all conform - before it is admitted, and the validator itself is hardened by planting known schema violations and requiring them to be caught. The result is a task family whose pass condition is a checked call sequence rather than a live response, with argument-level correctness scored separately from endpoint selection so the headline metric cannot overstate end-to-end competence.",
+      "material_kind": [
+        "specification",
+        "api"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has an interface specification",
+        "has parameter schemas",
+        "no network needed",
+        "deterministic behaviour"
+      ],
+      "produces": "Tool-call trajectories that pass static schema validation, each labelled with an intent and scored on endpoint choice and argument correctness separately.",
       "when_to_use": [
         "the source exposes an API schema, CLI reference or tool catalogue but the service itself cannot be executed",
         "executing against the real system is unsafe, costly or forbidden",
@@ -186,36 +242,43 @@
       "steps": [
         {
           "title": "Parse the specification into a typed tool table",
-          "detail": "Extract endpoints, methods, parameter names, types, required flags and response schemas, and keep the parsed structure as the single source of truth every later stage reads, so intent generation and validation cannot drift apart."
+          "detail": "Extract endpoints, methods, parameter names, types, required flags and response schemas, and keep the parsed structure as the single source of truth every later stage reads, so intent generation and validation cannot drift apart.",
+          "accept": "Every endpoint, method, parameter name, type, required flag and response schema from the document is in the parsed table, and every later stage reads only that table."
         },
         {
           "title": "Generate one intent per tool",
-          "detail": "For each endpoint or command produce a natural-language user intent that genuinely requires that tool and label it with the tool id; intents that any tool in the set could satisfy are rejected as under-specified."
+          "detail": "For each endpoint or command produce a natural-language user intent that genuinely requires that tool and label it with the tool id; intents that any tool in the set could satisfy are rejected as under-specified.",
+          "accept": "Each intent names the tool id it requires, and no other tool in the set could satisfy it."
         },
         {
           "title": "Synthesize the call sequence for each intent",
-          "detail": "Write the ordered calls with concrete argument values that satisfy the intent, including arguments whose values are only recoverable from an earlier step, such as an identifier returned by a previous call."
+          "detail": "Write the ordered calls with concrete argument values that satisfy the intent, including arguments whose values are only recoverable from an earlier step, such as an identifier returned by a previous call.",
+          "accept": "The intent has an ordered call sequence with concrete argument values, including values that are only recoverable from an earlier call."
         },
         {
           "title": "Statically validate every candidate",
-          "detail": "Check the trajectory against the specification: the endpoint exists, parameter names match the schema, types and formats conform, required parameters are present, and schema-level constraints hold; reject on the first violation."
+          "detail": "Check the trajectory against the specification: the endpoint exists, parameter names match the schema, types and formats conform, required parameters are present, and schema-level constraints hold; reject on the first violation.",
+          "accept": "Each admitted trajectory satisfies every schema check, and the first violation rejects the candidate."
         },
         {
           "title": "Harden the validator adversarially",
-          "detail": "Plant known violations (renamed parameter, wrong type, unknown endpoint, missing required field) into a sample of candidates and require the validator to flag them; measure the detection rate and add rules until it is close to complete rather than assuming it."
+          "detail": "Plant known violations (renamed parameter, wrong type, unknown endpoint, missing required field) into a sample of candidates and require the validator to flag them; measure the detection rate and add rules until it is close to complete rather than assuming it.",
+          "accept": "Planted violations - renamed parameter, wrong type, unknown endpoint, missing required field - are all flagged, and every miss adds a validation rule."
         },
         {
           "title": "Order calls by capability dependency",
-          "detail": "Model the tool action space as a dependency graph and order the synthesized calls along it, so the trajectory follows the order the tools actually require instead of an arbitrary permutation."
+          "detail": "Model the tool action space as a dependency graph and order the synthesized calls along it, so the trajectory follows the order the tools actually require instead of an arbitrary permutation.",
+          "accept": "The calls run in an order consistent with the tool dependency graph, each consuming what an earlier call produced."
         },
         {
           "title": "Score arguments separately from endpoint selection",
-          "detail": "Report tool-choice accuracy and argument accuracy as separate numbers; an endpoint-level score substantially overestimates correctness when arguments and values are wrong."
-        },
-        {
-          "title": "Hold out unseen specifications",
-          "detail": "Keep a set of specifications out of generation entirely and run the same pipeline on them, so the transfer claim rests on surfaces the pipeline never saw during development."
+          "detail": "Report tool-choice accuracy and argument accuracy as separate numbers; an endpoint-level score substantially overestimates correctness when arguments and values are wrong.",
+          "accept": "Tool-choice accuracy and argument accuracy are reported as two numbers, with argument values checked against schema type and format."
         }
+      ],
+      "curation_notes": [
+        "Hold out a set of specifications that never entered generation, run the same pipeline on them, and keep only those that produce the same class of validated trajectories.",
+        "Check the synthetic trajectories against the specification's own ambiguity, which would otherwise teach the agent to guess."
       ],
       "verifier": [
         "the static checker rejects a trajectory containing a planted schema violation and accepts a conforming one",

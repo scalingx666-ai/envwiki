@@ -5,7 +5,22 @@
       "id": "harness-sandbox-call-capture-replay",
       "name": "Harness-in-sandbox call capture and trajectory replay",
       "family": "platform-infra",
-      "summary": "Wrap the source system in the same agent harness the task is graded with, run it inside a disposable sandbox, and intercept the model boundary with a proxy so every call and every tool invocation is recorded. The recorded calls are reassembled into a prefix tree, which yields a replayable multi-turn trajectory and a state trace the verifier can compare against. Keeping the harness inside the sandbox and the policy outside it is what makes one procedure serve both grading a single Harbor task and collecting rollouts: the sandbox boundary is the isolation guarantee, the proxy is the observation point, and the prefix tree is the artifact that names the intermediate states a correct solution has to pass through.",
+      "summary": "Run the source system in a disposable sandbox behind a recording proxy, rebuild the multi-turn trajectory as a prefix tree, and grade the intermediate state checkpoints.",
+      "background": "Wrap the source system in the same agent harness the task is graded with, run it inside a disposable sandbox, and intercept the model boundary with a proxy so every call and every tool invocation is recorded. The recorded calls are reassembled into a prefix tree, which yields a replayable multi-turn trajectory and a state trace the verifier can compare against. Keeping the harness inside the sandbox and the policy outside it is what makes one procedure serve both grading a single Harbor task and collecting rollouts: the sandbox boundary is the isolation guarantee, the proxy is the observation point, and the prefix tree is the artifact that names the intermediate states a correct solution has to pass through.",
+      "material_kind": [
+        "infrastructure",
+        "code",
+        "trajectory"
+      ],
+      "task_kind": "reproduce",
+      "role": "environment",
+      "needs": [
+        "has a runnable harness",
+        "has an executable entry point",
+        "has observable side effects",
+        "no shared mutable paths"
+      ],
+      "produces": "A captured multi-turn trajectory, a prefix tree of the branches taken, and a checker pinned to the intermediate state checkpoints and the final state digest.",
       "when_to_use": [
         "the source is an agent harness, a multi-tool app or a service with side effects",
         "the task must be checked on intermediate tool-call state, not only on the final artifact",
@@ -23,32 +38,43 @@
       "steps": [
         {
           "title": "Stand up a disposable sandbox per attempt",
-          "detail": "Each task instance gets its own temporary sandbox holding the source checkout, its dependencies and its starting files, and the harness runs inside it so no state leaks between attempts. Keep harness and task environment inside the same sandbox boundary instead of splitting them across hosts."
+          "detail": "Each task instance gets its own temporary sandbox holding the source checkout, its dependencies and its starting files, and the harness runs inside it so no state leaks between attempts. Keep harness and task environment inside the same sandbox boundary instead of splitting them across hosts.",
+          "accept": "Each attempt runs in its own sandbox holding the checkout and its dependencies, and no state survives the sandbox."
         },
         {
           "title": "Insert a proxy at the model boundary",
-          "detail": "Route every model call through a local proxy that records request and response payloads verbatim. Policy decisions stay outside the sandbox while observation happens inside, so capture never changes the execution environment."
+          "detail": "Route every model call through a local proxy that records request and response payloads verbatim. Policy decisions stay outside the sandbox while observation happens inside, so capture never changes the execution environment.",
+          "accept": "Every model request and response is recorded verbatim, and the proxy forwards the payload unaltered."
         },
         {
           "title": "Instrument tool execution separately",
-          "detail": "Have the harness log each tool call with its arguments, exit status and the stdout or stderr it produced. The tool log, not the model's narration, is the ground truth about what happened to the environment."
+          "detail": "Have the harness log each tool call with its arguments, exit status and the stdout or stderr it produced. The tool log, not the model's narration, is the ground truth about what happened to the environment.",
+          "accept": "Every tool call is logged with its arguments, exit status and the stdout or stderr it produced."
         },
         {
           "title": "Rebuild the multi-turn trajectory as a prefix tree",
-          "detail": "Group the captured calls by shared prefix so the trajectory branches wherever the agent could have diverged. The tree is the reconstruction of the multi-turn conversation and it makes the ordered sequence of intermediate states explicit."
+          "detail": "Group the captured calls by shared prefix so the trajectory branches wherever the agent could have diverged. The tree is the reconstruction of the multi-turn conversation and it makes the ordered sequence of intermediate states explicit.",
+          "accept": "The tree branches at every point where the agent's next call diverged from the reference."
         },
         {
           "title": "Extract the state checkpoints a correct run must hit",
-          "detail": "From the tool log, mark the points where the source system's observable state changed in a way the task depends on: a file written, a record moved to another status, a request accepted. These become the intermediate assertions, rather than checking only the final artifact."
+          "detail": "From the tool log, mark the points where the source system's observable state changed in a way the task depends on: a file written, a record moved to another status, a request accepted. These become the intermediate assertions, rather than checking only the final artifact.",
+          "accept": "Each task-relevant state change is named as a checkpoint with its expected value."
         },
         {
           "title": "Pin the verifier to the state trace",
-          "detail": "Write the checker against the recorded state transitions plus the final artifact, so a run that reaches the same end state through an illegal path still fails."
+          "detail": "Write the checker against the recorded state transitions plus the final artifact, so a run that reaches the same end state through an illegal path still fails.",
+          "accept": "The checker reads the recorded transitions plus the final artifact, so a run that reaches the end state by an illegal path fails."
         },
         {
           "title": "Re-run in a fresh sandbox to confirm reproducibility",
-          "detail": "Rebuild the instance from scratch and replay the reference trajectory. An identical tool-call sequence and an identical final state digest must be reproduced; otherwise the environment has hidden state and the task will be flaky."
+          "detail": "Rebuild the instance from scratch and replay the reference trajectory. An identical tool-call sequence and an identical final state digest must be reproduced; otherwise the environment has hidden state and the task will be flaky.",
+          "accept": "A fresh sandbox reproduces the reference tool-call sequence and an identical final state digest."
         }
+      ],
+      "curation_notes": [
+        "Keep the capture path and the grading path identical across the set, so a change to the proxy never silently invalidates runs captured earlier.",
+        "Confirm that no two instances share a sandbox or a mutable path when the set runs in parallel, since a shared cache makes the environment non-reproducible."
       ],
       "verifier": [
         "the reference run's tool-call sequence and final state digest are reproduced identically on a fresh sandbox",
@@ -84,7 +110,22 @@
       "id": "simulated-api-ui-state-validated",
       "name": "Simulated API/UI environment with internal state validation",
       "family": "platform-infra",
-      "summary": "Model the source system as a simulator: tools and UI endpoints are re-implemented over an explicit internal state store, and every response is derived from that store instead of being improvised. Two properties make the result usable as a Harbor task. The simulator validates its own internal state after every transition, so inconsistent or reward-hacking trajectories are rejected rather than rewarded, and faults are injected in controlled proportions, which lets a task test whether the agent notices degraded data rather than whether it memorised a happy path. Instances are then filtered to the mid difficulty band where models neither pass trivially nor fail always.",
+      "summary": "Re-implement the source system's API and UI over an explicit state store, validate the store after every transition, inject faults in fixed proportions, and grade on final-state predicates.",
+      "background": "Model the source system as a simulator: tools and UI endpoints are re-implemented over an explicit internal state store, and every response is derived from that store instead of being improvised. Two properties make the result usable as a Harbor task. The simulator validates its own internal state after every transition, so inconsistent or reward-hacking trajectories are rejected rather than rewarded, and faults are injected in controlled proportions, which lets a task test whether the agent notices degraded data rather than whether it memorised a happy path. Instances are then filtered to the mid difficulty band where models neither pass trivially nor fail always.",
+      "material_kind": [
+        "api",
+        "web",
+        "simulation"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has an api or ui spec",
+        "has real request or page samples",
+        "has an explicit state schema",
+        "can be re-implemented offline"
+      ],
+      "produces": "A simulated product surface whose checker is a query over the state store, with a fixed fault schedule that the same instance replays.",
       "when_to_use": [
         "the source is a web app, an admin UI or a service whose responses can be re-implemented",
         "many task instances are needed over the same product surface",
@@ -102,36 +143,43 @@
       "steps": [
         {
           "title": "Extract the domain model first",
-          "detail": "Derive the entities, fields and transitions the source system exposes and write the state schema down before writing any endpoint, because the state store is what the verifier will read."
+          "detail": "Derive the entities, fields and transitions the source system exposes and write the state schema down before writing any endpoint, because the state store is what the verifier will read.",
+          "accept": "Entities, fields and transitions are written down as a state schema before any endpoint is written."
         },
         {
           "title": "Re-implement the tool and UI surface over that state",
-          "detail": "Each endpoint or screen action becomes a deterministic function of the state plus the request, and responses are rendered from the store rather than generated free-form."
+          "detail": "Each endpoint or screen action becomes a deterministic function of the state plus the request, and responses are rendered from the store rather than generated free-form.",
+          "accept": "Every endpoint or screen action is a deterministic function of the state plus the request."
         },
         {
           "title": "Keep an explicit, inspectable state store",
-          "detail": "Hold all state in a queryable database or file tree so a checker can read it directly and a simulated interaction can be replayed step by step."
+          "detail": "Hold all state in a queryable database or file tree so a checker can read it directly and a simulated interaction can be replayed step by step.",
+          "accept": "A checker can read the store directly, and a simulated interaction replays step by step."
         },
         {
           "title": "Validate internal state after every transition",
-          "detail": "After each action, run consistency checks over the store, covering referential integrity, required fields and legal state transitions, and reject the trajectory when they fail. This is what stops an agent from satisfying the goal by writing fields directly or by exploiting the simulator."
+          "detail": "After each action, run consistency checks over the store, covering referential integrity, required fields and legal state transitions, and reject the trajectory when they fail. This is what stops an agent from satisfying the goal by writing fields directly or by exploiting the simulator.",
+          "accept": "The consistency checks cover referential integrity, required fields and legal transitions, and a failing check rejects the trajectory."
         },
         {
           "title": "Inject faults in controlled proportions",
-          "detail": "Schedule explicit errors such as timeouts and 5xx responses, implicit degradations such as truncated records and missing fields, and mixed cases. Keep the level such that the agent can recover but has to notice the degradation instead of trusting the response."
+          "detail": "Schedule explicit errors such as timeouts and 5xx responses, implicit degradations such as truncated records and missing fields, and mixed cases. Keep the level such that the agent can recover but has to notice the degradation instead of trusting the response.",
+          "accept": "The fault schedule is fixed, covers explicit, implicit and mixed faults, and stays at a level the agent can recover from."
         },
         {
           "title": "Write tasks and checkers against the store",
-          "detail": "Express the goal as a predicate over final state, for example a row updated, a file written or an approval recorded, so the check is a query with a boolean answer rather than a rubric read by a model."
-        },
-        {
-          "title": "Calibrate difficulty on the mid band",
-          "detail": "Run several agents on the instance and keep those whose historical pass rate sits around 30 to 70 percent. Instances that are always solved or always failed carry no ranking signal and only inflate cost."
+          "detail": "Express the goal as a predicate over final state, for example a row updated, a file written or an approval recorded, so the check is a query with a boolean answer rather than a rubric read by a model.",
+          "accept": "The goal is a predicate over final state that the checker evaluates to a boolean."
         },
         {
           "title": "Confirm solvability and record the grading",
-          "detail": "Verify that a reference path exists for the instance before shipping it, and record which state predicates are checked so the grader is reproducible by a third party."
+          "detail": "Verify that a reference path exists for the instance before shipping it, and record which state predicates are checked so the grader is reproducible by a third party.",
+          "accept": "A reference path reaches the goal state from the pristine instance, and the checked state predicates are recorded."
         }
+      ],
+      "curation_notes": [
+        "Keep only instances whose historical pass rate sits around 30 to 70 percent; instances that are always solved or always failed carry no ranking signal and only inflate cost.",
+        "Run the agent rollouts across the set on a fixed schedule and store the per-instance pass rates, so the mid-band filter has historical evidence to work from."
       ],
       "verifier": [
         "a final-state predicate is evaluated directly against the state store, for example a specific field equals a specific value",

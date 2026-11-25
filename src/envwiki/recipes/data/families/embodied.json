@@ -5,7 +5,21 @@
       "id": "asset-scene-task-coevolution",
       "name": "Recursive asset-scene-task co-evolution",
       "family": "embodied",
-      "summary": "Treat environment construction as a closed loop rather than a one-way pipeline: assets are generated first, scenes are assembled from assets, tasks are written against the scene, and each stage feeds failure information back to the one before it. Scene generation looks ahead to what the tasks will require, and task generation requests targeted edits to the scene when the task turns out to be infeasible, so scenes and tasks improve one another across rounds. Feasibility is enforced by a critic that inspects the assembled instance together with its task and rejects silently broken ones - the dominant failure mode is not an ugly scene but a scene whose target cannot be reached, which makes the task fail before it starts. Each round leaves two artifacts behind: the validated instance set and the edit log that explains what the loop learned.",
+      "summary": "Assemble scenes from assets, write tasks against what the scene actually contains, and let a feasibility critic reject the pairs whose goal cannot be reached, turning each rejection into a targeted scene edit.",
+      "background": "Treat environment construction as a closed loop rather than a one-way pipeline: assets are generated first, scenes are assembled from assets, tasks are written against the scene, and each stage feeds failure information back to the one before it. Scene generation looks ahead to what the tasks will require, and task generation requests targeted edits to the scene when the task turns out to be infeasible, so scenes and tasks improve one another across rounds. Feasibility is enforced by a critic that inspects the assembled instance together with its task and rejects silently broken ones - the dominant failure mode is not an ugly scene but a scene whose target cannot be reached, which makes the task fail before it starts. Each round leaves two artifacts behind: the validated instance set and the edit log that explains what the loop learned.",
+      "material_kind": [
+        "simulation",
+        "embodied"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has an asset inventory",
+        "has a scene assembler",
+        "has a feasibility critic",
+        "queryable metadata"
+      ],
+      "produces": "One scene and task pair whose goal state is reachable, passes the feasibility check, and admits a reference solution that succeeds in it.",
       "when_to_use": [
         "the source separates raw material (assets) from the situations assembled on top of it",
         "naively assembled scenes make many tasks infeasible, so a feasibility critic is needed",
@@ -23,32 +37,38 @@
       "steps": [
         {
           "title": "Generate the asset pool with queryable metadata",
-          "detail": "Produce or curate the raw material together with the attributes the tasks will reference, and record them as metadata so the scene and task stages query it instead of re-reading the source."
+          "detail": "Produce or curate the raw material together with the attributes the tasks will reference, and record them as metadata so the scene and task stages query it instead of re-reading the source.",
+          "accept": "Every asset carries the attributes the tasks will reference, recorded as metadata the scene and task stages query."
         },
         {
           "title": "Assemble scenes from the asset pool",
-          "detail": "Compose assets into situated instances with context-aware placement, so the instance is coherent with the intent the tasks will ask about rather than a random arrangement."
+          "detail": "Compose assets into situated instances with context-aware placement, so the instance is coherent with the intent the tasks will ask about rather than a random arrangement.",
+          "accept": "The assembled instance places assets with context-aware placement and is coherent with the intent the task will ask about."
         },
         {
           "title": "Generate tasks against the assembled scene",
-          "detail": "Write instructions that operate on the scene's actual contents and specify the goal state precisely enough to be checked mechanically."
+          "detail": "Write instructions that operate on the scene's actual contents and specify the goal state precisely enough to be checked mechanically.",
+          "accept": "The instruction operates on the scene's actual contents and names a goal state precisely enough to check mechanically."
         },
         {
           "title": "Run the feasibility critic on the pair",
-          "detail": "Have the critic inspect the scene together with the task and reject instances where the goal is unreachable or the scene contradicts the instruction; this check is what stops silent failure from propagating into the dataset."
+          "detail": "Have the critic inspect the scene together with the task and reject instances where the goal is unreachable or the scene contradicts the instruction; this check is what stops silent failure from propagating into the dataset.",
+          "accept": "The critic rejects a planted instance whose target cannot be reached, and every retained pair passes the check."
         },
         {
           "title": "Convert failures into targeted edits",
-          "detail": "When an instance is rejected, turn the failure into a concrete edit request - move this asset, add that context, change this parameter - and apply it instead of regenerating from scratch, so the rejection is not wasted."
+          "detail": "When an instance is rejected, turn the failure into a concrete edit request - move this asset, add that context, change this parameter - and apply it instead of regenerating from scratch, so the rejection is not wasted.",
+          "accept": "Each rejected instance has one concrete edit request recorded - move this asset, add that context, change this parameter - that was applied instead of a regeneration."
         },
         {
           "title": "Let scene generation anticipate downstream requirements",
-          "detail": "In the next round, start scene generation from the requirements the rejected tasks exposed, so the scene already satisfies the constraints the task generator keeps asking for."
-        },
-        {
-          "title": "Iterate until the acceptance rate stabilizes, then freeze",
-          "detail": "Run the loop until the fraction of instances surviving the critic stops improving, keep the surviving instances as the corpus and keep the edit log as the record of the loop's progress."
+          "detail": "Start scene generation from the requirements the rejected task exposed, so the scene already satisfies the constraints the task generator keeps asking for, rather than hitting the same rejection again.",
+          "accept": "The scene is regenerated from the requirements the rejection exposed, and the reworked pair passes the feasibility check."
         }
+      ],
+      "curation_notes": [
+        "Run the loop over the whole set until the fraction of instances surviving the critic stops improving, and report the acceptance rate per round so the plateau is visible.",
+        "Keep the edit log alongside the corpus: it is the record of what each rejection taught the loop."
       ],
       "verifier": [
         "the critic rejects a planted infeasible instance whose target cannot be reached",
@@ -84,7 +104,22 @@
       "id": "constraint-driven-instance-generation",
       "name": "Constraint-driven instance generation with validity gates",
       "family": "embodied",
-      "summary": "Turn a compact specification of structural constraints into a family of concrete, valid instances, and gate every instance with an executable checker before it enters the corpus. The specification is compiled rather than paraphrased: a cost matrix derived from the stated constraints guides a deterministic expansion procedure - a graph search over a tile library, or a hierarchical sampler that places assets inside named functional zones - and each proposal is then compiled into geometry, with the relations extracted from the proposal driving fitting and local pose correction. The gates are the ones physics would impose: no collisions between placed elements, nothing outside the bounds, no violated constraint, and the task-relevant target reachable through the instance's own connectivity. Because the generator is parameterized by the constraint set, the corpus covers structural variation the source never showed explicitly, and every instance is reproducible from its seed and parameter values.",
+      "summary": "Compile a constraint spec into a cost matrix and a deterministic expansion procedure, place assets by relation-driven geometry, and gate each instance on collisions, bounds, constraint violations and reachability.",
+      "background": "Turn a compact specification of structural constraints into a family of concrete, valid instances, and gate every instance with an executable checker before it enters the corpus. The specification is compiled rather than paraphrased: a cost matrix derived from the stated constraints guides a deterministic expansion procedure - a graph search over a tile library, or a hierarchical sampler that places assets inside named functional zones - and each proposal is then compiled into geometry, with the relations extracted from the proposal driving fitting and local pose correction. The gates are the ones physics would impose: no collisions between placed elements, nothing outside the bounds, no violated constraint, and the task-relevant target reachable through the instance's own connectivity. Because the generator is parameterized by the constraint set, the corpus covers structural variation the source never showed explicitly, and every instance is reproducible from its seed and parameter values.",
+      "material_kind": [
+        "specification",
+        "simulation",
+        "embodied"
+      ],
+      "task_kind": "none",
+      "role": "create",
+      "needs": [
+        "has a constraint spec",
+        "has an asset library",
+        "has a validity checker",
+        "has labelled geometry"
+      ],
+      "produces": "One reproducible instance, rebuildable from its seed and parameter set, that passes the collision, bounds, constraint and reachability gates.",
       "when_to_use": [
         "the source describes a family of environments that vary structurally rather than in content",
         "many instances are needed and hand-authoring them does not scale",
@@ -102,32 +137,38 @@
       "steps": [
         {
           "title": "Compile the constraint spec into a cost matrix",
-          "detail": "Turn each stated constraint into a cost or prohibition between structural elements, so the constraints become weights the generator optimizes rather than prose it must remember to respect."
+          "detail": "Turn each stated constraint into a cost or prohibition between structural elements, so the constraints become weights the generator optimizes rather than prose it must remember to respect.",
+          "accept": "Each stated constraint appears as a cost or prohibition between structural elements, with no constraint left as prose."
         },
         {
           "title": "Choose the expansion procedure",
-          "detail": "Use a deterministic search over the asset library (a graph traversal whose ordering the cost matrix guides) when the variation is structural, and a hierarchical sampler that proposes arrangements inside named functional zones when the variation is spatial."
+          "detail": "Use a deterministic search over the asset library (a graph traversal whose ordering the cost matrix guides) when the variation is structural, and a hierarchical sampler that proposes arrangements inside named functional zones when the variation is spatial.",
+          "accept": "The procedure is fixed for this instance: a cost-guided graph traversal for structural variation, or a hierarchical sampler over named functional zones for spatial variation."
         },
         {
           "title": "Extract relations and compile them into concrete placements",
-          "detail": "From each proposal extract the relations it asserts (containment, adjacency, orientation) and compile them into geometry via fitting and local pose correction; the compiler, not the proposal, is what makes an instance valid."
+          "detail": "From each proposal extract the relations it asserts (containment, adjacency, orientation) and compile them into geometry via fitting and local pose correction; the compiler, not the proposal, is what makes an instance valid.",
+          "accept": "Each proposal's relations are compiled into geometry by fitting and local pose correction, and the compiled instance is what is checked."
         },
         {
           "title": "Run the validity gates",
-          "detail": "Reject any instance with an intersection between placed elements, any element out of bounds, or any element violating a stated constraint; write the gates as an executable checker so the corpus can be regenerated and re-audited at any time."
+          "detail": "Reject any instance with an intersection between placed elements, any element out of bounds, or any element violating a stated constraint; write the gates as an executable checker so the corpus can be regenerated and re-audited at any time.",
+          "accept": "The executable checker reports zero collisions, zero out-of-bounds elements and zero constraint violations for the instance."
         },
         {
           "title": "Check reachability of the task-relevant state",
-          "detail": "Verify from the instance's own connectivity that the agent can reach the state the task asks about; an unreachable target silently turns into an impossible task rather than a hard one."
-        },
-        {
-          "title": "Validate the corpus against ground truth",
-          "detail": "Where the asset library carries labels, compare the instance's segmentation or topology against those labels; also report how many instances were generated and the spread of the structural parameters actually realised, so diversity is measured rather than assumed."
+          "detail": "Verify from the instance's own connectivity that the agent can reach the state the task asks about; an unreachable target silently turns into an impossible task rather than a hard one.",
+          "accept": "The reachability check succeeds from the instance's own connectivity for the state the task asks about."
         },
         {
           "title": "Parameterize and freeze",
-          "detail": "Expose the constraint values as parameters, sweep them to build the corpus, and record the seed and parameter set per instance so any instance can be regenerated exactly."
+          "detail": "Expose the constraint values as parameters, sweep them to build the corpus, and record the seed and parameter set per instance so any instance can be regenerated exactly.",
+          "accept": "The seed and the parameter set are recorded, and re-running the generator with them reproduces the same instance."
         }
+      ],
+      "curation_notes": [
+        "Compare the corpus's segmentation and topology against the asset library's ground-truth labels where the library carries them, and report how many instances were generated and the spread of the structural parameters actually realised.",
+        "Sweep the constraint values to build the corpus, and confirm the corpus covers the declared structural variation instead of repeating one layout."
       ],
       "verifier": [
         "the generator script exits 0 and produces the requested number of instances with distinct parameter values",
@@ -163,7 +204,22 @@
       "id": "skill-library-guided-exploration",
       "name": "Skill-library exploration with verifier-guided search",
       "family": "embodied",
-      "summary": "Rather than scripting the trajectory, expose the environment's capabilities as a library of reusable, parameterized, closed-loop skills and let a reasoning agent search over that library until it finds a verified path to the goal. Each skill takes parameters and returns an outcome; the agent invokes it, observes the result, and writes verification, reflection and memory to decide the next invocation, so the search is driven by evidence rather than by a predetermined execution pipeline. The library is what makes the approach scale: a small set of skills with expressive parameters serves thousands of instances, and the winning traces can be distilled into compact scripts. The property that must be preserved is closure - every skill reads the current state and acts on it, never replays an open-loop action sequence - because an open-loop skill turns the search into a no-op and produces traces that do not transfer.",
+      "summary": "Expose the environment's capabilities as a few parameterised closed-loop skills, let an agent search over them under a verifier reporting partial progress, and distil the winning traces into reviewable scripts.",
+      "background": "Rather than scripting the trajectory, expose the environment's capabilities as a library of reusable, parameterized, closed-loop skills and let a reasoning agent search over that library until it finds a verified path to the goal. Each skill takes parameters and returns an outcome; the agent invokes it, observes the result, and writes verification, reflection and memory to decide the next invocation, so the search is driven by evidence rather than by a predetermined execution pipeline. The library is what makes the approach scale: a small set of skills with expressive parameters serves thousands of instances, and the winning traces can be distilled into compact scripts. The property that must be preserved is closure - every skill reads the current state and acts on it, never replays an open-loop action sequence - because an open-loop skill turns the search into a no-op and produces traces that do not transfer.",
+      "material_kind": [
+        "embodied",
+        "api",
+        "trajectory"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a capability api",
+        "returns observations",
+        "has a partial-goal verifier",
+        "deterministic behaviour"
+      ],
+      "produces": "One verified trajectory over closed-loop skills, distilled into a compact script that reaches the goal state under the verifier.",
       "when_to_use": [
         "the target exposes a set of capabilities rather than one fixed workflow",
         "the goal is reachable but the correct sequence of capability calls is not known in advance",
@@ -181,32 +237,38 @@
       "steps": [
         {
           "title": "Extract the skill set from the source",
-          "detail": "Group the environment's primitive operations into a small set of reusable closed-loop skills with clear parameters (what to pick, where to place, what to query); prefer few expressive skills over many rigid ones."
+          "detail": "Group the environment's primitive operations into a small set of reusable closed-loop skills with clear parameters (what to pick, where to place, what to query); prefer few expressive skills over many rigid ones.",
+          "accept": "Each skill has clear parameters and a stated effect, and the library stays small and expressive rather than many rigid skills."
         },
         {
           "title": "Make every skill closed-loop",
-          "detail": "Each skill reads current state, executes and returns an observation; reject open-loop replays of a fixed action list at review time, because they cannot support exploration and the traces they produce do not generalize."
+          "detail": "Each skill reads current state, executes and returns an observation; reject open-loop replays of a fixed action list at review time, because they cannot support exploration and the traces they produce do not generalize.",
+          "accept": "Every skill reads the current state and returns an observation, and the library contains no open-loop action list."
         },
         {
           "title": "Implement a verifier for partial goals",
-          "detail": "Write the checker that reports how much of the goal is satisfied so the search gets signal before the goal is reached; a binary end-only check turns the search into blind retrying."
+          "detail": "Write the checker that reports how much of the goal is satisfied so the search gets signal before the goal is reached; a binary end-only check turns the search into blind retrying.",
+          "accept": "The verifier reports how much of the goal is satisfied, so a partial solution scores above nothing."
         },
         {
           "title": "Search with verification, reflection and memory",
-          "detail": "The agent invokes a skill, records the outcome, generates a verification and a reflection on what happened, keeps that in memory, and selects the next skill; expand alternatives at branches where verification failed."
+          "detail": "The agent invokes a skill, records the outcome, generates a verification and a reflection on what happened, keeps that in memory, and selects the next skill; expand alternatives at branches where verification failed.",
+          "accept": "The search records an outcome, a verification and a reflection for each invocation, and expands alternatives at branches where verification failed."
         },
         {
           "title": "Harvest and filter successful traces",
-          "detail": "Keep only traces that reach the goal under the verifier and whose steps satisfy the library's parameter constraints; discard traces that succeed by accident."
+          "detail": "Keep only traces that reach the goal under the verifier and whose steps satisfy the library's parameter constraints; discard traces that succeed by accident.",
+          "accept": "Every kept trace reaches the goal under the verifier, and every step is a declared skill called with in-range parameters."
         },
         {
-          "title": "Distill into a reusable artifact",
-          "detail": "Compress the winning traces into a script or policy so each instance carries a compact reviewable solution, and leave the skill library unchanged so the same skills apply to new instances."
-        },
-        {
-          "title": "Scale the run without losing determinism",
-          "detail": "Decouple generation from execution by staging trajectory planning, execution and storage asynchronously, balancing load across workers and tolerating failures, so throughput rises without making the corpus unreproducible."
+          "title": "Distil into a reusable artifact",
+          "detail": "Compress the winning traces into a script or policy so each instance carries a compact reviewable solution, and leave the skill library unchanged so the same skills apply to new instances.",
+          "accept": "The winning trace is compressed into a script or policy that reaches the goal under the verifier, and the skill library is left unchanged."
         }
+      ],
+      "curation_notes": [
+        "Scale the run without losing determinism: decouple trajectory planning, execution and storage into asynchronous stages, balance load across workers and tolerate failures, so throughput rises while the corpus stays reproducible.",
+        "Record the exploration tree per instance - branches expanded, verification outcomes, search budget - so a run can be replayed and compared across instances."
       ],
       "verifier": [
         "a verifier script reports the goal state satisfied after the agent's final step",

@@ -10,38 +10,12 @@ from envwiki.recipes.library import load_library
 
 @pytest.fixture(autouse=True)
 def _index_dir(tmp_path, monkeypatch):
-    """Keep the index out of the user's cache directory."""
+    """Keep the index out of the user cache directory."""
     monkeypatch.setenv("ENVWIKI_INDEX_DIR", str(tmp_path))
 
 
-def test_bm25_space_ranks_the_document_that_mentions_the_term():
-    documents = {
-        "a": vector_index.tokenize("dockerise a terminal coding task"),
-        "b": vector_index.tokenize("synthesise a web gui environment"),
-        "c": vector_index.tokenize("verify a task with state diffs"),
-    }
-    space = vector_index.Bm25Space().fit(documents)
-    query = space.query_vector(vector_index.tokenize("terminal coding"))
-    scores = {
-        key: sum(
-            query[index] * space.document_vector(tokens).get(index, 0.0)
-            for index in query
-        )
-        for key, tokens in documents.items()
-    }
-    assert scores["a"] > scores["b"]
-    assert scores["b"] >= scores["c"]
-
-
-def test_bm25_idf_favours_the_rare_term():
-    space = vector_index.Bm25Space().fit(
-        {"a": ["docker", "cli"], "b": ["docker", "gui"], "c": ["docker", "web"]}
-    )
-    assert space.idf(space.vocabulary["cli"]) > space.idf(space.vocabulary["docker"])
-
-
 def test_library_reports_the_engine_it_uses():
-    assert load_library().engine() in {"lexical", "zvec-bm25", "zvec-hybrid"}
+    assert load_library().engine() in {"lexical", "zvec-fts", "zvec-fts+dense"}
 
 
 def test_library_falls_back_to_the_lexical_matcher(monkeypatch):
@@ -85,3 +59,16 @@ def test_a_changed_library_gets_its_own_index():
     first = vector_index.index_path(recipes)
     second = vector_index.index_path(recipes + [recipes[0]])
     assert first != second
+
+
+@pytest.mark.skipif(not vector_index.ZVEC_AVAILABLE, reason="zvec is not installed")
+def test_the_index_version_is_part_of_the_fingerprint():
+    """An index built by an older layout must never be reused."""
+    recipes = load_library().recipes
+    before = vector_index.fingerprint(recipes)
+    version = vector_index.INDEX_VERSION
+    try:
+        vector_index.INDEX_VERSION = version + "-other"
+        assert vector_index.fingerprint(recipes) != before
+    finally:
+        vector_index.INDEX_VERSION = version

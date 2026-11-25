@@ -5,7 +5,21 @@
       "id": "ace-candidate-verify-then-complicate",
       "name": "ACE candidate construction, verification, and oracle-preserving complication",
       "family": "data-synthesis",
-      "summary": "Agentic data is treated as a factorized instance of environment specification, task signal, interaction, and verifier, and generation as constrained distribution design: accuracy fixes the feasible support of grounded and internally consistent data, complexity places the learning mass relative to a declared learner and execution configuration, diversity controls coverage against redundancy. Construction is kept separate from verification and selection, so the checker does not inherit the generator's blind spots. Once the support is verified, environmental complexity is raised with augmentations that hold the oracle call sequence and the final answer exactly, which keeps the success signal computable by reference matching while the environment becomes harder.",
+      "summary": "Represent each instance as environment spec, task signal, interaction and verifier, keep the checker independent of the generator, then add distractors, ambiguity and noisy tool output while the oracle stays fixed.",
+      "background": "Agentic data is treated as a factorized instance of environment specification, task signal, interaction, and verifier, and generation as constrained distribution design: accuracy fixes the feasible support of grounded and internally consistent data, complexity places the learning mass relative to a declared learner and execution configuration, diversity controls coverage against redundancy. Construction is kept separate from verification and selection, so the checker does not inherit the generator's blind spots. Once the support is verified, environmental complexity is raised with augmentations that hold the oracle call sequence and the final answer exactly, which keeps the success signal computable by reference matching while the environment becomes harder.",
+      "material_kind": [
+        "api",
+        "data"
+      ],
+      "task_kind": "reproduce",
+      "role": "create",
+      "needs": [
+        "has an executable environment",
+        "observable state",
+        "independent verifier",
+        "a declared learner"
+      ],
+      "produces": "One instance carrying all four records, whose interaction executes end to end, whose difficulty is measured against a declared learner, and whose oracle call sequence and final answer survive the added complexity.",
       "when_to_use": [
         "you need many instances and must guarantee each one is executable and verifiable",
         "the existing pool is easy and difficulty must come from the environment",
@@ -23,32 +37,38 @@
       "steps": [
         {
           "title": "Factor the instance",
-          "detail": "Represent every candidate as the four records: environment specification, task signal, interaction, verifier. A candidate missing the verifier record is not yet usable, whatever its other parts look like."
+          "detail": "Represent every candidate as the four records: environment specification, task signal, interaction, verifier. A candidate missing the verifier record is not yet usable, whatever its other parts look like.",
+          "accept": "The instance carries all four records: environment specification, task signal, interaction and verifier."
         },
         {
           "title": "Establish the feasible support",
-          "detail": "Validate at several levels (schema and argument validity, then execution against the environment) and drop every candidate whose interaction contradicts the environment state. Only candidates inside this support enter the pool."
+          "detail": "Validate at several levels (schema and argument validity, then execution against the environment) and drop every candidate whose interaction contradicts the environment state. Only candidates inside this support enter the pool.",
+          "accept": "The instance passes schema and argument validation, and its interaction executes end to end without contradicting the environment state."
         },
         {
           "title": "Separate construction from verification",
-          "detail": "Keep the generator and the checker independent, then re-score the pool with a second check that was not used during construction. The fraction that flips between the two scores is reported, since it marks where the generator's blind spots live."
+          "detail": "Keep the generator and the checker independent, then verify this instance with a second check that was not used during construction.",
+          "accept": "The instance passes both checks, and the second check was written independently of the generator."
         },
         {
           "title": "Place complexity against a declared learner",
-          "detail": "State the learner assumption explicitly (which tools exist, how many attempts, what feedback is visible) and admit only interactions whose required depth beats a trivial baseline yet stays within reach of that learner. Measure the baseline-to-reference gap instead of asserting difficulty."
-        },
-        {
-          "title": "Control coverage rather than redundancy",
-          "detail": "Measure the pool's coverage over tool subsets, environment states, and task shapes, and reject near-duplicates that add volume without adding coverage."
+          "detail": "State the learner assumption explicitly (which tools exist, how many attempts, what feedback is visible) and admit only interactions whose required depth beats a trivial baseline yet stays within reach of that learner. Measure the baseline-to-reference gap instead of asserting difficulty.",
+          "accept": "The learner assumption is written down (tools, attempts, visible feedback), and the measured baseline-to-reference gap is recorded for this instance."
         },
         {
           "title": "Complicate with oracle preservation",
-          "detail": "Add distractor tools, indirect or ambiguous queries, and noisy, multi-format, or erroneous tool outputs while holding the oracle call sequence and the final answer fixed. The oracle is recorded before augmentation and compared after."
+          "detail": "Add distractor tools, indirect or ambiguous queries, and noisy, multi-format, or erroneous tool outputs while holding the oracle call sequence and the final answer fixed. The oracle is recorded before augmentation and compared after.",
+          "accept": "The oracle call sequence and final answer recorded before augmentation are byte-identical after it."
         },
         {
           "title": "Recompute the success signal",
-          "detail": "Recompute the verifier for the complicated instance: reference matching for standard cases, with special cases such as detecting and reporting a tool error handled explicitly and separately."
+          "detail": "Recompute the verifier for the complicated instance: reference matching for standard cases, with special cases such as detecting and reporting a tool error handled explicitly and separately.",
+          "accept": "The verifier runs against the complicated instance and scores reference matching, with tool-error detection handled as a separate, explicit case."
         }
+      ],
+      "curation_notes": [
+        "Re-score the whole pool with the second check and report the fraction of instances that flip between the two scores, since it marks where the generator's blind spots live.",
+        "Measure the pool's coverage over tool subsets, environment states and task shapes, and reject near-duplicates that add volume without adding coverage."
       ],
       "verifier": [
         "every retained instance carries all four records, and its recorded interaction executes end to end in the environment",
@@ -81,7 +101,21 @@
       "id": "decision-grounded-skill-package-synthesis",
       "name": "Decision-grounded trajectories over composed skill packages",
       "family": "data-synthesis",
-      "summary": "A successful trajectory is not automatically useful supervision: it may leave out the observation-action dependencies that matter, and its actions may not be justified by the information visible at decision time. Two requirements therefore drive construction, compositional coverage so the important observation-action dependencies appear, and decision grounding so every supervised action is supported by the learner-visible history. Instances are built as skill packages: a configuration of one or several skills drawn from the source, a task that requires them, and an executable trajectory in which each skill is actually exercised. Verification is rule-based plus agent-based with feedback-guided repair, and only trajectories that substantively use every required skill are retained.",
+      "summary": "Package the source's procedures as skills, generate a task needing a chosen combination of them, and keep the trajectory only when every skill is exercised and every supervised action is backed by visible history.",
+      "background": "A successful trajectory is not automatically useful supervision: it may leave out the observation-action dependencies that matter, and its actions may not be justified by the information visible at decision time. Two requirements therefore drive construction, compositional coverage so the important observation-action dependencies appear, and decision grounding so every supervised action is supported by the learner-visible history. Instances are built as skill packages: a configuration of one or several skills drawn from the source, a task that requires them, and an executable trajectory in which each skill is actually exercised. Verification is rule-based plus agent-based with feedback-guided repair, and only trajectories that substantively use every required skill are retained.",
+      "material_kind": [
+        "trajectory",
+        "api"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has executable procedures",
+        "has an executable environment",
+        "observable tool results",
+        "deterministic behaviour"
+      ],
+      "produces": "One trajectory over the selected skill configuration, in which every required skill is exercised and every supervised action is grounded in the visible observation history.",
       "when_to_use": [
         "the source documents procedures, commands, or workflows that can be packaged as skills",
         "you need coverage of compositions rather than many instances of one task",
@@ -99,32 +133,38 @@
       "steps": [
         {
           "title": "Extract and select the skill configuration",
-          "detail": "Turn the source's documented procedures into skills with an explicit trigger and effect, then select configurations, single skill and multi-skill combinations, that the environment can actually execute. A configuration naming skills that cannot be applied is dropped."
+          "detail": "Turn the source's documented procedures into skills with an explicit trigger and effect, then select configurations, single skill and multi-skill combinations, that the environment can actually execute. A configuration naming skills that cannot be applied is dropped.",
+          "accept": "Each skill has an explicit trigger and effect, and every selected configuration is one the environment can actually execute."
         },
         {
           "title": "Generate the task for the configuration",
-          "detail": "Synthesize a task that requires the selected skills, together with the observable start state it assumes, so the skills are necessary rather than decorative."
+          "detail": "Synthesize a task that requires the selected skills, together with the observable start state it assumes, so the skills are necessary rather than decorative.",
+          "accept": "The task requires the selected skills and states the observable start state it assumes."
         },
         {
           "title": "Execute to obtain the trajectory",
-          "detail": "Run the configuration in the environment and record the full trajectory with the observations available at each decision point; that observation history is what grounding is judged against."
+          "detail": "Run the configuration in the environment and record the full trajectory with the observations available at each decision point; that observation history is what grounding is judged against.",
+          "accept": "The trajectory records the observation available at each decision point, not only the actions."
         },
         {
           "title": "Check compositional coverage",
-          "detail": "Identify the observation-action dependencies the task depends on and confirm the trajectory contains instances of each. Where a dependency is under-supported, construct additional interactions around it instead of reusing the same success."
+          "detail": "Identify the observation-action dependencies the task depends on and confirm the trajectory contains instances of each. Where a dependency is under-supported, construct additional interactions around it instead of reusing the same success.",
+          "accept": "Each observation-action dependency the task depends on has an instance in the trajectory, and any under-supported dependency gets its own constructed interaction."
         },
         {
           "title": "Check decision grounding",
-          "detail": "For each supervised action verify that the learner-visible history supports it, that is, the needed observation appears earlier in the trajectory. Actions that only make sense with hindsight are dropped from supervision."
+          "detail": "For each supervised action verify that the learner-visible history supports it, that is, the needed observation appears earlier in the trajectory. Actions that only make sense with hindsight are dropped from supervision.",
+          "accept": "Every supervised action is supported by an observation that appears earlier in the trajectory; actions that need hindsight are dropped from supervision."
         },
         {
           "title": "Verify with two checkers and repair",
-          "detail": "Run a rule-based checker and an agent-based checker on the same instance and use their feedback to repair the task or the trajectory; instances that still fail are discarded rather than patched by hand."
-        },
-        {
-          "title": "Retain by substantive use",
-          "detail": "Keep only trajectories where every required skill is exercised to a meaningful degree, and record the structural-support selection that decided which instances to keep."
+          "detail": "Run a rule-based checker and an agent-based checker on the same instance and use their feedback to repair the task or the trajectory; instances that still fail are discarded rather than patched by hand.",
+          "accept": "Both checkers have run on the instance, and an instance that still fails is discarded rather than hand-patched."
         }
+      ],
+      "curation_notes": [
+        "Retain only the trajectories in which every required skill is exercised to a meaningful degree, checked by a per-skill usage counter, and record the structural-support selection that decided which instances to keep.",
+        "Report the agreement rate between the two checkers over the retained set and the coverage statistics over the selected configurations."
       ],
       "verifier": [
         "each retained trajectory exercises every skill named in its configuration, checked by a per-skill usage counter",
@@ -157,7 +197,22 @@
       "id": "deterministic-api-cache-provenance",
       "name": "Deterministic API cache with argument provenance",
       "family": "data-synthesis",
-      "summary": "A deterministic environment is built from a cache of real API responses, keyed by the request, so multi-step traces are valid and replayable instead of depending on live services. A dependency-ordered workflow graph is synthesized over that surface with dependency depth as the explicit complexity knob, and every argument in the trace is bound by provenance to a prior observation, a prior tool result, or a value stated in the request, which is what prevents the right tool from being called with a fabricated or stale parameter. Validation runs turn by turn against the resulting state, and grading is graduated, separating per-call atomic validity from orchestration consistency so partial correctness stays visible.",
+      "summary": "Replay real API responses from a request-keyed cache so multi-step traces are reproducible, bind every argument to the observation, tool result or request value it came from, and grade calls separately from ordering.",
+      "background": "A deterministic environment is built from a cache of real API responses, keyed by the request, so multi-step traces are valid and replayable instead of depending on live services. A dependency-ordered workflow graph is synthesized over that surface with dependency depth as the explicit complexity knob, and every argument in the trace is bound by provenance to a prior observation, a prior tool result, or a value stated in the request, which is what prevents the right tool from being called with a fabricated or stale parameter. Validation runs turn by turn against the resulting state, and grading is graduated, separating per-call atomic validity from orchestration consistency so partial correctness stays visible.",
+      "material_kind": [
+        "api",
+        "data",
+        "trajectory"
+      ],
+      "task_kind": "reproduce",
+      "role": "create",
+      "needs": [
+        "has an api surface",
+        "has captured responses",
+        "replayable calls",
+        "no network needed"
+      ],
+      "produces": "One replayable multi-turn tool trace whose every argument resolves to a recorded provenance source, graded separately per call and per ordering.",
       "when_to_use": [
         "the source is an API or service surface whose responses can be captured once",
         "long-range argument dependencies matter, not only tool selection",
@@ -175,32 +230,42 @@
       "steps": [
         {
           "title": "Capture the surface and cache the responses",
-          "detail": "Record the real requests and responses for the tools in scope, keyed by the parameters that determine the reply. The cache is the ground truth of the mock and is stored with the task."
+          "detail": "Record the real requests and responses for the tools in scope, keyed by the parameters that determine the reply. The cache is the ground truth of the mock and is stored with the task.",
+          "accept": "Requests and responses are stored keyed by the parameters that determine the reply, and the cache ships with the task."
         },
         {
           "title": "Build the deterministic replay environment",
-          "detail": "The mock returns the cached response for a known key and a deterministic error for an unknown one, so an invalid call sequence fails loudly instead of being silently tolerated. Replaying the same keys twice returns identical bytes."
+          "detail": "The mock returns the cached response for a known key and a deterministic error for an unknown one, so an invalid call sequence fails loudly instead of being silently tolerated. Replaying the same keys twice returns identical bytes.",
+          "accept": "A known key returns the cached response byte for byte, an unknown key raises the deterministic error, and replaying the same keys twice returns identical bytes."
         },
         {
           "title": "Synthesize the workflow graph",
-          "detail": "Pick a target outcome and derive a dependency-ordered sequence of calls in which the output of one call supplies an argument of the next. The dependency depth is set deliberately and recorded as the instance's complexity."
+          "detail": "Pick a target outcome and derive a dependency-ordered sequence of calls in which the output of one call supplies an argument of the next. The dependency depth is set deliberately and recorded as the instance's complexity.",
+          "accept": "The dependency-ordered call sequence is recorded, with the dependency depth set deliberately as this instance's complexity."
         },
         {
           "title": "Bind arguments by provenance",
-          "detail": "For every argument in the trace record its source: an observation the agent saw, an earlier tool result, or a value stated in the request. Values with no such source are fabricated and are rejected even when the tool choice is right."
+          "detail": "For every argument in the trace record its source: an observation the agent saw, an earlier tool result, or a value stated in the request. Values with no such source are fabricated and are rejected even when the tool choice is right.",
+          "accept": "Every argument in the trace names its source - an observation, an earlier tool result, or a value stated in the request - and arguments with no source are rejected."
         },
         {
           "title": "Validate turn by turn",
-          "detail": "After each turn compare the resulting state with the expected state and re-check the provenance constraints; repair the offending turn or drop the instance."
+          "detail": "After each turn compare the resulting state with the expected state and re-check the provenance constraints; repair the offending turn or drop the instance.",
+          "accept": "Each turn's state matches the expected state and re-passes the provenance constraints, or the turn is repaired and the instance dropped."
         },
         {
           "title": "Grade with graduated checks",
-          "detail": "Score each call on atomic validity at increasing granularity (exact match, type or slot match, partial) and separately score orchestration consistency (ordering and dependency respected). Keep the per-call and per-order breakdown so partial credit is mechanical."
+          "detail": "Score each call on atomic validity at increasing granularity (exact match, type or slot match, partial) and separately score orchestration consistency (ordering and dependency respected). Keep the per-call and per-order breakdown so partial credit is mechanical.",
+          "accept": "The per-call and the per-order breakdowns are reported separately, so partial credit is mechanical."
         },
         {
           "title": "Freeze cache, trace, and checks",
-          "detail": "Ship the cache, the trace with its provenance annotations, and the per-call checks as one artifact."
+          "detail": "Ship the cache, the trace with its provenance annotations, and the per-call checks as one artifact.",
+          "accept": "The cache, the provenance-annotated trace and the per-call checks are committed as one bundle beside the task, so the environment needs no network."
         }
+      ],
+      "curation_notes": [
+        "Keep the cache keys in step with the request schema: a key that no longer matches the request shape turns a valid call into an error, so re-capture rather than hand-patch the cache."
       ],
       "verifier": [
         "replaying the recorded request keys returns byte-identical responses, and an unknown key raises the deterministic error",

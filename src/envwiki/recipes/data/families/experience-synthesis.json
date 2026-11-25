@@ -5,7 +5,21 @@
       "id": "execution-first-trace-anchored-task",
       "name": "Execution-first trace-anchored task construction",
       "family": "experience-synthesis",
-      "summary": "Build the executable artifact before the prompt. A workflow structure is mapped onto the source's real tools through dependency-aware assignment, materialized in a sandbox, executed, and validated; only a trajectory that survives execution becomes the substrate for the natural-language request, the reference answer, and the check. Writing the prompt last removes the dominant failure of query-first synthesis, namely a plausible request that no valid call sequence can satisfy, and it makes the task's verifier a byproduct of the run rather than a separate annotation pass.",
+      "summary": "Build the artifact before the prompt: map a workflow onto the source's real tools by dependency, run it in a sandbox, and write the request, the reference answer and the check only from what the run produced.",
+      "background": "Build the executable artifact before the prompt. A workflow structure is mapped onto the source's real tools through dependency-aware assignment, materialized in a sandbox, executed, and validated; only a trajectory that survives execution becomes the substrate for the natural-language request, the reference answer, and the check. Writing the prompt last removes the dominant failure of query-first synthesis, namely a plausible request that no valid call sequence can satisfy, and it makes the task's verifier a byproduct of the run rather than a separate annotation pass.",
+      "material_kind": [
+        "code",
+        "api"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has an executable entry point",
+        "has a reproducible build",
+        "has installable dependencies",
+        "deterministic behaviour"
+      ],
+      "produces": "One task: a request derived from a validated reference trace, the trace itself, and an executable check that fails before the change and passes after it.",
       "when_to_use": [
         "the source is a repository, API collection, or CLI whose steps can actually be executed",
         "the ground truth should come from a real run rather than from an author's reasoning",
@@ -23,33 +37,41 @@
       "steps": [
         {
           "title": "Pick the workflow before the prompt",
-          "detail": "Choose one concrete multi-step workflow in the source (a build and test pipeline, a data-processing chain, a service call sequence) and enumerate its atomic steps together with the dependencies between them. The workflow, not the phrasing, is the unit of design."
+          "detail": "Choose one concrete multi-step workflow in the source (a build and test pipeline, a data-processing chain, a service call sequence) and enumerate its atomic steps together with the dependencies between them. The workflow, not the phrasing, is the unit of design.",
+          "accept": "One multi-step workflow is fixed, and its atomic steps and their dependencies are enumerated."
         },
         {
           "title": "Map steps to tools by dependency",
-          "detail": "Assign each atomic step to the tool or command that realizes it, respecting that the output of step i becomes an argument of step j. Steps with no available tool are dropped or recorded as an explicit gap rather than invented."
+          "detail": "Assign each atomic step to the tool or command that realizes it, respecting that the output of step i becomes an argument of step j. Steps with no available tool are dropped or recorded as an explicit gap rather than invented.",
+          "accept": "Every atomic step is assigned a tool or command, and steps with no available tool are dropped or recorded as an explicit gap."
         },
         {
           "title": "Materialize the sandbox",
-          "detail": "Provision the environment for the workflow: install dependencies, seed fixtures and inputs, pin the runtime, and record the provisioning commands so the environment can be rebuilt from scratch. A workflow that only runs in a hand-tuned interactive shell is not a task."
+          "detail": "Provision the environment for the workflow: install dependencies, seed fixtures and inputs, pin the runtime, and record the provisioning commands so the environment can be rebuilt from scratch. A workflow that only runs in a hand-tuned interactive shell is not a task.",
+          "accept": "Dependencies and fixtures are installed and seeded, the runtime is pinned, and the provisioning commands are recorded."
         },
         {
           "title": "Write the check before the request",
-          "detail": "Author the executable check that will judge success (unit tests for code, a state-diff or output-match script for data and tool flows) and confirm it currently fails on the unmodified workspace. The check, not the prompt, defines what success means."
+          "detail": "Author the executable check that will judge success (unit tests for code, a state-diff or output-match script for data and tool flows) and confirm it currently fails on the unmodified workspace. The check, not the prompt, defines what success means.",
+          "accept": "The check currently fails on the unmodified workspace."
         },
         {
           "title": "Execute and validate the reference trace",
-          "detail": "Run the workflow in the sandbox and capture the ordered call sequence with its observations. Any call that errors, or that returns a value the later steps cannot consume, invalidates the instance: fix the mapping or drop the workflow."
+          "detail": "Run the workflow in the sandbox and capture the ordered call sequence with its observations. Any call that errors, or that returns a value the later steps cannot consume, invalidates the instance: fix the mapping or drop the workflow.",
+          "accept": "Every call in the recorded trace returns a non-error observation that the later steps can consume."
         },
         {
           "title": "Derive the request from the validated artifacts",
-          "detail": "Write the natural-language task from the observed artifacts (files, fixtures, failing check names, available tools) rather than from an intended solution. The request must be satisfiable by the validated trace and must not name the steps that resolve it."
+          "detail": "Write the natural-language task from the observed artifacts (files, fixtures, failing check names, available tools) rather than from an intended solution. The request must be satisfiable by the validated trace and must not name the steps that resolve it.",
+          "accept": "The request is satisfiable by the validated trace, and it names no file, symbol or command that resolves it."
         },
         {
           "title": "Package instance, environment, and check",
-          "detail": "Ship the workspace provisioning script, the executable check, the reference trace, and the request as one artifact so the check can be run against a candidate solution without re-deriving the environment."
+          "detail": "Ship the workspace provisioning script, the executable check, the reference trace, and the request as one artifact so the check can be run against a candidate solution without re-deriving the environment.",
+          "accept": "The provisioning script, the executable check, the reference trace and the request ship as one artifact that runs against a candidate solution."
         }
       ],
+      "curation_notes": [],
       "verifier": [
         "the check command exits non-zero on the unmodified workspace and zero once the reference change or trace is applied",
         "every call in the recorded reference trace returns a non-error observation replayable with the same inputs",
@@ -80,7 +102,21 @@
       "id": "grounded-mcp-frontier-interaction-synthesis",
       "name": "Protocol-anchored interaction synthesis at the competence frontier",
       "family": "experience-synthesis",
-      "summary": "Unconstrained task generation degenerates into sampling the model's own priors, so the environment is anchored to a real protocol surface: the tools and schemas the source actually exposes. Structure-guided planning then traverses that environment, forcing each step to depend on an observation produced by an earlier one and injecting at least one adversarial element (a distractor tool, an ambiguous request, an action that must be refused). Difficulty is calibrated by probing a solver at its competence frontier, where the hinted attempt succeeds and the unhinted attempt does not, so the task lands just inside the edge of solvability rather than in the trivially solved or unreachable regions.",
+      "summary": "Anchor the environment to the source's real protocol surface, force each step to depend on an earlier one, inject one adversarial element, and keep only tasks where the hinted run succeeds and the unhinted one fails.",
+      "background": "Unconstrained task generation degenerates into sampling the model's own priors, so the environment is anchored to a real protocol surface: the tools and schemas the source actually exposes. Structure-guided planning then traverses that environment, forcing each step to depend on an observation produced by an earlier one and injecting at least one adversarial element (a distractor tool, an ambiguous request, an action that must be refused). Difficulty is calibrated by probing a solver at its competence frontier, where the hinted attempt succeeds and the unhinted attempt does not, so the task lands just inside the edge of solvability rather than in the trivially solved or unreachable regions.",
+      "material_kind": [
+        "api",
+        "specification"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a protocol surface",
+        "has parameter schemas",
+        "has a replayable environment",
+        "has a solver agent"
+      ],
+      "produces": "One request plus a multi-turn transcript that reaches a dependency-bound target state, with the hint and no-hint probe outcomes recorded alongside it.",
       "when_to_use": [
         "the source exposes a structured tool or protocol surface that can be replicated",
         "single-call tasks are uninteresting and long-horizon dependency-bearing requests are needed",
@@ -98,32 +134,43 @@
       "steps": [
         {
           "title": "Anchor the environment to the real protocol",
-          "detail": "Extract the tool names, parameter schemas, and state the source exposes and implement them as the environment's only legal surface. Invented tools and undocumented actions are excluded, so an error response is a meaningful signal rather than noise."
+          "detail": "Extract the tool names, parameter schemas, and state the source exposes and implement them as the environment's only legal surface. Invented tools and undocumented actions are excluded, so an error response is a meaningful signal rather than noise.",
+          "accept": "Only the source's tool names and parameter schemas are legal, so an error response is a meaningful signal rather than noise."
         },
         {
           "title": "Choose a target state and force dependencies",
-          "detail": "Pick a target state, then build the path to it so that each step consumes an observation produced by an earlier step. Every dependency edge is recorded with the prerequisite call and the field it supplies, which is what makes the trajectory checkable later."
+          "detail": "Pick a target state, then build the path to it so that each step consumes an observation produced by an earlier step. Every dependency edge is recorded with the prerequisite call and the field it supplies, which is what makes the trajectory checkable later.",
+          "accept": "Every dependency edge is recorded with its prerequisite call and the field it supplies."
         },
         {
           "title": "Inject one adversarial element",
-          "detail": "Add at least one of: a distractor tool that is plausible but wrong for the goal, an ambiguous request that must be disambiguated, or a policy that forbids the obvious action and demands a refusal or an alternative. Without it the task collapses into one obvious call chain."
+          "detail": "Add at least one of: a distractor tool that is plausible but wrong for the goal, an ambiguous request that must be disambiguated, or a policy that forbids the obvious action and demands a refusal or an alternative. Without it the task collapses into one obvious call chain.",
+          "accept": "At least one of a distractor tool, an ambiguous request or a policy that demands a refusal is present."
         },
         {
           "title": "Synthesize the request and the interaction",
-          "detail": "Generate the user request that implies the target state without naming the tool sequence, plus the multi-turn assistant and tool transcript that reaches it, including the observations that justify each call."
+          "detail": "Generate the user request that implies the target state without naming the tool sequence, plus the multi-turn assistant and tool transcript that reaches it, including the observations that justify each call.",
+          "accept": "The request implies the target state without naming the tool sequence, and the transcript reaches that state."
         },
         {
           "title": "Probe the competence frontier",
-          "detail": "Run the solver twice, once with a hint naming the required goal and once without. Keep the task when the hinted run succeeds and the unhinted run fails or is unstable; discard tasks solved unhinted and tasks failed even with the hint."
+          "detail": "Run the solver twice, once with a hint naming the required goal and once without. Keep the task when the hinted run succeeds and the unhinted run fails or is unstable; discard tasks solved unhinted and tasks failed even with the hint.",
+          "accept": "The hinted run succeeds and the unhinted run fails or is unstable."
         },
         {
           "title": "Freeze the surface and the probe result",
-          "detail": "Snapshot the environment state and the tool schemas alongside the transcript and the recorded hint and no-hint outcomes, so the difficulty claim is inspectable rather than asserted."
+          "detail": "Snapshot the environment state and the tool schemas alongside the transcript and the recorded hint and no-hint outcomes, so the difficulty claim is inspectable rather than asserted.",
+          "accept": "The environment state, the tool schemas, the transcript and both probe outcomes are stored together."
         },
         {
           "title": "Reject degenerate interactions",
-          "detail": "Remove transcripts that contain error returns, unanswered prerequisites, or a resolution achievable by a single call."
+          "detail": "Remove transcripts that contain error returns, unanswered prerequisites, or a resolution achievable by a single call.",
+          "accept": "No retained transcript contains an error return, an unanswered prerequisite or a resolution achievable by a single call."
         }
+      ],
+      "curation_notes": [
+        "Probe difficulty with a prompt distinct from the task's own request, so the frontier is not self-confirming.",
+        "Check that the adversarial element is part of the success criteria, since otherwise it penalizes correct behaviour."
       ],
       "verifier": [
         "every tool call in the transcript is present in the frozen schema list and returns a non-error observation",
@@ -155,7 +202,22 @@
       "id": "mock-world-user-simulator-rubric",
       "name": "Mock tool world with user simulator and rubric check",
       "family": "experience-synthesis",
-      "summary": "The source's tools are re-implemented as a deterministic mock system rather than called live, and the request is deliberately underspecified: the task author keeps some details private and a user simulator holds them, so the agent has to query the user in order to finish. Success is written as a task-level rubric over required subgoals, required user-agent interactions, and forbidden behaviours, so the check is a list of assertions rather than a model verdict. The world is treated as editable: when dry-run trajectories show a stochastic user, an unreliable mock tool, or a misfiring rubric item, those components are diagnosed and repaired instead of being accepted as noise.",
+      "summary": "Re-implement the tools as deterministic mocks, withhold some task details for a user simulator to hold, and write success as a rubric of required subgoals, required interactions and forbidden behaviours.",
+      "background": "The source's tools are re-implemented as a deterministic mock system rather than called live, and the request is deliberately underspecified: the task author keeps some details private and a user simulator holds them, so the agent has to query the user in order to finish. Success is written as a task-level rubric over required subgoals, required user-agent interactions, and forbidden behaviours, so the check is a list of assertions rather than a model verdict. The world is treated as editable: when dry-run trajectories show a stochastic user, an unreliable mock tool, or a misfiring rubric item, those components are diagnosed and repaired instead of being accepted as noise.",
+      "material_kind": [
+        "api",
+        "simulation",
+        "multi-agent"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a tool surface",
+        "no network needed",
+        "has a rubric format",
+        "deterministic behaviour"
+      ],
+      "produces": "One underspecified request, the private record the user simulator holds, the mock tool responses and a rubric a deterministic checker can evaluate.",
       "when_to_use": [
         "the tools exist but live APIs are unstable, slow, or side-effecting",
         "the interesting part of the task is handling a partially specified request",
@@ -173,32 +235,43 @@
       "steps": [
         {
           "title": "Mock the tool system",
-          "detail": "Re-implement the tools the task needs as stubs returning fixed, stable responses, including the error cases the request can trigger. The mock must not touch the network."
+          "detail": "Re-implement the tools the task needs as stubs returning fixed, stable responses, including the error cases the request can trigger. The mock must not touch the network.",
+          "accept": "Each stub returns a fixed response for every call the request can trigger, including its error cases, and no stub touches the network."
         },
         {
           "title": "Create the task with private details",
-          "detail": "Write the full task with every detail a competent solver needs, then remove a chosen subset from the request and move it into the private record. What is removed determines what the agent has to ask for."
+          "detail": "Write the full task with every detail a competent solver needs, then remove a chosen subset from the request and move it into the private record. What is removed determines what the agent has to ask for.",
+          "accept": "The full task is written with every detail a competent solver needs, then a chosen subset is removed from the request and moved into the private record."
         },
         {
           "title": "Attach the user simulator",
-          "detail": "Give the simulator the private record and a policy of releasing withheld details only when the agent asks for them, in consistent phrasing. Persona and seed are pinned so replays match."
+          "detail": "Give the simulator the private record and a policy of releasing withheld details only when the agent asks for them, in consistent phrasing. Persona and seed are pinned so replays match.",
+          "accept": "The simulator releases withheld details only when the agent asks for them, in consistent phrasing, with persona and seed pinned."
         },
         {
           "title": "Write the rubric as machine-checkable assertions",
-          "detail": "Express the rubric as required subgoals, required user-agent interactions, and forbidden behaviours, each mapped to a concrete observation in the transcript or the mock state, so a checker evaluates it without a model judge."
+          "detail": "Express the rubric as required subgoals, required user-agent interactions, and forbidden behaviours, each mapped to a concrete observation in the transcript or the mock state, so a checker evaluates it without a model judge.",
+          "accept": "Every rubric item names a required subgoal, a required user-agent interaction or a forbidden behaviour, and maps to a concrete observation in the transcript or the mock state."
         },
         {
           "title": "Dry-run and repair the world",
-          "detail": "Run a few trajectories and inspect tool traces and rewards. Where the user simulator contradicts itself, a mock tool errors unexpectedly, or a rubric item misfires, repair the simulator, the stub, or the rubric and re-run; the world is an artifact under construction, not a fixed fixture."
+          "detail": "Run a few trajectories and inspect tool traces and rewards. Where the user simulator contradicts itself, a mock tool errors unexpectedly, or a rubric item misfires, repair the simulator, the stub, or the rubric and re-run; the world is an artifact under construction, not a fixed fixture.",
+          "accept": "Each simulator contradiction, mock tool error and misfiring rubric item is repaired and the trajectories are re-run."
         },
         {
           "title": "Check the request is underspecified but inferable",
-          "detail": "Confirm that the withheld details cannot be guessed from the request and that the rubric does not require them without an asking turn; otherwise the agent bypasses the user entirely."
+          "detail": "Confirm that the withheld details cannot be guessed from the request and that the rubric does not require them without an asking turn; otherwise the agent bypasses the user entirely.",
+          "accept": "The withheld details cannot be guessed from the request, and no rubric item requires them without an asking turn."
         },
         {
           "title": "Freeze the world",
-          "detail": "Pin the simulator persona, the mock responses, and the rubric version together with the request."
+          "detail": "Pin the simulator persona, the mock responses, and the rubric version together with the request.",
+          "accept": "The simulator persona, the mock responses and the rubric version are pinned together with the request."
         }
+      ],
+      "curation_notes": [
+        "Repair the simulator, the stub or the rubric rather than the agent's behaviour when a dry run misfires.",
+        "Keep live API calls out of the loop across the task set, since a live call makes the same task yield different transcripts on every run."
       ],
       "verifier": [
         "the rubric file enumerates required subgoals and forbidden behaviours, each with a deterministic evaluator",

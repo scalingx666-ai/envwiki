@@ -5,7 +5,22 @@
       "id": "deterministic-app-docking-tasks",
       "name": "Deterministic application docking with audited checkpoint tasks",
       "family": "computer-use",
-      "summary": "Reconstruct the target application or site as a deterministic, self-contained executable environment that keeps the original interfaces and workflows but removes live content, then author tasks on top of it with rule-based, multi-checkpoint evaluation. The reconstruction is task-driven rather than a wholesale clone: each new task expands the functional scope the environment must implement, and a human then audits the implementation for visual fidelity, functional correctness and task validity. Checkpoints are what make long, multi-application runs gradable - each sub-goal is scored separately, so two runs with the same Pass@1 can be distinguished by how much of the workflow each actually completed - and capability annotations record whether a task exercised the GUI, the command line, several applications or a long horizon. The environment must reset to the same state every time, otherwise checkpoint results are not comparable across attempts.",
+      "summary": "Reconstruct the app or site as a self-contained executable that resets to an identical state, then write one task as ordered rule-based checkpoints over observable state.",
+      "background": "Reconstruct the target application or site as a deterministic, self-contained executable environment that keeps the original interfaces and workflows but removes live content, then author tasks on top of it with rule-based, multi-checkpoint evaluation. The reconstruction is task-driven rather than a wholesale clone: each new task expands the functional scope the environment must implement, and a human then audits the implementation for visual fidelity, functional correctness and task validity. Checkpoints are what make long, multi-application runs gradable - each sub-goal is scored separately, so two runs with the same Pass@1 can be distinguished by how much of the workflow each actually completed - and capability annotations record whether a task exercised the GUI, the command line, several applications or a long horizon. The environment must reset to the same state every time, otherwise checkpoint results are not comparable across attempts.",
+      "material_kind": [
+        "gui",
+        "web",
+        "infrastructure"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a reference capture",
+        "runs offline",
+        "deterministic behaviour",
+        "runs in a container"
+      ],
+      "produces": "A reproducible environment that resets to an identical state, plus one task stated as an ordered checkpoint list with a per-checkpoint pass report.",
       "when_to_use": [
         "the source is a web site, desktop application or OS image that must be run repeatedly",
         "live content, authentication walls and network drift would make evaluation non-reproducible",
@@ -23,32 +38,39 @@
       "steps": [
         {
           "title": "Scope the workflows, not the product",
-          "detail": "Enumerate the screens and flows the tasks will touch and implement only those; the environment's cost is driven by breadth, and breadth no task exercises is pure overhead."
+          "detail": "Enumerate the screens and flows this task will touch and implement only those; the environment's cost is driven by breadth, and breadth no task exercises is pure overhead.",
+          "accept": "A list of the screens and flows the task uses is written down, and every flow outside that list is left unimplemented."
         },
         {
           "title": "Dock the interface deterministically",
-          "detail": "Rebuild the visual interface, content and functional workflow of the real service under local control, with seeded content and no live calls, so a reset returns the environment to an identical state."
+          "detail": "Rebuild the visual interface, content and functional workflow of the real service under local control, with seeded content and no live calls, so a reset returns the environment to an identical state.",
+          "accept": "Two resets of the rebuilt environment produce the same state snapshot hash, and no call reaches the live service."
         },
         {
-          "title": "Let the task list drive the functional scope",
-          "detail": "Implement the rarely exercised paths, including post-authentication flows, only when a task requires them, and keep an audit trail of what was added and why."
+          "title": "Implement only the paths this task needs",
+          "detail": "Implement the rarely exercised paths this task requires, including post-authentication flows, and record what was added and why; paths no task needs stay unimplemented.",
+          "accept": "Every path the task touches runs end to end in the rebuilt environment, and each added path carries a one-line reason."
         },
         {
-          "title": "Author tasks with checkpoints",
-          "detail": "Write each task as an instruction plus an ordered list of rule-based checks over observable state (file created, field set, item moved, process exited), one check per sub-goal, so partial completion is scored rather than flattened to a boolean."
+          "title": "Author the task with checkpoints",
+          "detail": "Write the task as an instruction plus an ordered list of rule-based checks over observable state (file created, field set, item moved, process exited), one check per sub-goal, so partial completion is scored rather than flattened to a boolean.",
+          "accept": "The task ships with an ordered checkpoint list, one check per sub-goal, and every check reads observable state."
         },
         {
-          "title": "Annotate the capabilities each task exercises",
-          "detail": "Tag every task with its modality (graphical only, command line, multi-application, long-horizon) so the report can separate a generally weak model from one that fails on a specific modality."
-        },
-        {
-          "title": "Audit the instances",
-          "detail": "Human reviewers check visual fidelity against the reference, functional correctness of the implemented flows, and whether the task is valid and unambiguous; repair or drop instances that fail the audit."
+          "title": "Audit this instance",
+          "detail": "A human reviewer checks visual fidelity against the reference, functional correctness of the implemented flows, and whether the task is valid and unambiguous; repair or drop the instance if it fails.",
+          "accept": "An audit record exists for this task covering visual fidelity, functional correctness and task validity."
         },
         {
           "title": "Confirm the pristine environment fails",
-          "detail": "Run every task against the untouched environment: the checks must fail there and pass after the reference solution is applied, so no task ships already satisfied."
+          "detail": "Run this task's checks against the untouched environment: they must fail there and pass after the reference solution is applied, so the task does not ship already satisfied.",
+          "accept": "The checks exit non-zero on the pristine environment and zero after the reference solution runs."
         }
+      ],
+      "curation_notes": [
+        "Keep the audit trail of what was added to the environment and why, so growth across the task set stays attributable.",
+        "Tag each task with the modality it exercises (graphical only, command line, multi-application, long-horizon) so the report can separate a generally weak model from one that fails on a specific modality.",
+        "Run every task in the set against the untouched environment and drop any that is already satisfied."
       ],
       "verifier": [
         "each task's rule-based checks exit non-zero on the pristine environment and zero after the reference solution runs",
@@ -84,7 +106,22 @@
       "id": "execution-gated-interface-task-synthesis",
       "name": "Execution-gated synthesis of cross-interface tasks",
       "family": "computer-use",
-      "summary": "Generate long-horizon tasks for a computer-use agent and admit them only if they pass execution-based quality gates. The environment is executable and supports several interaction modes over one shared state - graphical interface, command line, and service interfaces - so a task can require switching between them and revisiting one later. Tasks are woven from reusable operations over seed files, which makes difficulty controllable rather than accidental, and the exploration that supports them builds an explicit transition graph over screens and elements, so trajectory generation is reproducible and spurious cycles are excluded. The gates are the substance of the method: a task must be solvable, must not already be complete when the agent starts, must be non-trivial, and its verdict must survive a cross-judge agreement check plus a counterfactual probe that perturbs the evidence the judge sees. A pipeline that admits a small fraction of its drafts is the normal outcome, not a failure.",
+      "summary": "Expose GUI, command-line and service interfaces over shared state in an executable environment, weave tasks from reusable operations, and admit a task only after the solver, judge-agreement and counterfactual gates pass.",
+      "background": "Generate long-horizon tasks for a computer-use agent and admit them only if they pass execution-based quality gates. The environment is executable and supports several interaction modes over one shared state - graphical interface, command line, and service interfaces - so a task can require switching between them and revisiting one later. Tasks are woven from reusable operations over seed files, which makes difficulty controllable rather than accidental, and the exploration that supports them builds an explicit transition graph over screens and elements, so trajectory generation is reproducible and spurious cycles are excluded. The gates are the substance of the method: a task must be solvable, must not already be complete when the agent starts, must be non-trivial, and its verdict must survive a cross-judge agreement check plus a counterfactual probe that perturbs the evidence the judge sees. A pipeline that admits a small fraction of its drafts is the normal outcome, not a failure.",
+      "material_kind": [
+        "gui",
+        "api",
+        "infrastructure"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has an executable environment",
+        "has multiple interfaces",
+        "deterministic behaviour",
+        "has seed files"
+      ],
+      "produces": "One long-horizon task woven from reusable operations, admitted only after the solver, judge-agreement and counterfactual gates pass, with its reference goal state recorded.",
       "when_to_use": [
         "many long-horizon tasks are needed and hand-authoring does not scale",
         "the environment supports more than one interaction mode over shared state",
@@ -102,32 +139,39 @@
       "steps": [
         {
           "title": "Build the multi-interface environment",
-          "detail": "Reconstruct the applications to be reproduced into deterministic environments and expose a command-line surface for each alongside its graphical interface, so both act on the same state and the agent can choose between them."
+          "detail": "Reconstruct the applications to be reproduced into deterministic environments and expose a command-line surface for each alongside its graphical interface, so both act on the same state and the agent can choose between them.",
+          "accept": "The graphical, command-line and service interfaces all act on the same state, and a change made through one is visible through the others."
         },
         {
           "title": "Curate the operation library over seed files",
-          "detail": "Enumerate reusable operations (open, filter, rename, upload, run, configure) together with the seed files they act on; tasks are woven from these later, which makes both generation and difficulty controllable."
+          "detail": "Enumerate reusable operations (open, filter, rename, upload, run, configure) together with the seed files they act on; tasks are woven from these later, which makes both generation and difficulty controllable.",
+          "accept": "Each operation names the seed files it acts on, and every operation in the library runs in the environment."
         },
         {
           "title": "Explore to build a transition graph",
-          "detail": "Walk the environment to build an explicit graph of screens and elements and the edges between them, so the generator knows which sequences are reachable and can plan against the graph instead of improvising."
+          "detail": "Walk the environment to build an explicit graph of screens and elements and the edges between them, so the generator knows which sequences are reachable and can plan against the graph instead of improvising.",
+          "accept": "A graph of screens, elements and the edges between them is written down, and the generator plans against that graph."
         },
         {
           "title": "Weave the task from operations",
-          "detail": "Compose operations into an instruction with a controllable number of sub-steps and interface switches, and record the reference state the task ends in."
+          "detail": "Compose operations into an instruction with a controllable number of sub-steps and interface switches, and record the reference state the task ends in.",
+          "accept": "The task states its number of sub-steps and interface switches, and the reference state it ends in is recorded."
         },
         {
           "title": "Run the solver and the execution gates",
-          "detail": "Execute candidate tasks with a heterogeneous set of solver agents; a task is admitted only if it is solvable by at least one solver, is not already complete at the start, and is non-trivial, with the solver pass rate low but non-zero."
+          "detail": "Execute candidate tasks with a heterogeneous set of solver agents; a task is admitted only if it is solvable by at least one solver, is not already complete at the start, and is non-trivial, with the solver pass rate low but non-zero.",
+          "accept": "At least one solver completes the task, the task is not already complete in the pristine environment, and the solver pass rate is low but non-zero."
         },
         {
           "title": "Check the verdict with cross-judge agreement and a counterfactual probe",
-          "detail": "Have independent judges verify the outcome and require agreement between them, then perturb the evidence the judge sees and confirm the verdict changes; a judge that passes every probe makes the agreement number meaningless."
-        },
-        {
-          "title": "Mine the goal state for anchors",
-          "detail": "From the successful rollouts, annotate the task-relevant interface elements in the goal state as reference anchors, giving a scalable per-element reward signal for later training without rewriting rule-based checks."
+          "detail": "Have independent judges verify the outcome and require agreement between them, then perturb the evidence the judge sees and confirm the verdict changes; a judge that passes every probe makes the agreement number meaningless.",
+          "accept": "Independent judges agree on the verdict, and perturbing the evidence flips the verdict on the perturbed instance."
         }
+      ],
+      "curation_notes": [
+        "Mine the goal states of the accepted rollouts for task-relevant interface elements and record them as reference anchors, giving a scalable per-element reward signal for later training without rewriting the rule-based checks.",
+        "Expect the pipeline to admit only a small fraction of its drafts; the gates are meant to reject, and a pipeline that admits most candidates is not gating.",
+        "Report the admission rate and the cross-judge agreement statistics over the whole set, so a collapse in yield is visible before the set is used."
       ],
       "verifier": [
         "each admitted task has a recorded solver trajectory that reaches the goal state, so solvability is demonstrated rather than assumed",
@@ -168,7 +212,21 @@
       "id": "perturbation-recovery-task-construction",
       "name": "Error-recovery task construction by controlled perturbation",
       "family": "computer-use",
-      "summary": "Take a task a working agent can complete, deliberately break it, and require the agent to recover. The error modes are enumerated first and injected in a controlled way - a stale value left in a field, a mis-click on the wrong row, a skipped confirmation, a closed document - and each injection carries the recovery steps that undo it, so the instance is scored on the recovery rather than on luck. Scoring is deterministic and multi-checkpoint: the work and the correction are checked separately, so an agent that produces the right end state without noticing the breakage is distinguishable from one that handled it. The environment must change observably between actions for this to work; a single screenshot after each action leaves the breakage invisible and turns the instance into a coin flip.",
+      "summary": "Take a task a working agent already completes, inject one declared fault into its environment, and require the recovery: the checker scores the work and the correction separately, so luck is separated from recovery.",
+      "background": "Take a task a working agent can complete, deliberately break it, and require the agent to recover. The error modes are enumerated first and injected in a controlled way - a stale value left in a field, a mis-click on the wrong row, a skipped confirmation, a closed document - and each injection carries the recovery steps that undo it, so the instance is scored on the recovery rather than on luck. Scoring is deterministic and multi-checkpoint: the work and the correction are checked separately, so an agent that produces the right end state without noticing the breakage is distinguishable from one that handled it. The environment must change observably between actions for this to work; a single screenshot after each action leaves the breakage invisible and turns the instance into a coin flip.",
+      "material_kind": [
+        "gui",
+        "trajectory"
+      ],
+      "task_kind": "repair",
+      "role": "create",
+      "needs": [
+        "has a working reference solution",
+        "has dynamic state",
+        "observable state changes",
+        "deterministic behaviour"
+      ],
+      "produces": "One task whose environment is broken in a declared, documented way, checked by checkpoints that pass only when both the work and the recovery are correct.",
       "when_to_use": [
         "you need to test whether an agent recovers from its own mistakes",
         "the environment has dynamic state that changes between actions",
@@ -186,32 +244,38 @@
       "steps": [
         {
           "title": "Enumerate the error modes",
-          "detail": "List the failure modes a real user or agent produces in this environment (wrong argument, wrong target, skipped confirmation, stale view, undone step) and rank them by frequency, so the injected errors are representative rather than exotic."
+          "detail": "List the failure modes a real user or agent produces in this environment (wrong argument, wrong target, skipped confirmation, stale view, undone step) and rank them by frequency, so the injected errors are representative rather than exotic.",
+          "accept": "A ranked list of error modes is written for this environment, each with the frequency that decided its rank."
         },
         {
           "title": "Design the injection points",
-          "detail": "For each error mode decide where in the flow it is injected and what it breaks, for example a field pre-filled with a stale value that the agent must notice and correct."
+          "detail": "For each error mode decide where in the flow it is injected and what it breaks, for example a field pre-filled with a stale value that the agent must notice and correct.",
+          "accept": "Each chosen error mode names the point in the flow where it is injected and what it breaks."
         },
         {
           "title": "Attach and validate the recovery steps",
-          "detail": "Record the steps that restore the correct state for each injection, then run them in the environment; an instance is only meaningful if a correct recovery exists and is itself verified."
+          "detail": "Record the steps that restore the correct state for each injection, then run them in the environment; an instance is only meaningful if a correct recovery exists and is itself verified.",
+          "accept": "The recovery for each injection is recorded and, run directly in the environment, passes every checkpoint."
         },
         {
           "title": "Write the multi-checkpoint checker",
-          "detail": "Score the sub-goals individually and require both the work and the correction, so an agent that reaches the right end state without noticing the injected error earns no full credit."
+          "detail": "Score the sub-goals individually and require both the work and the correction, so an agent that reaches the right end state without noticing the injected error earns no full credit.",
+          "accept": "The checker scores the sub-goals individually, requires both the work and the correction, and returns the same result on repeated runs."
         },
         {
           "title": "Verify the discriminating power",
-          "detail": "Run an agent that does not recover and one that does: the first must lose at least one checkpoint and the second must pass all of them, otherwise the instance does not actually measure recovery."
+          "detail": "Run an agent that does not recover and one that does: the first must lose at least one checkpoint and the second must pass all of them, otherwise the instance does not actually measure recovery.",
+          "accept": "The non-recovering rollout loses at least one checkpoint and the recovering rollout passes all of them."
         },
         {
           "title": "Make the breakage observable",
-          "detail": "Ensure the interface surfaces the changed state between actions (a re-rendered panel, an updated value) and that the agent's observation window includes it; a single screenshot per action hides exactly the evidence the task depends on."
-        },
-        {
-          "title": "Tree the variants and keep them balanced",
-          "detail": "Expand each error mode into several instances through a tree of injections, and keep the set balanced across modes so no single failure dominates the reported score."
+          "detail": "Ensure the interface surfaces the changed state between actions (a re-rendered panel, an updated value) and that the agent's observation window includes it; a single screenshot per action hides exactly the evidence the task depends on.",
+          "accept": "The interface re-renders the changed state between actions, and the agent's observation window includes it."
         }
+      ],
+      "curation_notes": [
+        "Expand each error mode into several instances through a tree of injections.",
+        "Keep the instance set balanced across the error catalog so no single failure mode dominates the reported score."
       ],
       "verifier": [
         "the non-recovering rollout scores strictly lower than the recovering rollout on the checkpoint list",

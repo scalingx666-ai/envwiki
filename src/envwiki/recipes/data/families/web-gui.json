@@ -5,7 +5,22 @@
       "id": "code-native-guid-reconstruction",
       "name": "Code-native GUI environment reconstruction",
       "family": "web-gui",
-      "summary": "Reconstruct a real application as a lightweight, fast, self-contained web environment with a code model, then make the reward code-native: executable assertions over DOM and application state instead of noisy visual proxies. One unified specification plus task-centric test-driven development keeps multi-page applications coherent.",
+      "summary": "Rebuild a real application as a lightweight self-contained web environment and make the reward code-native: executable assertions over DOM and application state instead of noisy visual proxies.",
+      "background": "Reconstruct a real application as a lightweight, fast, self-contained web environment with a code model, then make the reward code-native: executable assertions over DOM and application state instead of noisy visual proxies. One unified specification plus task-centric test-driven development keeps multi-page applications coherent.",
+      "material_kind": [
+        "gui",
+        "web",
+        "code"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a reference design image",
+        "has a code model",
+        "can serve a local web app",
+        "no network needed"
+      ],
+      "produces": "A self-contained web environment plus a task whose reward is an executable assertion over DOM text, element state or application state.",
       "when_to_use": [
         "the source is a web or desktop application, or a screenshot of one",
         "training on the real application is too slow, too costly or not reproducible",
@@ -23,32 +38,37 @@
       "steps": [
         {
           "title": "Pick the application and the scope",
-          "detail": "Choose which screens, flows and data actually matter for the task; a faithful clone of everything is neither cheap nor necessary."
+          "detail": "Choose which screens, flows and data actually matter for the task; a faithful clone of everything is neither cheap nor necessary.",
+          "accept": "The screens, flows and data the task needs are listed, and the rest of the application is out of scope."
         },
         {
           "title": "Reconstruct as a lightweight web environment",
-          "detail": "Have a multimodal code model rebuild the application as a small self-contained web environment, with local seed data and no external calls."
+          "detail": "Have a multimodal code model rebuild the application as a small self-contained web environment, with local seed data and no external calls.",
+          "accept": "The environment serves the scoped flows from local seed data and makes no external calls."
         },
         {
           "title": "Write one unified specification",
-          "detail": "Specify routes, pages, shared components and the data model once, so every generated page belongs to the same application."
+          "detail": "Specify routes, pages, shared components and the data model once, so every generated page belongs to the same application.",
+          "accept": "Routes, pages, shared components and the data model are specified once, and every generated page conforms to them."
         },
         {
           "title": "Develop task-centric, test first",
-          "detail": "Build the smallest environment that supports the task, with the test written before the page; task-centric test-driven development is what stops multi-page apps from drifting."
-        },
-        {
-          "title": "Seed diversity",
-          "detail": "Vary the reconstruction with a website seed plus a reference design image, otherwise every environment converges on the same look and the same flows."
+          "detail": "Build the smallest environment that supports the task, with the test written before the page; task-centric test-driven development is what stops multi-page apps from drifting.",
+          "accept": "The test for the task exists and fails before the page that satisfies it is written."
         },
         {
           "title": "Attach code-native rewards",
-          "detail": "Express the reward as executable assertions over DOM text, element state or application state; a visual estimate of success is too noisy to train on."
+          "detail": "Express the reward as executable assertions over DOM text, element state or application state; a visual estimate of success is too noisy to train on.",
+          "accept": "The reward is an executable assertion over DOM text, element state or application state."
         },
         {
           "title": "Generate the task evaluators",
-          "detail": "Derive a verifiable evaluator per task so the reward can be dense during training rather than only at the end."
+          "detail": "Derive a verifiable evaluator per task so the reward can be dense during training rather than only at the end.",
+          "accept": "Each task has an evaluator that fails on the pristine environment and can be applied during the episode, not only at the end."
         }
+      ],
+      "curation_notes": [
+        "Vary the reconstructions with a website seed plus a reference design image, otherwise every environment converges on the same look and the same flows."
       ],
       "verifier": [
         "executable assertions over the DOM or application state",
@@ -78,7 +98,22 @@
       "id": "explore-first-reverse-task-synthesis",
       "name": "Explore-first reverse task synthesis for web agents",
       "family": "web-gui",
-      "summary": "Invert the usual order: the agent acts in the environment first and the task is written afterwards from what it saw. Exploration is a structured sweep, not free-form scrolling, and it produces a map of the site's functionally distinct page states and the executable interactions that move between them, so rare branches are covered instead of over-sampled popular ones. Candidate tasks are proposed from that map, executed in the environment, and jointly repaired with their trajectories whenever the instruction and the execution disagree; a trajectory-level reward model rejects pairs whose wording is not grounded in what was actually performed. The map also supplies the graph structure used to compose multi-step tasks without cycles.",
+      "summary": "Act first, write the task afterwards: sweep the site into a map of page states and transitions, propose tasks from the map, execute them, and repair instruction and trajectory until a trajectory scorer accepts the pair.",
+      "background": "Invert the usual order: the agent acts in the environment first and the task is written afterwards from what it saw. Exploration is a structured sweep, not free-form scrolling, and it produces a map of the site's functionally distinct page states and the executable interactions that move between them, so rare branches are covered instead of over-sampled popular ones. Candidate tasks are proposed from that map, executed in the environment, and jointly repaired with their trajectories whenever the instruction and the execution disagree; a trajectory-level reward model rejects pairs whose wording is not grounded in what was actually performed. The map also supplies the graph structure used to compose multi-step tasks without cycles.",
+      "material_kind": [
+        "web",
+        "gui",
+        "trajectory"
+      ],
+      "task_kind": "reverse",
+      "role": "create",
+      "needs": [
+        "has an executable site environment",
+        "records trajectories",
+        "has a proposal model",
+        "has a trajectory-level scorer"
+      ],
+      "produces": "A web task with a recorded trajectory that reaches its goal state, plus the site map of states and transitions it was derived from.",
       "when_to_use": [
         "the source is a live or captured site whose task surface is not known in advance",
         "many diverse tasks are needed and manual authoring does not scale",
@@ -96,36 +131,42 @@
       "steps": [
         {
           "title": "Explore with a structured sweep",
-          "detail": "Move through the site by its own navigation affordances, recording each distinct page state and the interaction that produced it. Uniform random clicking over-samples common flows and misses the rare transitions that make tasks worth training on."
+          "detail": "Move through the site by its own navigation affordances, recording each distinct page state and the interaction that produced it. Uniform random clicking over-samples common flows and misses the rare transitions that make tasks worth training on.",
+          "accept": "Each functionally distinct page state is recorded together with the interaction that produced it."
         },
         {
           "title": "Assemble the website map",
-          "detail": "Organise the observations into a map of functionally distinct page states and the transitions between them, with the elements that trigger each transition. The map is the artifact the tasks are derived from and the ground for any coverage claim."
+          "detail": "Organise the observations into a map of functionally distinct page states and the transitions between them, with the elements that trigger each transition. The map is the artifact the tasks are derived from and the ground for any coverage claim.",
+          "accept": "The map lists the distinct page states and, for each transition, the element that triggers it."
         },
         {
           "title": "Propose tasks from the map",
-          "detail": "Derive candidate instructions from the observed states and transitions, so the task language is anchored in what the site supports rather than in what the model imagines a website of that kind should contain."
+          "detail": "Derive candidate instructions from the observed states and transitions, so the task language is anchored in what the site supports rather than in what the model imagines a website of that kind should contain.",
+          "accept": "Each candidate instruction names a state or a transition that the map actually contains."
         },
         {
           "title": "Execute and record",
-          "detail": "Run each candidate in the environment and keep the trajectory that reached the goal together with the states visited, so the instruction can later be checked against the execution rather than trusted."
+          "detail": "Run each candidate in the environment and keep the trajectory that reached the goal together with the states visited, so the instruction can later be checked against the execution rather than trusted.",
+          "accept": "The candidate ran to its stated goal state and both its trajectory and its visited states are stored."
         },
         {
           "title": "Co-repair instruction and trajectory",
-          "detail": "When instruction and trajectory disagree, edit both: fix the wording where the trajectory is right, and regenerate the trajectory where the instruction states a behaviour the site does support. Accepting the mismatch leaves supervision that teaches the agent to describe something other than what it did."
+          "detail": "When instruction and trajectory disagree, edit both: fix the wording where the trajectory is right, and regenerate the trajectory where the instruction states a behaviour the site does support. Accepting the mismatch leaves supervision that teaches the agent to describe something other than what it did.",
+          "accept": "After the repair the stored trajectory and the instruction describe the same behaviour."
         },
         {
           "title": "Filter for alignment",
-          "detail": "Score the pairs with a trajectory-level reward model that checks the instruction against the executed trajectory, and drop the pairs whose wording cannot be grounded in the performance."
+          "detail": "Score the pairs with a trajectory-level reward model that checks the instruction against the executed trajectory, and drop the pairs whose wording cannot be grounded in the performance.",
+          "accept": "A trajectory-level reward model scored each pair, and the pairs whose wording is not grounded in the execution were dropped."
         },
         {
           "title": "Compose along the transition graph",
-          "detail": "Extend verified tasks along the map's graph by planning paths that do not revisit a state, so multi-step tasks grow long without turning into cyclic loops."
-        },
-        {
-          "title": "Keep the coverage record",
-          "detail": "Retain the map and the set of states covered by the retained tasks, so later rounds can target the states and transitions that are still unrepresented."
+          "detail": "Extend verified tasks along the map's graph by planning paths that do not revisit a state, so multi-step tasks grow long without turning into cyclic loops.",
+          "accept": "The composed path revisits no state."
         }
+      ],
+      "curation_notes": [
+        "Retain the map and the set of states covered by the retained tasks, so later rounds can target the states and transitions that are still unrepresented."
       ],
       "verifier": [
         "each retained instruction is graded against its own recorded trajectory, and pairs whose trajectory does not support the instruction are rejected",
@@ -162,7 +203,21 @@
       "id": "http-capture-replay-site-replica",
       "name": "HTTP capture and replay replica with repair loop",
       "family": "web-gui",
-      "summary": "The fidelity of a synthetic web environment comes from the real site rather than from a code model, so the site is captured at the HTTP layer and replayed. A browser session records the response bodies, headers and redirects for every URL it reaches, and a local server serves those recordings, so pages look and behave like the original while the environment stays deterministic, resettable and cheap to run per rollout. The capture is not a blind dump: an explorer drives the site to discover its reachable URLs and interaction outcomes, and an independent verifier checks the frozen candidate and directs repairs, either fixing the local replay or recapturing only the URLs that cannot be fixed. Tasks are then written over the navigation skills the exploration actually confirmed, which keeps them inside the behaviour the replica supports.",
+      "summary": "Capture the real site at the HTTP layer and replay it from a local server: explore to complete the capture, verify and repair it, then write tasks over the navigation skills the capture confirmed.",
+      "background": "The fidelity of a synthetic web environment comes from the real site rather than from a code model, so the site is captured at the HTTP layer and replayed. A browser session records the response bodies, headers and redirects for every URL it reaches, and a local server serves those recordings, so pages look and behave like the original while the environment stays deterministic, resettable and cheap to run per rollout. The capture is not a blind dump: an explorer drives the site to discover its reachable URLs and interaction outcomes, and an independent verifier checks the frozen candidate and directs repairs, either fixing the local replay or recapturing only the URLs that cannot be fixed. Tasks are then written over the navigation skills the exploration actually confirmed, which keeps them inside the behaviour the replica supports.",
+      "material_kind": [
+        "web",
+        "infrastructure"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a reachable site",
+        "can capture http responses",
+        "can serve a local replay",
+        "has an independent verifier"
+      ],
+      "produces": "A local replica serving the recorded bytes at the original paths, plus a task whose success is a comparison over replica state or recorded artifacts.",
       "when_to_use": [
         "the source is a real website whose visual fidelity and content matter",
         "the live site is unstable, login-gated or too slow to afford per rollout",
@@ -180,36 +235,43 @@
       "steps": [
         {
           "title": "Scope the site to a bounded surface",
-          "detail": "Decide which pages, entry points and authenticated areas the tasks will use. A capture of an entire site is unbounded, and the replay drifts as the site's reachable surface grows."
+          "detail": "Decide which pages, entry points and authenticated areas the tasks will use. A capture of an entire site is unbounded, and the replay drifts as the site's reachable surface grows.",
+          "accept": "The pages, entry points and authenticated areas in scope are listed, and everything else is left out of the capture."
         },
         {
           "title": "Record at the HTTP layer",
-          "detail": "Drive a browser session through the scoped surface and store the response body, status, headers and redirect target under each request key. Cache assets instead of re-fetching them so a rollout costs no network time."
+          "detail": "Drive a browser session through the scoped surface and store the response body, status, headers and redirect target under each request key. Cache assets instead of re-fetching them so a rollout costs no network time.",
+          "accept": "Each scoped request key has a stored body, status, headers and redirect target, and assets are cached rather than re-fetched."
         },
         {
           "title": "Replay locally behind the same URLs",
-          "detail": "Serve the recording from a local origin that mirrors the original path structure, so links, forms and redirects behave as they did and the agent sees the real page rather than a mock-up of it."
+          "detail": "Serve the recording from a local origin that mirrors the original path structure, so links, forms and redirects behave as they did and the agent sees the real page rather than a mock-up of it.",
+          "accept": "The local server serves the recorded bytes at the original paths, and the links, forms and redirects behave as recorded."
         },
         {
           "title": "Explore to complete the capture",
-          "detail": "Run an explorer over the replica to discover the URLs the pages actually link to and the interactions that work. Any URL reached but not recorded is either recaptured or explicitly marked unavailable, so the replay never serves an empty body for a real link."
+          "detail": "Run an explorer over the replica to discover the URLs the pages actually link to and the interactions that work. Any URL reached but not recorded is either recaptured or explicitly marked unavailable, so the replay never serves an empty body for a real link.",
+          "accept": "Every URL reached during exploration is either recorded or explicitly marked unavailable, and none returns an empty body."
         },
         {
           "title": "Verify and repair the frozen candidate",
-          "detail": "Have an independent checker confirm the captured pages against the source for structural and content fidelity and point at the mismatches; repair locally where possible and recapture only the URLs that cannot be fixed, so the loop terminates."
+          "detail": "Have an independent checker confirm the captured pages against the source for structural and content fidelity and point at the mismatches; repair locally where possible and recapture only the URLs that cannot be fixed, so the loop terminates.",
+          "accept": "An independent checker compared the captured pages with the source, and each mismatch is either repaired locally or recaptured."
         },
         {
           "title": "Ground tasks in observed navigation",
-          "detail": "Write tasks from the navigation skills exploration confirmed, such as filtering, paging, form entry and cross-page linking, so each task is one the replica can actually support."
+          "detail": "Write tasks from the navigation skills exploration confirmed, such as filtering, paging, form entry and cross-page linking, so each task is one the replica can actually support.",
+          "accept": "The task uses a navigation skill that exploration confirmed works on the replica."
         },
         {
           "title": "Attach deterministic checks",
-          "detail": "Express each task's success against the replica's recorded artifacts and backend state, so the reward is a comparison over bytes and rows rather than a visual estimate."
-        },
-        {
-          "title": "Freeze the capture with checksums",
-          "detail": "Store the recording and its checksums with the task set. A replica whose capture drifts silently makes earlier scores incomparable and turns replay failures into environment noise."
+          "detail": "Express each task's success against the replica's recorded artifacts and backend state, so the reward is a comparison over bytes and rows rather than a visual estimate.",
+          "accept": "Success is a comparison over replica state or recorded artifacts and needs no visual or model judgement."
         }
+      ],
+      "curation_notes": [
+        "Store the recording and its checksums with the task set, because a capture that drifts silently makes earlier scores incomparable.",
+        "Recapture the URLs whose content changes on the live site before comparing runs, since such content can only be verified from the snapshot it was captured in."
       ],
       "verifier": [
         "every URL referenced by a task returns the recorded response in the replay, with matching status and content checksum",

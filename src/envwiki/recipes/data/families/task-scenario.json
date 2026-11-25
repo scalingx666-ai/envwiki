@@ -5,7 +5,21 @@
       "id": "capability-frontier-curriculum",
       "name": "Curriculum around the policy capability frontier",
       "family": "task-scenario",
-      "summary": "Scenario selection is driven by where the agent currently succeeds. Exploration of the environment produces reachable states and successful trajectories; the set of states from which the reference solver reliably completes the task defines a capability region, and its boundary is where success turns unreliable. Scenarios are chosen just inside that boundary, where only a few well-chosen actions are needed to reach a clearly solvable state, and the curriculum is expanded backwards along the successful reference trajectories. An automatic evaluator, calibrated against human labels on a sample, filters candidates so the scenario set does not fill with tasks the checker cannot score.",
+      "summary": "Place the scenario just inside the solver's capability frontier: explore to find reachable states, measure per-state reference success, and pick the start state where success turns unreliable.",
+      "background": "Scenario selection is driven by where the agent currently succeeds. Exploration of the environment produces reachable states and successful trajectories; the set of states from which the reference solver reliably completes the task defines a capability region, and its boundary is where success turns unreliable. Scenarios are chosen just inside that boundary, where only a few well-chosen actions are needed to reach a clearly solvable state, and the curriculum is expanded backwards along the successful reference trajectories. An automatic evaluator, calibrated against human labels on a sample, filters candidates so the scenario set does not fill with tasks the checker cannot score.",
+      "material_kind": [
+        "trajectory",
+        "gui"
+      ],
+      "task_kind": "implement",
+      "role": "curate",
+      "needs": [
+        "has an explorable environment",
+        "has a reference solver",
+        "has replayable trajectories",
+        "has a human-labelled sample"
+      ],
+      "produces": "A scenario starting from a near-frontier state, with its reference trajectory, a failing baseline and an evaluator calibrated against human labels.",
       "when_to_use": [
         "the environment is fixed but the solver's capability is not",
         "you want tasks that are neither trivial nor hopeless",
@@ -23,32 +37,39 @@
       "steps": [
         {
           "title": "Explore and log",
-          "detail": "Let the agent move freely through the environment and record the reachable states, the actions taken, and the outcome of each episode. This exploration log is the raw material for every later step."
+          "detail": "Let the agent move freely through the environment and record the reachable states, the actions taken, and the outcome of each episode. This exploration log is the raw material for every later step.",
+          "accept": "The log records the reachable states, the actions taken and the outcome of each episode."
         },
         {
           "title": "Estimate the capability region",
-          "detail": "From the log and the reference solver, compute the success rate of completing the task from each reachable state. States with consistently high success form the region; the band where success becomes unreliable is the frontier."
+          "detail": "From the log and the reference solver, compute the success rate of completing the task from each reachable state. States with consistently high success form the region; the band where success becomes unreliable is the frontier.",
+          "accept": "A per-state success-rate table is computed and stored, and the band where success becomes unreliable is identified."
         },
         {
           "title": "Select a near-frontier scenario",
-          "detail": "Choose a start state on the frontier side of the band, so the task needs only a few correct actions to reach a state from which the reference solver succeeds reliably. Both extremes are rejected: deep inside the region is already solved, well outside it is unlearnable."
+          "detail": "Choose a start state on the frontier side of the band, so the task needs only a few correct actions to reach a state from which the reference solver succeeds reliably. Both extremes are rejected: deep inside the region is already solved, well outside it is unlearnable.",
+          "accept": "The chosen start state needs only a few correct actions to reach a state the reference solver completes reliably."
         },
         {
           "title": "Compile the scenario profile",
-          "detail": "Write the observable starting condition, the goal, and the artifacts the scenario presupposes, including the exact version or state of the interface, so the task is reproducible and not tied to a transient rendering."
+          "detail": "Write the observable starting condition, the goal, and the artifacts the scenario presupposes, including the exact version or state of the interface, so the task is reproducible and not tied to a transient rendering.",
+          "accept": "The profile states the observable starting condition, the goal, the presupposed artifacts and the exact interface version or state."
         },
         {
-          "title": "Filter with a calibrated evaluator",
-          "detail": "Score the candidate with an automatic evaluator and compare its judgements with human labels on a sample; keep the scenario only when the agreement rate clears a threshold, and fix the evaluator where it disagrees."
-        },
-        {
-          "title": "Expand backwards along references",
-          "detail": "Derive new scenarios by stepping backwards along the successful reference trajectory from the frontier, each with its own start state, checkpoint, and reference solution, so difficulty is graded rather than binary."
+          "title": "Score the candidate with the automatic evaluator",
+          "detail": "Score the candidate scenario with the automatic evaluator and record its verdict with the scenario.",
+          "accept": "The evaluator returns a verdict for the candidate scenario, and the verdict is stored with it."
         },
         {
           "title": "Gate every scenario",
-          "detail": "Require that the reference solution succeeds and that a trivial baseline fails, and store both outcomes per scenario as the difficulty evidence."
+          "detail": "Require that the reference solution succeeds and that a trivial baseline fails, and store both outcomes per scenario as the difficulty evidence.",
+          "accept": "The reference solution ends in success, the trivial baseline ends in failure, and both outcomes are recorded."
         }
+      ],
+      "curation_notes": [
+        "Audit the automatic evaluator against human labels on a sample and fix it where it disagrees, so the kept scenarios are not mis-scored.",
+        "Derive new scenarios by stepping backwards along the successful reference trajectory from the frontier, each with its own start state, checkpoint and reference solution, so difficulty is graded rather than binary.",
+        "Sweep the whole environment before estimating the capability region, because a region computed from a partial exploration hides the true frontier."
       ],
       "verifier": [
         "each stored scenario has a reference trajectory that ends in success and a baseline attempt that ends in failure",
@@ -80,7 +101,21 @@
       "id": "checkpointed-task-evolution-dag",
       "name": "Seed-to-deep task evolution with a checkpoint DAG",
       "family": "task-scenario",
-      "summary": "A deep task is grown from a trivially answerable seed rather than authored in one shot. The seed is decomposed into atomic steps arranged as a directed acyclic graph, and every step carries a checkpoint expressed as a rule over observable environment state. Query, DAG, and checkpoints are edited as one unit, so adding a dependency means rewriting the request to match. Success is decided by rule-based state matching against the environment rather than by a rubric read by a judge, and reachability is gated by running a reference solution that must flip every checkpoint.",
+      "summary": "Grow a deep task from a trivially answerable seed: decompose it into an acyclic step DAG, give every step a rule-based checkpoint over observable state, and rewrite the request with the graph.",
+      "background": "A deep task is grown from a trivially answerable seed rather than authored in one shot. The seed is decomposed into atomic steps arranged as a directed acyclic graph, and every step carries a checkpoint expressed as a rule over observable environment state. Query, DAG, and checkpoints are edited as one unit, so adding a dependency means rewriting the request to match. Success is decided by rule-based state matching against the environment rather than by a rubric read by a judge, and reachability is gated by running a reference solution that must flip every checkpoint.",
+      "material_kind": [
+        "simulation",
+        "data"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a trivial seed item",
+        "has observable state",
+        "state is readable by rules",
+        "has a reference solver"
+      ],
+      "produces": "A deep task whose request, acyclic step DAG and rule-based checkpoints move as one package, with every checkpoint flipped by the reference solution.",
       "when_to_use": [
         "the source contains facts or states that can be chained into a multi-step objective",
         "the environment exposes observable state a rule-based checker can read",
@@ -98,32 +133,42 @@
       "steps": [
         {
           "title": "Seed with the trivial nucleus",
-          "detail": "Start from a simple question or state change that is easy to verify. The seed anchors the deeper task and must remain derivable from the source, so the task never depends on invented facts."
+          "detail": "Start from a simple question or state change that is easy to verify. The seed anchors the deeper task and must remain derivable from the source, so the task never depends on invented facts.",
+          "accept": "The seed is a simple, easily verified question or state change, and it is derivable from the source."
         },
         {
           "title": "Decompose into a DAG of atomic steps",
-          "detail": "Break the objective into atomic steps, each with a single verifiable outcome, and record the dependency edges between them. The graph must stay acyclic; a cycle means the requested objective has no ordering that satisfies it."
+          "detail": "Break the objective into atomic steps, each with a single verifiable outcome, and record the dependency edges between them. The graph must stay acyclic; a cycle means the requested objective has no ordering that satisfies it.",
+          "accept": "Every step has a single verifiable outcome, the dependency edges are recorded, and the graph contains no cycle."
         },
         {
           "title": "Attach a checkpoint to every step",
-          "detail": "For each step write the rule that detects it in the environment state, referencing concrete state variables. A step without a rule cannot be graded and is removed or rewritten."
+          "detail": "For each step write the rule that detects it in the environment state, referencing concrete state variables. A step without a rule cannot be graded and is removed or rewritten.",
+          "accept": "Each step carries a rule over concrete state variables, and no step is left without one."
         },
         {
           "title": "Grow the graph and rewrite the request together",
-          "detail": "Add steps and dependencies, then rewrite the request so it describes the same graph the checkpoints encode. Query, DAG, and checkpoint list move as one unit to prevent drift."
+          "detail": "Add steps and dependencies, then rewrite the request so it describes the same graph the checkpoints encode. Query, DAG, and checkpoint list move as one unit to prevent drift.",
+          "accept": "The request describes exactly the graph the checkpoints encode, and no step in the graph is left unmentioned."
         },
         {
           "title": "Challenge the task",
-          "detail": "Attack the task as a solver would: check that no single shortcut satisfies all checkpoints, that the request does not hint at the ordering, and that the added difficulty comes from dependency reasoning rather than from extra hops."
+          "detail": "Attack the task as a solver would: check that no single shortcut satisfies all checkpoints, that the request does not hint at the ordering, and that the added difficulty comes from dependency reasoning rather than from extra hops.",
+          "accept": "No single shortcut satisfies all checkpoints, the request does not hint at the ordering, and the extra difficulty comes from dependency reasoning rather than from extra hops."
         },
         {
           "title": "Gate on reachability",
-          "detail": "Run a reference solution in the environment and require every checkpoint to flip from false to true along that run. A checkpoint that never flips is unreachable, so either the step or the rule is wrong."
+          "detail": "Run a reference solution in the environment and require every checkpoint to flip from false to true along that run. A checkpoint that never flips is unreachable, so either the step or the rule is wrong.",
+          "accept": "The reference solution flips every checkpoint from false to true, and the pre-solution state leaves at least one false."
         },
         {
           "title": "Remove leakage and freeze",
-          "detail": "Strip from the request any string that reveals a checkpoint value or the reference path, then freeze the request, the DAG, and the checkpoint rules as one task package."
+          "detail": "Strip from the request any string that reveals a checkpoint value or the reference path, then freeze the request, the DAG, and the checkpoint rules as one task package.",
+          "accept": "No checkpoint's target value or the reference path appears in the request text, and the request, DAG and checkpoint rules are frozen together."
         }
+      ],
+      "curation_notes": [
+        "Run the Explorer-Formalizer-Challenger iteration across the set, so the query, the DAG of atomic steps and the checkpoint rules evolve together in each round instead of being written once."
       ],
       "verifier": [
         "a graph check confirms the checkpoint DAG is acyclic",
@@ -156,7 +201,22 @@
       "id": "requirement-driven-scenario-compilation",
       "name": "Requirement-driven scenario compilation with in-loop execution",
       "family": "task-scenario",
-      "summary": "Tasks are derived from a capability requirement instead of from an available repository, so the resulting distribution reflects demand rather than the substrate at hand. Material describing how the work is actually performed is mined into scenario profiles (role, artifacts, constraints, deliverable), and each profile is compiled into a task directive. The workspace, dependencies, and runtime configuration the directive needs are retrieved or constructed automatically. Generation, execution, and verification happen inside the loop, in the real container, so a task whose components are inconsistent or non-executable is discarded before it becomes an instance. Requirements are decoupled along several dimensions to spread difficulty, and a final judge filter removes the residue.",
+      "summary": "Derive tasks from a capability requirement: mine real work material into scenario profiles, compile one into a directive, materialise its workspace, and execute and verify it inside the loop.",
+      "background": "Tasks are derived from a capability requirement instead of from an available repository, so the resulting distribution reflects demand rather than the substrate at hand. Material describing how the work is actually performed is mined into scenario profiles (role, artifacts, constraints, deliverable), and each profile is compiled into a task directive. The workspace, dependencies, and runtime configuration the directive needs are retrieved or constructed automatically. Generation, execution, and verification happen inside the loop, in the real container, so a task whose components are inconsistent or non-executable is discarded before it becomes an instance. Requirements are decoupled along several dimensions to spread difficulty, and a final judge filter removes the residue.",
+      "material_kind": [
+        "specification",
+        "data",
+        "infrastructure"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a capability requirement",
+        "has real work material",
+        "has a container runtime",
+        "has an executable check"
+      ],
+      "produces": "A task directive with a reproducible workspace, a provisioning script that rebuilds it from empty, and an executable check on the deliverable.",
       "when_to_use": [
         "the source defines capabilities or a domain rather than a ready-made repository",
         "you need several distinct scenarios in one domain that differ in shape",
@@ -174,32 +234,43 @@
       "steps": [
         {
           "title": "State the capability requirement",
-          "detail": "Write the capability the scenario must exercise and the kinds of work it covers, in terms of outcomes rather than tools, so the task is not bound to one substrate."
+          "detail": "Write the capability the scenario must exercise and the kinds of work it covers, in terms of outcomes rather than tools, so the task is not bound to one substrate.",
+          "accept": "The requirement names the capability and the kinds of work it covers in outcome terms, with no tool named."
         },
         {
           "title": "Mine the work into scenario profiles",
-          "detail": "Collect material describing how the work is actually performed and turn it into a profile: the role, the input artifacts, the constraints, the deliverable, and the implied tools. The profile is the unit of diversity."
+          "detail": "Collect material describing how the work is actually performed and turn it into a profile: the role, the input artifacts, the constraints, the deliverable, and the implied tools. The profile is the unit of diversity.",
+          "accept": "The profile names the role, the input artifacts, the constraints, the deliverable and the implied tools, and comes from real work material."
         },
         {
           "title": "Compile the profile into a task directive",
-          "detail": "Turn one profile into a directive that fixes the starting state, the required actions, and the deliverable format. The directive is written so a solver can act on it without seeing the reference solution."
+          "detail": "Turn one profile into a directive that fixes the starting state, the required actions, and the deliverable format. The directive is written so a solver can act on it without seeing the reference solution.",
+          "accept": "The directive fixes the starting state, the required actions and the deliverable format, and can be acted on without seeing the reference solution."
         },
         {
           "title": "Materialize the workspace",
-          "detail": "Retrieve or construct the files, dependencies, and runtime configuration the directive needs, and record the provisioning script so the workspace is rebuilt from nothing on a clean machine."
+          "detail": "Retrieve or construct the files, dependencies, and runtime configuration the directive needs, and record the provisioning script so the workspace is rebuilt from nothing on a clean machine.",
+          "accept": "The provisioning script rebuilds the workspace from an empty directory and exits 0."
         },
         {
           "title": "Execute and verify inside the loop",
-          "detail": "Run the task in the container, apply the reference solution, and evaluate the deliverable with the executable check. Components that error during setup, or whose check cannot be decided, are rejected now rather than shipped."
+          "detail": "Run the task in the container, apply the reference solution, and evaluate the deliverable with the executable check. Components that error during setup, or whose check cannot be decided, are rejected now rather than shipped.",
+          "accept": "The reference solution runs in the container and the executable check decides the deliverable, and components that error during setup are rejected."
         },
         {
-          "title": "Decouple requirements across dimensions",
-          "detail": "Vary one dimension per instance (artifact count, tool mix, adversarial twist, depth) and record that dimension in the instance metadata, so the set spans a distribution rather than one shape."
+          "title": "Decouple one requirement dimension",
+          "detail": "Vary one dimension of the requirement relative to its profile (artifact count, tool mix, adversarial twist or depth) and record that dimension in the instance metadata.",
+          "accept": "The instance metadata records exactly one varied dimension relative to its profile."
         },
         {
           "title": "Filter and freeze",
-          "detail": "Apply a model-judge filter for consistency and realism on top of the mechanical check, then freeze the request, the provisioning script, and the check together as one task."
+          "detail": "Apply a model-judge filter for consistency and realism on top of the mechanical check, then freeze the request, the provisioning script, and the check together as one task.",
+          "accept": "The model judge accepts consistency and realism, and the request, provisioning script and check are frozen as one package."
         }
+      ],
+      "curation_notes": [
+        "Spread the set across the decoupled dimensions (artifact count, tool mix, adversarial twist, depth), so the instances span a distribution rather than one shape.",
+        "Judge-filter the final set for consistency and realism on top of the mechanical check, so no broken component is hidden behind a passing score."
       ],
       "verifier": [
         "the provisioning script rebuilds the workspace from an empty directory and exits 0",

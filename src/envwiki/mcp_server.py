@@ -74,18 +74,23 @@ server = MCPServer(
 
 
 def _summary(recipe, score: float | None = None) -> dict[str, Any]:
+    """The card a ranking tool returns: fields to compare, not prose.
+
+    The fields say what kind of material the method works on, what kind of
+    task it poses and what it needs, so an agent can choose without
+    reading the long method first. get_recipe has the rest.
+    """
     data: dict[str, Any] = {
         "id": recipe.id,
         "name": recipe.name,
         "family": recipe.family,
+        "role": recipe.role,
+        "material_kind": list(recipe.material_kind),
+        "task_kind": recipe.task_kind,
+        "needs": list(recipe.needs),
+        "produces": recipe.produces,
         "effort": recipe.effort,
         "summary": recipe.summary,
-        "when_to_use": recipe.when_to_use,
-        "not_when_to_use": recipe.not_when_to_use,
-        "source_papers": [
-            {"arxiv_id": paper.arxiv_id, "title": paper.title, "note": paper.note}
-            for paper in recipe.source_papers
-        ],
     }
     if score is not None:
         data["match_score"] = round(score, 4)

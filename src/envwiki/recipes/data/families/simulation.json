@@ -5,7 +5,22 @@
       "id": "adaptive-difficulty-procedural-env",
       "name": "Closed-loop adaptive procedural environment generation",
       "family": "simulation",
-      "summary": "Generate environment instances in a loop that watches the agent, instead of sampling once and hoping the difficulty lands. The environment is represented by a controllable set of parameters that govern difficulty, and generation is decomposed: a structured plan comes first, assets and poses are resolved under constraints, and only a validated artifact is assembled. Candidate instances are rolled out and scored with feedback finer than binary success - the stage reached, the number of actions used, the failure mode - and that feedback is mapped back onto the parameters so the next batch is harder exactly where the agent is weak. The deliverable is a calibrated bank of instances whose solve rate is known, and one task cut from the target band.",
+      "summary": "Generate instances in a closed loop: difficulty lives in explicit parameters, candidates are rolled out and scored with fine-grained feedback, and that feedback reshapes the next batch.",
+      "background": "Generate environment instances in a loop that watches the agent, instead of sampling once and hoping the difficulty lands. The environment is represented by a controllable set of parameters that govern difficulty, and generation is decomposed: a structured plan comes first, assets and poses are resolved under constraints, and only a validated artifact is assembled. Candidate instances are rolled out and scored with feedback finer than binary success - the stage reached, the number of actions used, the failure mode - and that feedback is mapped back onto the parameters so the next batch is harder exactly where the agent is weak. The deliverable is a calibrated bank of instances whose solve rate is known, and one task cut from the target band.",
+      "material_kind": [
+        "simulation",
+        "embodied"
+      ],
+      "task_kind": "implement",
+      "role": "create",
+      "needs": [
+        "has a parameterised generator",
+        "has a solver agent",
+        "has a fine-grained progress signal",
+        "affordable rollouts",
+        "has a target difficulty band"
+      ],
+      "produces": "One validated instance whose measured solve rate sits inside the target band, plus the seed and parameter values that regenerate it identically.",
       "when_to_use": [
         "the source domain admits many valid instances (scenes, layouts, workflows, configurations)",
         "sampling difficulty once leaves most instances trivial or outright broken",
@@ -23,32 +38,38 @@
       "steps": [
         {
           "title": "Make difficulty an explicit parameter set",
-          "detail": "Identify the fields that control difficulty - object count, obstacle density, ordering constraints, dependency depth - and expose them in a controllable representation instead of burying them inside a generator prompt."
+          "detail": "Identify the fields that control difficulty - object count, obstacle density, ordering constraints, dependency depth - and expose them in a controllable representation instead of burying them inside a generator prompt.",
+          "accept": "The difficulty-controlling fields are exposed in an inspectable representation rather than hidden inside a generator prompt."
         },
         {
           "title": "Emit a structured plan before any artifact",
-          "detail": "The generator returns a structured plan (entities, poses, constraints, dependencies) that is inspectable on its own. Catching a bad plan here costs a text edit; catching it after synthesis costs a full asset build."
+          "detail": "The generator returns a structured plan (entities, poses, constraints, dependencies) that is inspectable on its own. Catching a bad plan here costs a text edit; catching it after synthesis costs a full asset build.",
+          "accept": "The generator returns a plan of entities, poses, constraints and dependencies that can be inspected before any asset is built."
         },
         {
           "title": "Resolve assets and layout under constraint checks",
-          "detail": "Retrieve cached assets or generate new ones, assign poses, and verify collision and physical-validity constraints before assembling the runnable artifact. Reject invalid assemblies before the agent ever sees them."
+          "detail": "Retrieve cached assets or generate new ones, assign poses, and verify collision and physical-validity constraints before assembling the runnable artifact. Reject invalid assemblies before the agent ever sees them.",
+          "accept": "Collision and physical-validity constraints are checked on the candidate and any invalid assembly is rejected before the agent sees it."
         },
         {
           "title": "Roll out and collect fine-grained feedback",
-          "detail": "Run each candidate instance through the solver and record not just success but the stage reached, the actions consumed and the failure mode, so one failed run identifies which parameter was too easy."
-        },
-        {
-          "title": "Close the loop on the parameters",
-          "detail": "Translate the feedback into parameter changes for the next batch: raise the parameter correlated with the observed failure, keep a spread over the others rather than maximising one, and re-generate."
+          "detail": "Run the candidate instance through the solver and record not just success but the stage reached, the actions consumed and the failure mode, so one failed run identifies which parameter was too easy.",
+          "accept": "The instance's stage reached, action count and failure mode are recorded alongside the binary outcome."
         },
         {
           "title": "Enforce a difficulty band",
-          "detail": "Keep instances whose measured solve rate sits inside the target band. Discard instances every rollout solves (no learning signal) and instances no rollout solves (broken or unsolvable rather than hard)."
+          "detail": "Keep the instance only if its measured solve rate sits inside the target band. An instance every rollout solves carries no learning signal, and an instance no rollout solves is broken or unsolvable rather than hard.",
+          "accept": "The instance's measured solve rate is recorded in the task metadata and lies inside the intended band."
         },
         {
           "title": "Cut one task from the band",
-          "detail": "Select the instance at the intended difficulty, write the instruction without leaking the mechanism, and derive the verifier from that instance's own constraint set so the check is instance-specific."
+          "detail": "Select the instance at the intended difficulty, write the instruction without leaking the mechanism, and derive the verifier from that instance's own constraint set so the check is instance-specific.",
+          "accept": "The instruction states the goal without naming the mechanism, and the verifier is derived from this instance's own constraint set."
         }
+      ],
+      "curation_notes": [
+        "Map the feedback onto parameter changes for the next batch: raise the parameter correlated with the observed failure, and keep a spread over the others rather than maximising one.",
+        "Filter the whole bank by measured solve rate, dropping instances every rollout solves (no learning signal) and instances no rollout solves (broken or unsolvable rather than hard)."
       ],
       "verifier": [
         "constraint check derived from the instance's own plan (every required predicate holds in the final state) executed by tests/test.sh",
@@ -84,7 +105,22 @@
       "id": "quality-gated-multi-interface-env",
       "name": "Multi-interface environment with execution-based quality gates",
       "family": "simulation",
-      "summary": "Synthesize one executable environment whose state is reachable through several interfaces at once - a GUI, an MCP service, a command line - so a task can force the agent to move between them over the same underlying state. Generation runs as a pipeline (persona, world state, services, records, task) and the accepted set is filtered by execution-based gates rather than by inspection: heterogeneous rollouts must solve the task, the measured solve rate must fall below the difficulty ceiling, two independent judges must agree on completion, and counterfactual probes must show the verdict flips when the environment is changed in a controlled way. Solvability, difficulty and verifier reliability are therefore measured rather than asserted, and the frozen world state lets the verifier replay against exactly the state the task was generated from.",
+      "summary": "One executable environment exposes the same state through GUI, MCP and CLI; keep it only if rollouts solve it, the solve rate is low, two judges agree, and a counterfactual flips the verdict.",
+      "background": "Synthesize one executable environment whose state is reachable through several interfaces at once - a GUI, an MCP service, a command line - so a task can force the agent to move between them over the same underlying state. Generation runs as a pipeline (persona, world state, services, records, task) and the accepted set is filtered by execution-based gates rather than by inspection: heterogeneous rollouts must solve the task, the measured solve rate must fall below the difficulty ceiling, two independent judges must agree on completion, and counterfactual probes must show the verdict flips when the environment is changed in a controlled way. Solvability, difficulty and verifier reliability are therefore measured rather than asserted, and the frozen world state lets the verifier replay against exactly the state the task was generated from.",
+      "material_kind": [
+        "simulation",
+        "gui",
+        "api"
+      ],
+      "task_kind": "implement",
+      "role": "environment",
+      "needs": [
+        "has a scenario seed",
+        "has a backing store",
+        "has agents of differing capability",
+        "affordable rollouts"
+      ],
+      "produces": "A frozen multi-interface environment with a recorded solve rate, cross-judge agreement and a counterfactual probe, plus the instruction and the verifier written over it.",
       "when_to_use": [
         "the task should require switching interfaces over one shared state",
         "the environment can be regenerated per task instead of being reused across tasks",
@@ -102,32 +138,43 @@
       "steps": [
         {
           "title": "Seed the world from a persona",
-          "detail": "Expand a scenario-level persona into a world state: backing records with consistent fields, dates and cross-references, so later steps have real content to act on rather than placeholders."
+          "detail": "Expand a scenario-level persona into a world state: backing records with consistent fields, dates and cross-references, so later steps have real content to act on rather than placeholders.",
+          "accept": "The world state holds backing records with consistent fields, dates and cross-references rather than placeholders."
         },
         {
           "title": "Expose one state through several interfaces",
-          "detail": "Build the GUI view, the MCP tools and the CLI over the same store. Each interface must write through the shared state, so a change made through one is immediately visible through the others."
+          "detail": "Build the GUI view, the MCP tools and the CLI over the same store. Each interface must write through the shared state, so a change made through one is immediately visible through the others.",
+          "accept": "A write made through the GUI, the MCP tools or the CLI is immediately visible through the other two."
         },
         {
           "title": "State the task in outcome terms",
-          "detail": "Write the instruction as the user's objective plus the interfaces that exist, without naming the records, the fields or the sequence of calls to use."
+          "detail": "Write the instruction as the user's objective plus the interfaces that exist, without naming the records, the fields or the sequence of calls to use.",
+          "accept": "The instruction names the objective and the available interfaces, and names no record, field or call sequence."
         },
         {
           "title": "Gate on solvability with heterogeneous rollouts",
-          "detail": "Run several agents of differing capability against the instance and keep the task only if at least one succeeds. A task nobody can solve is broken, not hard, and must be dropped rather than shipped."
+          "detail": "Run several agents of differing capability against the instance and keep the task only if at least one succeeds. A task nobody can solve is broken, not hard, and must be dropped rather than shipped.",
+          "accept": "At least one agent of differing capability solved the instance, and the outcome of every rollout is recorded."
         },
         {
           "title": "Gate on difficulty",
-          "detail": "Measure the solve rate over those rollouts and keep instances whose rate sits below the intended ceiling; instances cleared by every strong rollout are discarded as trivial."
+          "detail": "Measure the solve rate over those rollouts and keep instances whose rate sits below the intended ceiling; instances cleared by every strong rollout are discarded as trivial.",
+          "accept": "The measured solve rate over those rollouts is recorded and lies below the intended ceiling."
         },
         {
           "title": "Gate on verifier reliability",
-          "detail": "Score the outcome with two independent judges and require agreement, then probe counterfactuals - a variant of the instance with one controlled change - and confirm the verdict flips as it should. Drop tasks whose verdict is unstable."
+          "detail": "Score the outcome with two independent judges and require agreement, then probe counterfactuals - a variant of the instance with one controlled change - and confirm the verdict flips as it should. Drop tasks whose verdict is unstable.",
+          "accept": "Two independent judges agree on the verdict for the reference solution, and the controlled perturbation receives the opposite verdict."
         },
         {
           "title": "Freeze the world state with the task",
-          "detail": "Snapshot the generated state, the interface code and the seed into the task image, so the verifier runs against exactly the state the task was generated from and any rollout can be replayed."
+          "detail": "Snapshot the generated state, the interface code and the seed into the task image, so the verifier runs against exactly the state the task was generated from and any rollout can be replayed.",
+          "accept": "The generated state, the interface code and the seed are captured in the task image, and the verifier runs against exactly that state."
         }
+      ],
+      "curation_notes": [
+        "Filter the candidate environments as a set with the execution-based gates, keeping only those that pass solvability, difficulty and verifier reliability instead of inspecting them by hand.",
+        "Score the simulator itself, not only the agent trained on it, when judging whether the generated environments hold up."
       ],
       "verifier": [
         "outcome assertions executed against the frozen environment state, with reward.txt written as 1 or 0",
@@ -163,7 +210,21 @@
       "id": "trace-grounded-worldbook-replica",
       "name": "Trace-grounded worldbook replica",
       "family": "simulation",
-      "summary": "Reconstruct a system you cannot or must not run as a stateful simulator, without touching the original. Historical interaction traces are mined into a worldbook with three separate layers: an environment schema (entities and fields), grounded evidence (the trace excerpts that justify each entry), and behavioral knowledge (the transition rules themselves). A deterministic engine consumes the worldbook and produces observations and state transitions, so the same action sequence always yields the same observations. Every rule in the worldbook is falsifiable: it must reproduce the traces it was mined from, and the replica exposes a probe surface so a wrong belief can be corrected by querying the environment rather than by more inference. The task is then built on a rule the instruction never states, so success requires the agent to discover the dynamics instead of guessing them.",
+      "summary": "Rebuild a system you cannot run as a deterministic simulator mined from historical traces, keep every rule falsifiable against those traces, and build the task on a rule the instruction never states.",
+      "background": "Reconstruct a system you cannot or must not run as a stateful simulator, without touching the original. Historical interaction traces are mined into a worldbook with three separate layers: an environment schema (entities and fields), grounded evidence (the trace excerpts that justify each entry), and behavioral knowledge (the transition rules themselves). A deterministic engine consumes the worldbook and produces observations and state transitions, so the same action sequence always yields the same observations. Every rule in the worldbook is falsifiable: it must reproduce the traces it was mined from, and the replica exposes a probe surface so a wrong belief can be corrected by querying the environment rather than by more inference. The task is then built on a rule the instruction never states, so success requires the agent to discover the dynamics instead of guessing them.",
+      "material_kind": [
+        "trajectory",
+        "simulation"
+      ],
+      "task_kind": "reverse",
+      "role": "create",
+      "needs": [
+        "has historical traces",
+        "has a documented schema",
+        "has a deterministic runtime",
+        "has observable state"
+      ],
+      "produces": "A deterministic replica with a versioned worldbook, plus a task that can only be solved by discovering the hidden transition rule from observations.",
       "when_to_use": [
         "the original service is unavailable, expensive, or unsafe to call, but historical traces exist",
         "the task turns on business rules that drift per deployment and are only readable at runtime",
@@ -181,32 +242,42 @@
       "steps": [
         {
           "title": "Mine the traces into a worldbook",
-          "detail": "Parse the traces into per-entity records. For every observed field write down its schema entry, the trace excerpt that evidences it, and the rule that produced it. Keep the three layers separate: schema, grounded evidence, behavioral knowledge."
+          "detail": "Parse the traces into per-entity records. For every observed field write down its schema entry, the trace excerpt that evidences it, and the rule that produced it. Keep the three layers separate: schema, grounded evidence, behavioral knowledge.",
+          "accept": "Every observed field carries a schema entry, the trace excerpt that evidences it and the rule that produced it, kept in three separate layers."
         },
         {
           "title": "Compile rules into a deterministic transition engine",
-          "detail": "Turn each behavioral rule into an executable predicate over (state, action) that returns (observation, next state). The engine reads and writes an explicit state object; no model-generated state, so replaying an action sequence always reproduces the observations."
+          "detail": "Turn each behavioral rule into an executable predicate over (state, action) that returns (observation, next state). The engine reads and writes an explicit state object; no model-generated state, so replaying an action sequence always reproduces the observations.",
+          "accept": "Replaying the same action sequence from the same state reproduces identical observations and identical state hashes."
         },
         {
           "title": "Gate rules by replaying the mined traces",
-          "detail": "Replay every mined trace through the engine from its recorded initial state and drop rules whose predicted observation or state diverges from the recorded one. Keep the engine version that reproduces the largest trace subset and record the residual mismatch count as the replica fidelity."
+          "detail": "Replay the mined traces that the task depends on through the engine from their recorded initial state, and drop every rule whose predicted observation or state diverges from the recorded one. Record the residual mismatch count as the replica fidelity.",
+          "accept": "The trace subset the task relies on replays with zero residual mismatches, and the residual count is recorded."
         },
         {
           "title": "Separate the probe surface from the hidden rule",
-          "detail": "Decide which fields the agent may observe at any time and which rule stays unstated in the instruction. Build the task so the target state is reachable only by discovering the hidden rule from observations, not by applying a documented procedure."
+          "detail": "Decide which fields the agent may observe at any time and which rule stays unstated in the instruction. Build the task so the target state is reachable only by discovering the hidden rule from observations, not by applying a documented procedure.",
+          "accept": "The observable field set is written down, and the target state is reachable only by discovering the unstated rule from observations."
         },
         {
           "title": "Support belief correction, not just action",
-          "detail": "Expose an explicit read/probe tool that returns the current value of a named field, so a stale belief can be corrected mid-run. The probe must return the live value, never the value cached at episode start, and a probe of an unknown field must fail rather than guess."
+          "detail": "Expose an explicit read/probe tool that returns the current value of a named field, so a stale belief can be corrected mid-run. The probe must return the live value, never the value cached at episode start, and a probe of an unknown field must fail rather than guess.",
+          "accept": "Probing a known field returns its live current value, and probing an unknown field fails instead of guessing."
         },
         {
           "title": "Author the task on the replica",
-          "detail": "State the instruction in terms of the business objective, never the rule or the field names that would give it away. Attach a state-based verifier that asserts final replica field values after the agent's actions, not the wording of its answer."
+          "detail": "State the instruction in terms of the business objective, never the rule or the field names that would give it away. Attach a state-based verifier that asserts final replica field values after the agent's actions, not the wording of its answer.",
+          "accept": "The instruction states the business objective without naming the rule or the field names, and the verifier asserts final replica field values."
         },
         {
           "title": "Pre-flight the task",
-          "detail": "Confirm the reference solution drives the replica from the initial state to the asserted state in the intended number of actions, that the verifier fails on an untouched workspace, and that running the reference solution twice yields identical state hashes."
+          "detail": "Confirm the reference solution drives the replica from the initial state to the asserted state in the intended number of actions, that the verifier fails on an untouched workspace, and that running the reference solution twice yields identical state hashes.",
+          "accept": "The reference solution reaches the asserted state in the intended number of actions, the verifier fails on an untouched workspace, and two reference runs produce identical state hashes."
         }
+      ],
+      "curation_notes": [
+        "Replay the entire mined corpus rather than only the rules the task uses, and keep the engine version that reproduces the largest trace subset, recording the residual mismatch count as the replica fidelity."
       ],
       "verifier": [
         "final replica state fields asserted by value after the agent's actions; test.sh exits 0 and writes 1 to /logs/verifier/reward.txt",
